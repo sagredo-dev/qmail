@@ -1,9 +1,12 @@
 v. 2023.11.20
-Combined patch for netqmail-1.06 by Roberto Puzzanghera [roberto dot puzzanghera at sagredo dot eu]
-More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
-==========================================================================================================
+=============
 
-= This patch puts together
+Combined patch for netqmail-1.06 by Roberto Puzzanghera [roberto dot puzzanghera at sagredo dot eu]
+
+More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
+
+This patch puts together
+
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.
   It provides cram-md5, login, plain authentication support for qmail-smtpd and qmail-remote.
@@ -218,13 +221,14 @@ More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
   reduced the CPU time consumed by qmail-remote by a factor of 10.
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
 
-= Disclaimer
+Disclaimer
+=========
 This patch comes with the usual warranty: it works for me, it may not work for you,
 use at your own risk etc. etc. :)
 Comments, suggestions, criticisms are always welcome!
 
-= Usage
-
+Usage
+=====
 * Install libsrs2
 wget https://notes.sagredo.eu/files/qmail/tar/libsrs2-1.0.18.tar.gz
 tar xzf libsrs2-1.0.18.tar.gz
