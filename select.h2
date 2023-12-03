@@ -1,6 +1,12 @@
 #ifndef SELECT_H
 #define SELECT_H
 
+#include <features.h>
+#if (__GLIBC__ > 2) || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 2)
+# include <bits/types.h>
+# undef __FD_SETSIZE
+# define __FD_SETSIZE 131077
+#endif 
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/select.h>

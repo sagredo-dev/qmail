@@ -1,0 +1,60 @@
+maxrcpt patch for qmail-smtpd
+
+    To: djb-qmail@xxxxxxxxxxxxxxxxxxxx
+    Subject: maxrcpt patch for qmail-smtpd
+    From: Michael Samuel <michael@xxxxxxxxxxxxxxxxxx>
+    Date: Wed, 12 Nov 1997 15:18:38 +1100 (EST)
+    Mailing-list: contact djb-qmail-help@xxxxxxxxxxxxxxxxxxxx; run by ezmlm
+
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Here is a patch for qmail-smtpd to read a control file to limit the number
+of rcpt to commands.
+
+In the patch I have a thank-you to Sam, this is referring to
+mrsam@xxxxxxxxxxxxx who gave me the ideas on how to start off.
+
+Anyway, it is a "Do what you like with it, but don't blame me" license,
+but if it doesn't work, tell me what went wrong if you like and I will
+try to figure it out.
+
+
+
+Michael Samuel,
+
+Surf-Net City - Internet Cafe and Internet Service Providers
+
+                                Phone: +61 3 9593-9977
+                                E-Mail: michael@xxxxxxxxxxxxxxxxxx
+
+-----BEGIN PGP SIGNATURE-----
+Version: 2.6.3ia
+Charset: noconv
+
+iQCVAwUBNGkuIUqgdYLWa7qBAQHEiwP+JqNDMZDLwLY7CUdmkuY0OUHwSaFCJJiS
+T853fUkupG2kQz6WU8m0RXWd4Rhr+BT8+hqjDDPQYfWzK6QcEf563D0Mp7nA0ZuQ
+s+XHKflwb8PAZBp+lpzkMsgDg/B8mlw9dnJ4pGeP1keWR/5cgBFM78XsthW2rLXd
+EIXiZJ7AEhc=
+=5RMp
+-----END PGP SIGNATURE-----
+
+Here is a patch I rigged up limit the number of RCPT TO: commands per E-Mail
+messages.
+
+It reads the file control/maxrcpt relative to your qmail directory stucture
+(usually /var/qmail/control/maxrcpt).
+
+In that file you should have a integer, which represents the maximum number
+of recipients per E-Mail Messages.
+
+Apparently one of the SMTP rfcs recommends a minimum of 100 recipients per
+message be allowed.  Just something to keep in mind anyway.
+
+If /var/qmail/control/maxrcpt doesn't exist, it does not impose a limit and
+skips the rcpt part of the code, so unless I missed something in the source, 
+you could even have more than MAXINT.
+
+I would like to thank Sam from the qmail list for giving me a good start to
+this patch, and anyone else who offered me suggestions from the qmail list.
+(When I refer to qmail list, I'm referring to djb-qmail@xxxxxxxxxxxxxxxxxxxx)
+

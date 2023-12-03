@@ -1,0 +1,94 @@
+Chkuser 2.0.9 automatic patching
+
+When to use automatic patching
+==============================
+
+The release.tar package contains some .patch files, ready for installation,
+trying to semplify the most frequent situations.
+
+You may use one of these patches if you have these sources:
+
+	- a clean qmail 1.03 or netqmail 1.05 
+
+You may also consider using one of these patches if you have additional compatible
+patches installed. This means that these additional patches should not have changed
+the same sources and lines which are going to be used by chkuser.
+
+If you have any doubt, backup your sources and try the automatic installation,
+otherwise execute the manual installation (that's very easy).
+
+Backup
+======
+
+Save you qmail working sources before making any change.
+
+Basic installation
+==================
+
+Download the newest release.tar package and untar it. It will create a directory
+containing all release chkuser files and patches.
+
+Chose the most appropriate .patch file to be applied, according to your qmail
+installation: .patch files names are self-describing.
+
+Position in the qmail/netqmail source directory:
+
+	$ cd /usr/.../netqmail-1.05
+
+Apply selected patch:
+
+	$ patch < /path_to_chkuser_release_dir/netqmail-1.05_chkuser-2.x.x.patch
+
+No errors should be displayed. If you see any error, better you restore your
+sources and go to manual editing.
+
+editing vpopmail home path
+
+	If your production home path for vpopmail (or whatever you call him) user
+	is NOT /home/vpopmail, you must perform the following additional actions.
+
+	Edit Makefile, changing the line referring to vpopmail's home path and
+	putting the right home path:
+
+		VPOPMAIL_HOME=/home/vpopmail 
+
+	Edit conf-cc, changing the string referring to vpopmail's home path and
+	putting the right home path:
+
+		cc -O2 -I/home/vpopmail/include 
+
+chkuser settings
+================
+
+Edit chkuser_settings.h, uncommenting the options you prefer, and commenting the
+ones you don't want. Default settings should cover the most of situations.
+
+See the related settings pages for more informations.
+
+Make
+====
+Now, make (or gmake on *BSD) as your usual. No errors (just warnings) should
+come out. If you see any error, better you restore your sources
+and go to manual editing.
+
+Checking
+========
+Select a domain, contained in your rcpthosts, for which bouncing is enabled, and run:
+
+	$ ./qmail-smtpd
+	mail from <wrong_sender>
+	mail from <right_sender>
+	rcpt to: <fake_user@your_domain>
+	rcpt to: <real_user@your_domain>
+
+You should see error and ok messages, depending on the addresses you typed.
+
+Install
+=======
+Copy the new executable in the /var/qmail/bin directory (or make install).
+
+Running
+=======
+This patched qmail-smtpd must be executed in a different way than the normal one.
+See the running pages for detailed instructions.
+

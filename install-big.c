@@ -4,6 +4,9 @@
 #include "fmt.h"
 #include "fifo.h"
 
+#include <stdio.h>
+#include "channels.h"
+
 char buf[100 + FMT_ULONG];
 
 void dsplit(base,uid,mode)
@@ -29,6 +32,8 @@ int mode;
 
 void hier()
 {
+  int cc;
+
   h(auto_qmail,auto_uido,auto_gidq,0755);
 
   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
@@ -58,6 +63,14 @@ void hier()
   dsplit("queue/info",auto_uids,0700);
   dsplit("queue/local",auto_uids,0700);
   dsplit("queue/remote",auto_uids,0700);
+
+  for (cc = 0;cc < SUPPL_CHANNELS;++cc)
+  {
+      char adbuf[100];
+
+      sprintf(adbuf,"queue/" QDIR_BASENAME "%d", cc);
+      dsplit(adbuf,auto_uids,0700);
+  }
 
   d(auto_qmail,"queue/lock",auto_uidq,auto_gidq,0750);
   z(auto_qmail,"queue/lock/tcpto",1024,auto_uidr,auto_gidq,0644);
@@ -89,6 +102,7 @@ void hier()
   c(auto_qmail,"doc","TEST.receive",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","REMOVE.sendmail",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","REMOVE.binmail",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","README.qregex",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.local2alias",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.local2ext",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","PIC.local2local",auto_uido,auto_gidq,0644);
@@ -108,9 +122,13 @@ void hier()
   c(auto_qmail,"bin","qmail-rspawn",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","qmail-clean",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","qmail-send",auto_uido,auto_gidq,0711);
+#ifdef EXTERNAL_TODO
+  c(auto_qmail,"bin","qmail-todo",auto_uido,auto_gidq,0711);
+#endif
   c(auto_qmail,"bin","splogger",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","qmail-newu",auto_uido,auto_gidq,0700);
   c(auto_qmail,"bin","qmail-newmrh",auto_uido,auto_gidq,0700);
+  c(auto_qmail,"bin","qmail-newmvrt",auto_uido,auto_gidq,0700);
   c(auto_qmail,"bin","qmail-pw2u",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","qmail-inject",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","predate",auto_uido,auto_gidq,0755);
@@ -133,6 +151,7 @@ void hier()
   c(auto_qmail,"bin","qsmhook",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","qbiff",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","forward",auto_uido,auto_gidq,0755);
+  c(auto_qmail,"bin","srsfilter",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","preline",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","condredirect",auto_uido,auto_gidq,0755);
   c(auto_qmail,"bin","bouncesaying",auto_uido,auto_gidq,0755);

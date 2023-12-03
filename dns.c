@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <netdb.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -9,6 +8,7 @@ extern int res_query();
 extern int res_search();
 #include "ip.h"
 #include "ipalloc.h"
+#include "strsalloc.h"
 #include "fmt.h"
 #include "alloc.h"
 #include "str.h"
@@ -19,14 +19,17 @@ extern int res_search();
 static unsigned short getshort(c) unsigned char *c;
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 
-static union { HEADER hdr; unsigned char buf[PACKETSZ]; } response;
+static struct { unsigned char *buf; } response;
+static int responsebuflen = 0;
 static int responselen;
 static unsigned char *responseend;
 static unsigned char *responsepos;
+static u_long saveresoptions;
 
 static int numanswers;
 static char name[MAXDNAME];
 static struct ip_address ip;
+static stralloc txt = {0};
 unsigned short pref;
 
 static stralloc glue = {0};
@@ -43,18 +46,33 @@ int type;
  errno = 0;
  if (!stralloc_copy(&glue,domain)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
- responselen = lookup(glue.s,C_IN,type,response.buf,sizeof(response));
+ if (!responsebuflen)
+  if (response.buf = (unsigned char *)alloc(PACKETSZ+1))
+   responsebuflen = PACKETSZ+1;
+   else return DNS_MEM;
+
+ responselen = lookup(glue.s,C_IN,type,response.buf,responsebuflen);
+ if ((responselen >= responsebuflen) ||
+     (responselen > 0 && (((HEADER *)response.buf)->tc)))
+  {
+   if (responsebuflen < 65536)
+    if (alloc_re(&response.buf, responsebuflen, 65536))
+     responsebuflen = 65536;
+    else return DNS_MEM;
+    saveresoptions = _res.options;
+    _res.options |= RES_USEVC;
+    responselen = lookup(glue.s,C_IN,type,response.buf,responsebuflen);
+    _res.options = saveresoptions;
+  }
  if (responselen <= 0)
   {
    if (errno == ECONNREFUSED) return DNS_SOFT;
    if (h_errno == TRY_AGAIN) return DNS_SOFT;
    return DNS_HARD;
   }
- if (responselen >= sizeof(response))
-   responselen = sizeof(response);
  responseend = response.buf + responselen;
  responsepos = response.buf + sizeof(HEADER);
- n = ntohs(response.hdr.qdcount);
+ n = ntohs(((HEADER *)response.buf)->qdcount);
  while (n-- > 0)
   {
    i = dn_expand(response.buf,responseend,responsepos,name,MAXDNAME);
@@ -64,7 +82,7 @@ int type;
    if (i < QFIXEDSZ) return DNS_SOFT;
    responsepos += QFIXEDSZ;
   }
- numanswers = ntohs(response.hdr.ancount);
+ numanswers = ntohs(((HEADER *)response.buf)->ancount);
  return 0;
 }
 
@@ -177,6 +195,49 @@ int wanttype;
  return 0;
 }
 
+static int findtxt(wanttype)
+int wanttype;
+{
+ unsigned short rrtype;
+ unsigned short rrdlen;
+ int i;
+
+ if (numanswers <= 0) return 2;
+ --numanswers;
+ if (responsepos == responseend) return DNS_SOFT;
+
+ i = dn_expand(response.buf,responseend,responsepos,name,MAXDNAME);
+ if (i < 0) return DNS_SOFT;
+ responsepos += i;
+
+ i = responseend - responsepos;
+ if (i < 4 + 3 * 2) return DNS_SOFT;
+   
+ rrtype = getshort(responsepos);
+ rrdlen = getshort(responsepos + 8);
+ responsepos += 10;
+
+ if (rrtype == wanttype)
+  {
+   unsigned short txtpos;
+   unsigned char txtlen;
+
+   txt.len = 0;
+   for (txtpos = 0;txtpos < rrdlen;txtpos += txtlen)
+    {
+     txtlen = responsepos[txtpos++];
+     if (txtlen > rrdlen-txtpos) txtlen = rrdlen-txtpos;
+     if (!stralloc_catb(&txt,&responsepos[txtpos],txtlen)) return DNS_MEM;
+    }
+
+   responsepos += rrdlen;
+   return 1;
+ }
+
+ responsepos += rrdlen;
+ return 0;
+}
+
 void dns_init(flagsearch)
 int flagsearch;
 {
@@ -194,7 +255,7 @@ stralloc *sa;
    if (!sa->len) return loop;
    if (sa->s[sa->len - 1] == ']') return loop;
    if (sa->s[sa->len - 1] == '.') { --sa->len; continue; }
-   switch(resolve(sa,T_ANY))
+   switch(resolve(sa,T_CNAME))
     {
      case DNS_MEM: return DNS_MEM;
      case DNS_SOFT: return DNS_SOFT;
@@ -235,15 +296,18 @@ struct ip_address *ip;
  return len;
 }
 
-int dns_ptr(sa,ip)
-stralloc *sa;
+static int dns_ptrplus(ssa,ip)
+strsalloc *ssa;
 struct ip_address *ip;
 {
+ stralloc sa = {0};
  int r;
 
- if (!stralloc_ready(sa,iaafmt((char *) 0,ip))) return DNS_MEM;
- sa->len = iaafmt(sa->s,ip);
- switch(resolve(sa,T_PTR))
+ if (!stralloc_ready(&sa,iaafmt((char *) 0,ip))) return DNS_MEM;
+ sa.len = iaafmt(sa.s,ip);
+ r = resolve(&sa,T_PTR);
+ alloc_free(sa.s);
+ switch(r)
   {
    case DNS_MEM: return DNS_MEM;
    case DNS_SOFT: return DNS_SOFT;
@@ -254,12 +318,34 @@ struct ip_address *ip;
    if (r == DNS_SOFT) return DNS_SOFT;
    if (r == 1)
     {
-     if (!stralloc_copys(sa,name)) return DNS_MEM;
-     return 0;
+     stralloc sa2 = {0};
+     if (!stralloc_copys(&sa2,name)) return DNS_MEM;
+     if (!strsalloc_append(ssa,&sa2)) return DNS_MEM;
     }
   }
+ if (ssa->len) return 0;
  return DNS_HARD;
 }
+
+int dns_ptr(ssa,ip)
+strsalloc *ssa;
+struct ip_address *ip;
+{
+ int r;
+ int j;
+
+ if (!strsalloc_readyplus(ssa,0)) return DNS_MEM;
+ ssa->len = 0;
+ r = dns_ptrplus(ssa,ip);
+ if (r < 0)
+  {
+   for (j = 0;j < ssa->len;++j)
+    alloc_free(ssa->sa[j].s);
+   ssa->len = 0;
+  }
+ return r;
+}
+
 
 static int dns_ipplus(ia,sa,pref)
 ipalloc *ia;
@@ -267,12 +353,14 @@ stralloc *sa;
 int pref;
 {
  int r;
- struct ip_mx ix;
+ struct ip_mx ix = {0};
 
  if (!stralloc_copy(&glue,sa)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
  if (glue.s[0]) {
+#ifndef IX_FQDN
    ix.pref = 0;
+#endif
    if (!glue.s[ip_scan(glue.s,&ix.ip)] || !glue.s[ip_scanbracket(glue.s,&ix.ip)])
     {
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
@@ -291,9 +379,16 @@ int pref;
    ix.ip = ip;
    ix.pref = pref;
    if (r == DNS_SOFT) return DNS_SOFT;
-   if (r == 1)
+   if (r == 1) {
+#ifdef IX_FQDN
+     ix.fqdn = glue.s;
+#endif
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
   }
+  }
+#ifdef IX_FQDN
+ glue.s = 0;
+#endif
  return 0;
 }
 
@@ -313,7 +408,7 @@ unsigned long random;
 {
  int r;
  struct mx { stralloc sa; unsigned short p; } *mx;
- struct ip_mx ix;
+ struct ip_mx ix = {0};
  int nummx;
  int i;
  int j;
@@ -325,7 +420,9 @@ unsigned long random;
  if (!stralloc_copy(&glue,sa)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
  if (glue.s[0]) {
+#ifndef IX_FQDN
    ix.pref = 0;
+#endif
    if (!glue.s[ip_scan(glue.s,&ix.ip)] || !glue.s[ip_scanbracket(glue.s,&ix.ip)])
     {
      if (!ipalloc_append(ia,&ix)) return DNS_MEM;
@@ -395,4 +492,50 @@ unsigned long random;
 
  alloc_free(mx);
  return flagsoft;
+}
+
+
+static int dns_txtplus(ssa,sa)
+strsalloc *ssa;
+stralloc *sa;
+{
+ int r;
+
+ switch(resolve(sa,T_TXT)) 
+  {
+   case DNS_MEM: return DNS_MEM;
+   case DNS_SOFT: return DNS_SOFT;
+   case DNS_HARD: return DNS_HARD;
+  }
+ while ((r = findtxt(T_TXT)) != 2)
+  {
+   if (r == DNS_SOFT) return DNS_SOFT;
+   if (r == 1)
+    {
+     stralloc sa = {0};
+     if (!stralloc_copy(&sa,&txt)) return DNS_MEM;
+     if (!strsalloc_append(ssa,&sa)) return DNS_MEM;
+    }
+  }
+ if (ssa->len) return 0;
+ return DNS_HARD;
+}
+
+int dns_txt(ssa,sa)
+strsalloc *ssa;
+stralloc *sa;
+{
+ int r;
+ int j;
+
+ if (!strsalloc_readyplus(ssa,0)) return DNS_MEM;
+ ssa->len = 0;
+ r = dns_txtplus(ssa,sa);
+ if (r < 0)
+  {
+   for (j = 0;j < ssa->len;++j)
+    alloc_free(ssa->sa[j].s);
+   ssa->len = 0;
+  }
+ return r;
 }

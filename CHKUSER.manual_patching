@@ -1,0 +1,182 @@
+Chkuser 2.0 manual editing
+
+Manual editing is a very simple operation.
+
+Watching the patch design, shown in the patch design page, you may see that
+only some simple changes must be done to qmail-smtpd.c and Makefile.
+
+Backup
+======
+
+Save you qmail working sources before making any change.
+
+Basic installation
+==================
+
+Download the newest release.tar package and untar it. It will create a directory
+containing all chkuser files and patches.
+
+Position in the qmail/netqmail source directory:
+
+	$ cd /usr/.../netqmail-1.05
+
+Copy all the chkuser sources:
+
+	$ cp /path_to_release_tar/chkuser* .
+
+edit qmail-smtpd.c
+	within qmail-smtpd.c, change the following lines:
+
+	At the end of initial #include declarations, add the following (+) lines:
+
+	#include "timeoutwrite.h"
+	#include "commands.h"
+	
++	/* start chkuser code */ 
++	#include "chkuser.h"
++	/* end chkuser code */
+
+	#define MAXHOPS 100 
+
+Within smtp_mail routine, add the following (+) lines
+
+	void smtp_mail(arg) char *arg;
+	{
+	if (!addrparse(arg)) { err_syntax(); return; }
++	/* start chkuser code */
++	if (chkuser_sender (&addr) != CHKUSER_OK) { return; }
++	/* end chkuser code */
+	flagbarf = bmfcheck();
+
+	Within smtp_rcpt routine, delete the following (-) lines and substitute
+	them with the (+) ones:
+
+-	  if (relayclient) {
+-	    --addr.len;
+-	    if (!stralloc_cats(&addr,relayclient)) die_nomem();
+-	  }
+-	  else
+-	    if (!addrallowed()) { err_nogateway(); return; }
+
++	/* start chkuser code */
++	  switch (chkuser_realrcpt (&mailfrom, &addr)) {
++	    case CHKUSER_KO:
++	      return;
++	      break;
++	    case CHKUSER_RELAYING:
++	      --addr.len;
++	      if (!stralloc_cats(&addr,relayclient)) die_nomem();
++	      if (!stralloc_0(&addr)) die_nomem();
++	      break;
++	}
++	/* end chkuser code */
+
+	if (!stralloc_cats(&rcptto,"T")) die_nomem();
+	if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+	if (!stralloc_0(&rcptto)) die_nomem();
+
+edit Makefile
+	Within Makefile, change or add the following lines.
+
+	At the begininng of the file:
+
+	# Don't edit Makefile! Use conf-* for configuration.
+
++	VPOPMAIL_HOME=/home/vpopmail
++	SMTPD_CHKUSER_OBJ=chkuser.o dns.o
++	VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
+
+	SHELL=/bin/sh
+
+	Be carefule to use the right path, if your vpopmail production home
+	path is NOT "/home/vpopmail".
+
+	dns.lib is added to qmail-smtpd building instructions, so, if you
+	have previously patched qmail-smtpd in order to include dns.lib, take
+	care to delete the duplication from the previous lines.
+
+	Before "clean:" insert the chkuser.o definition:
+
+	exit.h auto_spawn.h
+      		./compile chkspawn.c
++       chkuser.o: \
++       compile chkuser.c chkuser.h chkuser_settings.h
++       	./compile chkuser.c
+
+	clean: \
+
+	Beware: the "./compile chkuser.c" line has an heading TAB.
+
+	Change the qmail-smtpd compiling and linking instructions,
+	deleting the (-) lines and adding the (+) ones.
+
+
+	qmail-smtpd: \
+	load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
+	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
+	date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
+	open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
+-	fs.a auto_qmail.o socket.lib
++	fs.a auto_qmail.o socket.lib $(SMTPD_CHKUSER_OBJ)
+-	      ./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
++	      ./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
+	      timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
+	      received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
+	      datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+-	      alloc.a substdio.a error.a str.a fs.a auto_qmail.o `cat \
+-	      socket.lib`
++	      alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
++	      $(VPOPMAIL_LIBS) \
++	      `cat socket.lib`
+
+	Beware: all the lines starting from and following "./load" have an heading TAB.
+
+edit TARGETS
+	Append the following blue line at the end of TARGETS file:
+
+	man
+	setup
+	check
++	chkuser.o
+
+edit conf-cc
+	Edit conf-cc, adding the include path of production vpopmail:
+
+	cc -O2 -I/home/vpopmail/include 
+
+	Be carefule to use the right path, if your vpopmail production home path
+	is NOT "/home/vpopmail".
+
+chkuser settings
+================
+Edit chkuser_settings.h, uncommenting the options you prefer, and commenting the
+ones you don't want. Default settings should cover the most of situations.
+
+See the related settings pages for more informations.
+
+Make
+====
+Now, make (or gmake on *BSD) as your usual. No errors (just warnings)
+should come out. If you see any error, check carefully edited lines.
+
+Checking
+========
+Select a domain, contained in your rcpthosts, for which bouncing is enabled, and run:
+
+	$ ./qmail-smtpd
+	mail from <wrong_sender>
+	mail from <right_sender>
+	rcpt to: <fake_user@your_domain>
+	rcpt to: <real_user@your_domain>
+
+You should see error and ok messages, depending on the addresses you typed.
+
+Install
+=======
+Copy the new executable in the /var/qmail/bin directory (or make install).
+
+Running
+=======
+This patched qmail-smtpd must be executed in a different way than the normal one.
+See the running pages for detailed instructions.
+

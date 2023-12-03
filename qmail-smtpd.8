@@ -14,6 +14,15 @@ must be supplied several environment variables;
 see
 .BR tcp-environ(5) .
 
+If the environment variable
+.B SMTPS
+is non-empty,
+.B qmail-smtpd
+starts a TLS session (to support the deprecated SMTPS protocol,
+normally on port 465). Otherwise,
+.B qmail-smtpd
+offers the STARTTLS extension to ESMTP.
+
 .B qmail-smtpd
 is responsible for counting hops.
 It rejects any message with 100 or more 
@@ -23,7 +32,30 @@ or
 header fields.
 
 .B qmail-smtpd
-supports ESMTP, including the 8BITMIME and PIPELINING options.
+supports ESMTP, including the 8BITMIME, DATA, PIPELINING, SIZE, and AUTH options.
+.B qmail-smtpd
+includes a \'MAIL FROM:\' parameter parser and obeys \'Auth\' and \'Size\' advertisements.
+.B qmail-smtpd
+can accept LOGIN, PLAIN, and CRAM-MD5 AUTH types. It invokes
+.IR checkprogram ,
+which reads on file descriptor 3 the username, a 0 byte, the password
+or CRAM-MD5 digest/response derived from the SMTP client,
+another 0 byte, a CRAM-MD5 challenge (if applicable to the AUTH type),
+and a final 0 byte.
+.I checkprogram
+invokes
+.I subprogram
+upon successful authentication, which should in turn return 0 to
+.BR qmail-smtpd ,
+effectively setting the environment variables $RELAYCLIENT and $TCPREMOTEINFO
+(any supplied value replaced with the authenticated username).
+.B qmail-smtpd
+will reject the authentication attempt if it receives a nonzero return
+value from
+.I checkprogram
+or
+.IR subprogram .
+
 .SH TRANSPARENCY
 .B qmail-smtpd
 converts the SMTP newline convention into the UNIX newline convention
@@ -37,11 +69,34 @@ accepts messages that contain long lines or non-ASCII characters,
 even though such messages violate the SMTP protocol.
 .SH "CONTROL FILES"
 .TP 5
+.I badhelo
+Unacceptable HELO/EHLO host names.
+.B qmail-smtpd
+will reject every recipient address for a message if
+the host name is listed in, 
+or matches a POSIX regular expression pattern listed in,
+.IR badhelo .
+If the 
+.B NOBADHELO 
+environment variable is set, then the contents of 
+.IR badhelo 
+will be ignored.
+For more information, please have a look at doc/README.qregex.
+.TP 5
+.I badhelonorelay
+Functions the same as the
+.IR badhelo
+control file but is read only if the 
+.B RELAYCLIENT 
+environment variable is not set.
+For more information, please have a look at doc/README.qregex.
+.TP 5
 .I badmailfrom
 Unacceptable envelope sender addresses.
 .B qmail-smtpd
 will reject every recipient address for a message
-if the envelope sender address is listed in
+if the envelope sender address is listed in, , or matches a POSIX regular expression
+pattern listed in,
 .IR badmailfrom .
 A line in
 .I badmailfrom
@@ -49,6 +104,61 @@ may be of the form
 .BR @\fIhost ,
 meaning every address at
 .IR host .
+For more information, please have a look at doc/README.qregex.
+.TP 5
+.I badmailfromnorelay
+Functions the same as the
+.IR badmailfrom
+control file but is read only if the 
+.B RELAYCLIENT 
+environment variable is not set.
+For more information, please have a look at doc/README.qregex.
+.TP 5
+.I badrcpttonorelay
+Functions the same as the
+.IR badrcptto
+control file but is read only if the
+.B RELAYCLIENT
+environment variable is not set.
+For more information, please have a look at doc/README.qregex.
+.TP 5
+.I badrcptto
+Unacceptable envelope recipient addresses.
+.B qmail-smtpd
+will reject every recipient address for a message if the recipient address
+is listed in,
+or matches a POSIX regular expression pattern listed in,
+.IR badrcptto .
+For more information, please have a look at doc/README.qregex.
+
+.TP 5
+.I brtlimit
+Number of bad recipients before closing the transmission channel.
+.B qmail-smtpd
+will close the transmission channel after 
+reaching the number of bad recipients in
+.IR brtlimit .
+Both badrcptto, chkuser and validrcptto failures are counted.
+
+If the environment variable
+.B BRTLIMIT 
+is set, it overrides
+.IR brtlimit .
+
+Default and minimum: 0.
+
+.TP 5
+.I clientca.pem
+A list of Certifying Authority (CA) certificates that are used to verify
+the client-presented certificates during a TLS-encrypted session.
+
+.TP 5
+.I clientcrl.pem
+A list of Certificate Revocation Lists (CRLs). If present it
+should contain the CRLs of the CAs in 
+.I clientca.pem 
+and client certs will be checked for revocation.
+
 .TP 5
 .I databytes
 Maximum number of bytes allowed in a message,
@@ -76,6 +186,34 @@ If the environment variable
 .B DATABYTES
 is set, it overrides
 .IR databytes .
+
+.TP 5
+.I dh4096.pem
+If these 4096 bit DH parameters are provided,
+.B qmail-smtpd
+will use them for TLS sessions instead of generating one on-the-fly 
+(which is very timeconsuming).
+
+.TP 5
+.I dnsbllist
+A list of dnsbl providers that
+.B qmail-smtpd
+checks to identify blacklisted ip addresses.
+
+Exception:
+If the environment variable
+.B DNSBLSKIP
+is set,
+.B qmail-smtpd
+ignores
+.IR dnsbllist ,
+and the dnsbl check is not performed.
+The check is skipped even if some other authentication method succedeed
+and authorized the client to relay (smtp-auth or tls client certificate),
+or if
+.B RELAYCLIENT
+enviromnent variable is set.
+
 .TP 5
 .I localiphost
 Replacement host name for local IP addresses.
@@ -151,6 +289,19 @@ may include wildcards:
 
 Envelope recipient addresses without @ signs are
 always allowed through.
+
+.TP 5
+.I rsa4096.pem
+If this 4096 bit RSA key is provided,
+.B qmail-smtpd
+will use it for TLS sessions instead of generating one on-the-fly.
+
+.TP 5
+.I servercert.pem
+SSL certificate to be presented to clients in TLS-encrypted sessions. 
+Should contain both the certificate and the private key. Certifying Authority
+(CA) and intermediate certificates can be added at the end of the file.
+
 .TP 5
 .I smtpgreeting
 SMTP greeting message.
@@ -169,6 +320,119 @@ Number of seconds
 .B qmail-smtpd
 will wait for each new buffer of data from the remote SMTP client.
 Default: 1200.
+
+.SH "ENVIRONMENT VARIABLES READ"
+Environment variables may be defined globally in the
+.B qmail-smtpd
+startup script and/or individually as part of the
+.B tcpserver's
+cdb database.
+The environment variables may be quoted ("variable", or 'variable') and
+in case of global use, have to be exported.
+.B qmail-smtpd
+supports the following legacy environment variables, typically
+provided by
+.B tcpserver
+or
+.B sslserver
+or
+.BR tcp-env :
+.IR TCPREMOTEIP ,
+.IR TCPREMOTEHOST
+.IR TCPREMOTEINFO
+and
+.IR TCPLOCALPORT
+as well as
+.IR RELAYCLIENT .
+
+.B qmail-smtpd
+may use the following environment variables for SMTP authentication:
+.TP 5
+.IR SMTPAUTH
+is used to enable SMTP Authentication for the AUTH types
+LOGIN and PLAIN.
+In case
+.TP 5
+.IR SMTPAUTH='+cram'
+is defined,
+.B qmail-smtpd
+honors LOGIN, PLAIN, and additionally CRAM-MD5 authentication.
+Simply 
+.TP 5
+.IR SMTPAUTH='cram'
+restricts authentication just to CRAM-MD5.
+If however
+.TP 5
+.IR SMTPAUTH='!'
+starts with an exclamation mark, AUTH is required. 
+You can enforce 'Submission' using this option 
+and binding
+.B qmail-smtpd
+to the SUBMISSION port \'587'\.
+In particular,
+.TP 5
+.IR SMTPAUTH='!cram'
+may be useful.
+In opposite, if
+.TP 5
+.IR SMTPAUTH='-'
+starts with a dash, AUTH is disabled for particular
+connections.
+
+Note: The use of 'cram' requires a CRAM-MD5 enabled PAM.
+
+.TP 5
+.I tlsclients
+A list of email addresses. When relay rules would reject an incoming message,
+.B qmail-smtpd
+can allow it if the client presents a certificate that can be verified against
+the CA list in
+.I clientca.pem
+and the certificate email address is in
+.IR tlsclients .
+
+.TP 5
+.I tlsserverciphers
+A set of OpenSSL cipher strings. Multiple ciphers contained in a
+string should be separated by a colon. If the environment variable
+.B TLSCIPHERS
+is set to such a string, it takes precedence.
+
+.TP 5
+.I spfbehavior
+Set to a value between 1 and 6 to enable SPF checks; 0 to disable.
+1 selects 'annotate-only' mode, where
+.B qmail-smtpd
+will annotate incoming email with
+.B Received-SPF
+fields, but will not reject any messages.  2 will produce temporary
+failures on DNS lookup problems so you can make sure you always have
+meaningful Received-SPF headers.  3 selects 'reject' mode,
+where incoming mail will be rejected if the SPF record says 'fail'.  4
+selects a more stricter rejection mode, which is like 'reject' mode,
+except that incoming mail will also be rejected when the SPF record
+says 'softfail'.  5 will also reject when the SPF record says 'neutral',
+and 6 if no SPF records are available at all (or a syntax error was
+encountered). The contents of this file are overridden by the value of
+the
+.B SPFBEHAVIOR
+environment variable, if set.
+Default: 0.
+.TP 5
+.I spfexp
+You can add a line with a an SPF explanation that will be shown to the
+sender in case of a reject. It will override the default one. You can
+use SPF macro expansion.
+.TP 5
+.I spfguess
+You can add a line with SPF rules that will be checked if a sender
+domain doesn't have a SPF record. The local rules will also be used
+in this case.
+.TP 5
+.I spfrules
+You can add a line with SPF rules that will be checked before other SPF
+rules would fail.  This can be used to always allow certain machines to
+send certain mails.
 .SH "SEE ALSO"
 tcp-env(1),
 tcp-environ(5),

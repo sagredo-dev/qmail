@@ -9,8 +9,10 @@ extern int auto_uidp;
 extern int auto_uidq;
 extern int auto_uidr;
 extern int auto_uids;
+extern int auto_uidv;
 
 extern int auto_gidn;
 extern int auto_gidq;
+extern int auto_gidv;
 
 #endif

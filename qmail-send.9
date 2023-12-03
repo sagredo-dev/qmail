@@ -16,6 +16,15 @@ If a message is temporarily undeliverable to one or more addresses,
 .B qmail-send
 leaves it in the queue and tries the addresses again later.
 
+.B Supplemental queues
+allow more than one queue for remote recipients. (CHANNELS - 2) supplemental queues total, because one queue is always
+designated for local deliveries and a second queue is always available for remote deliveries that
+don't match any of the domains listed in the supplemental queue control files.
+This makes it possible to divide remote deliveries into distinct queues at different concurrency
+levels and can be used as a throttling mechanism based on domain.
+Supplemental queues are managed by the supplsX and concurrencysupplX control files, where X is an integer from
+0 to (CHANNELS - 3).
+
 .B qmail-send
 prints a readable record of its activities to descriptor 0.
 It writes commands to
@@ -51,7 +60,13 @@ If
 .B qmail-send
 receives a HUP signal,
 it will reread
-.I locals
+.IR concurrencylocal ,
+.IR concurrencyremote ,
+.IR locals,
+.IR supplsX,
+.IR concurrencylocal,
+.IR concurrencyremote,
+.IR concurrencysupplX
 and
 .IR virtualdomains .
 .TP 5
@@ -93,6 +108,15 @@ If 0, remote deliveries will be put on hold.
 is limited at compile time to
 SPAWN.
 .TP 5
+.I concurrencysupplX
+Maximum number of simultaneous delivery attempts via supplemental
+channel X, where X is an integer starting at 0.
+Default: 20.
+If 0, deliveries via channel X will be put on hold.
+.I concurrencysupplX
+is limited at compile time to
+SPAWN.
+.TP 5
 .I doublebouncehost
 Double-bounce host.
 Default:
@@ -115,6 +139,10 @@ notice to
 (If that bounces,
 .B qmail-send
 gives up.)
+As a special case, if the first line of
+.IR doublebounceto
+is blank (contains a single linefeed), qmail-send will not queue
+the double-bounce at all.
 .TP 5
 .I envnoathost
 Presumed domain name for addresses without @ signs.
@@ -147,6 +175,12 @@ is considered local if
 is listed in
 .IR locals .
 .TP 5
+.I supplsX
+List of domain names that the current host
+will deliver on supplemental channel X where X is an integer starting at 0,
+one per line.
+No default.
+.TP 5
 .I percenthack
 List of domain names where the percent hack is applied.
 If
@@ -164,7 +198,9 @@ so the percent hack may be applied repeatedly.
 handles
 .I percenthack
 before
-.IR locals .
+.I locals
+and
+.IR supplsX.
 .TP 5
 .I queuelifetime
 Number of seconds

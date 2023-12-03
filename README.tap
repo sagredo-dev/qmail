@@ -1,0 +1,34 @@
+qmail provides the ability to make a copy of each email that flows through the system.
+This is done using the QUEUE_EXTRA code. See qmail FAQ #8.2
+
+The qmail tap patch adds additional functionality:
+1) Specify which email addresses to tap using a regex style control file. With the
+   regex function, you can specify full domains or individual email addresses.
+
+2) Specify which email address to send the emails to.
+
+3) Qmail does not need to be restated to when the taps control file is changed.
+
+The regex match is applied to both the to and from email addresses. So email
+sent to or from the addresses will be copied. Matching is case insensitive.
+If there are multiple matches, the first match is used.
+
+The queue tap patch adds a new control file:
+
+/var/qmail/control/taps
+Contains a regex style list of addresses to tap and the email
+address of where you want the copy sent to.
+
+Examples:
+a) To tap a whole domain add a line like:
+A:.*@domain.com:joe@example.com
+
+
+b) To tap an individual email address add a line like:
+A:user@domain.com:other@example.com
+
+c) To tap messages going to a domain add a line like:
+T:.*@domain.com:joe@example.com
+
+d) To tap messages comming from a domain add a line like:
+F:.*@domain.com:joe@example.com

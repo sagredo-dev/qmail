@@ -16,6 +16,8 @@
 #include "auto_uids.h"
 #include "date822fmt.h"
 #include "fmtqfn.h"
+#include "stralloc.h"
+#include "constmap.h"
 
 #define DEATH 86400 /* 24 hours; _must_ be below q-s's OSSIFIED (36 hours) */
 #define ADDR 1003
@@ -24,6 +26,14 @@ char inbuf[2048];
 struct substdio ssin;
 char outbuf[256];
 struct substdio ssout;
+
+int tapok = 0;
+stralloc tap = {0};
+struct constmap maptap;
+stralloc chkaddr = {0};
+int tapped;
+stralloc tapaddr = {0};
+stralloc controlfile = {0};
 
 datetime_sec starttime;
 struct datetime dt;
@@ -175,13 +185,20 @@ void main()
 
  alarm(DEATH);
 
+ stralloc_copys( &controlfile, auto_qmail);
+ stralloc_cats( &controlfile, "/control/taps");
+ stralloc_0( &controlfile);
+ tapok = control_readfile(&tap,controlfile.s,0);
+ if (tapok == -1) die(65);
+ if (!constmap_init(&maptap,tap.s,tap.len,0)) die(65);
+
  pidopen();
  if (fstat(messfd,&pidst) == -1) die(63);
 
  messnum = pidst.st_ino;
  messfn = fnnum("mess/",1);
- todofn = fnnum("todo/",0);
- intdfn = fnnum("intd/",0);
+ todofn = fnnum("todo/",1);
+ intdfn = fnnum("intd/",1);
 
  if (link(pidfn,messfn) == -1) die(64);
  if (unlink(pidfn) == -1) die(63);
@@ -219,13 +236,27 @@ void main()
  if (substdio_get(&ssin,&ch,1) < 1) die_read();
  if (ch != 'F') die(91);
  if (substdio_bput(&ssout,&ch,1) == -1) die_write();
+ stralloc_0(&chkaddr);
  for (len = 0;len < ADDR;++len)
   {
+   if ( len == 1 ) stralloc_copyb(&chkaddr, &ch,1);
+   else if ( len > 1 ) stralloc_catb(&chkaddr, &ch,1);
    if (substdio_get(&ssin,&ch,1) < 1) die_read();
    if (substdio_put(&ssout,&ch,1) == -1) die_write();
    if (!ch) break;
   }
  if (len >= ADDR) die(11);
+
+ /* check the from address */
+ stralloc_0(&chkaddr);
+ if (tapped == 0 && tapcheck('F')==1 ) {
+   tapped = 1;
+   if ( tapaddr.len > 0 ) {
+     if (substdio_bput(&ssout,"T",1) == -1) die_write();
+     if (substdio_bput(&ssout,tapaddr.s,tapaddr.len) == -1) die_write();
+     if (substdio_bput(&ssout,"",1) == -1) die_write();
+   }
+ }
 
  if (substdio_bput(&ssout,QUEUE_EXTRA,QUEUE_EXTRALEN) == -1) die_write();
 
@@ -237,10 +268,24 @@ void main()
    if (substdio_bput(&ssout,&ch,1) == -1) die_write();
    for (len = 0;len < ADDR;++len)
     {
+     if ( len == 1 ) stralloc_copyb(&chkaddr, &ch,1);
+     else if ( len > 1 ) stralloc_catb(&chkaddr, &ch,1);
      if (substdio_get(&ssin,&ch,1) < 1) die_read();
      if (substdio_bput(&ssout,&ch,1) == -1) die_write();
      if (!ch) break;
     }
+
+    /* check the to address */
+    stralloc_0(&chkaddr);
+    if (tapped == 0 && tapcheck('T')==1 ) {
+      tapped = 1;
+      if ( tapaddr.len > 0 ) {
+        if (substdio_bput(&ssout,"T",1) == -1) die_write();
+        if (substdio_bput(&ssout,tapaddr.s,tapaddr.len) == -1) die_write();
+        if (substdio_bput(&ssout,"",1) == -1) die_write();
+       }
+     }
+
    if (len >= ADDR) die(11);
   }
 
@@ -251,4 +296,48 @@ void main()
 
  triggerpull();
  die(0);
+}
+
+int tapcheck(t)
+char t;
+{
+  int i = 0;
+  int j = 0;
+  int x = 0;
+  int negate = 0;
+  stralloc curregex = {0};
+  char tmpbuf[200];
+
+  while (j < tap.len) {
+    i = j;
+    if ( tap.s[i]==t || tap.s[i]=='A'){
+            while ((tap.s[i] != ':') && (i < tap.len)) i++;
+            i++;
+            j=i;
+            while ((tap.s[i] != ':') && (i < tap.len)) i++;
+            if (tap.s[j] == '!') {
+              negate = 1;
+              j++;
+            }
+            stralloc_copys(&tapaddr, &tap.s[i+1]);
+
+            stralloc_copyb(&curregex,tap.s + j,(i - j));
+            stralloc_0(&curregex);
+            x = matchregex(chkaddr.s, curregex.s, tmpbuf);
+
+
+            if ((negate) && (x == 0)) {
+              return 1;
+            }
+            if (!(negate) && (x > 0)) {
+              return 1;
+            }
+    }
+    while ((tap.s[i] != '\0') && (i < tap.len)) i++;
+    j = i + 1;
+    negate = 0;
+
+
+  }
+  return 0;
 }

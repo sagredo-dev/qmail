@@ -1,0 +1,203 @@
+QREGEX (v2) 20060423 - README April 23, 2006
+A Regular Expression matching patch for qmail 1.03 and netqmail
+
+
+OVERVIEW:
+
+qregex adds the ability to match address evelopes via Regular Expressions (REs)
+in the qmail-smtpd process. It has the abiltiy to match `helo/ehlo` (host name),
+`mail from` (envelope sender), and `rcpt to` (envelope recipient) commands.
+It follows all the base rules that are set out with qmail (ie using control
+files) so it makes for easy integretion into an existing setup (see the
+install instructions for more info). The v2 is specified because qregex was
+re-written to better conform to the security guarantee set forth by the author
+of qmail. The original version used stdio.h and stdlib.h for reading the
+control files whereas v2 now uses all stralloc functions which are much more
+regulated against buffer overruns and the like.
+See: http://cr.yp.to/qmail/guarantee.html
+
+
+FEATURES:
+
+Features of qregex include:
+
+1. Performs pattern matching on envelope senders and envelope
+   recipients against REs in the badmailfrom and badrcptto control
+   files. Two additional control files, badmailfromnorelay and
+   badrcpttonorelay, are used for pattern matching when the 
+   RELAYCLIENT environment variable is not set.
+
+2. Performs pattern matching on the helo/ehlo host name. Setting the
+   NOBADHELO environment variable prevents the host name from being
+   compared to the patterns in the badhelo control file.
+
+3. Matches to patterns are logged. Setting the LOGREGEX environment
+   variable causes the matched regex pattern to be included in the log. 
+
+4. Matching is case insensitive.
+
+5. qregex ignores empty envelope senders. An empty envelope sender is not
+   compared to the patterns in the badmailfrom and badmailfromnorelay
+   control files and is always accepted.
+
+
+PLATFORMS:
+
+qregex has been built and tested on the following platforms. I'm sure it won't
+have any problems on any platform that qmail will run on (providing they have
+a regex interface) but if you run into problems let me know.
+
+	- OpenBSD 3.x
+	- FreeBSD 4.x, 5.x
+	- Mandrake Linux 9.x
+	- SuSE Linux 8.x
+
+
+
+INSTALLATION INSTRUCTIONS:
+
+Installation is very simple, there is only one requirement. You need to use the
+GNU version of the patch utility (http://www.gnu.org/software/patch/patch.html).
+(For Solaris 8 users it is installed as 'gpatch')
+
+- If this is a new setup.
+Unpack the qmail archive, cd into the qmail-1.03 directory and run
+"patch < /path/to/qregex-<version>.patch". Follow the instructions as per the
+included qmail INSTALL file. Once you are done come back to this file and read
+the section on the control files.
+
+If you are using netqmail, then unpack the netqmail archive. Run the collate.sh
+script and cd into the resulting netqmail-<version> directory. From there, run
+"patch < /path/to/qregex-<version>.patch". Complete the netqmail installation
+normally. Once you are done, come back to this file and read the section on the
+control files.
+
+- If this is an existing setup.
+FIRST: create your control files (see below).
+cd into your existing qmail or netqmail source directory. Run
+"patch < /path/to/qregex-<version>.patch" then "make qmail-smtpd". Now run
+./qmail-smtpd and test your new rules to make sure they work as expected.
+
+Install the new binary by cd'ing to /var/qmail/bin and as root (in one command)
+copy the existing binary to 'qmail-smtpd.old' and copy the new binary from the
+source directory to 'qmail-smtpd'.
+(ex. cp qmail-smtpd qmail-smtpd.old && cp ~/qmail-1.03/qmail-smtpd qmail-smtpd)
+
+You can also optionally just run "make setup check" as it will install the
+updated documentation and man pages provided with this patch. Stopping qmail
+before doing the "make setup check" is always a good idea.
+
+
+LOGGING:
+
+qregex will log matches to the patterns in the various control files. Log
+messages will take these three forms depending on which control file was
+matched:
+
+badhelo
+qmail-smtpd: badhelo: <host> at <remote IP>
+
+badmailfrom and badmailfromnorelay
+qmail-smtpd: badmailfrom: <sender address> at <remote IP>
+
+badrcptto and badrcpttonorelay
+qmail-smtpd: badrcptto: <rcpt address> at <remote IP>
+
+When the LOGREGEX environment variable is set, the matched pattern will
+be included in the log. Log messages will have the regex pattern appended
+to them. For example, a badhelo log message will look like this:
+
+qmail-smtpd: badhelo: <host> at <remote IP> matches pattern: <regex>
+
+
+CONTROL FILES:
+
+qregex provides you with five control files. None of these control files
+is mandatory and you can use them in any combination you choose in your setup.
+
+The "control/badmailfrom" and "control/badrcptto" files contain your REs for
+matching against the 'mail from' (envelope sender) and 'rcpt to' (envelope
+recipient) smtp commands respectively.
+The "control/badmailfromnorelay" and "control/badrcpttonorelay" match against
+the same commands but are read only when the RELAYCLIENT environment variable
+is not set.
+The "control/badhelo" file matches against the 'helo/ehlo' smtp command.
+
+If you prefer you can symlink the badmailfrom and badrcptto control files
+(ln -s badmailfrom badrcptto) and maintain fewer sets of rules. Beware
+this might cause problems in certain setups.
+        
+	Here's an example "badhelo" file.
+	-----------------------------------
+	# block host strings with no dot (not a FQDN)
+	!\.
+	-----------------------------------
+	
+	An example "badmailfrom" file.
+	-----------------------------------
+	# this will drop everything containing the string
+	# bad.domain.com or Bad.Domain.Com or BAD.domain.COM
+	bad\.domain\.com
+	# force users to fully qualify themselves
+	# (i.e. deny "user", accept "user@domain")
+	!@
+	-----------------------------------
+
+	And "badrcptto" (a little more interesting)
+	-----------------------------------
+	# must not contain invalid characters, brakets or multiple @'s
+	[!%#:*^(){}]
+	@.*@
+	-----------------------------------
+
+You can use the non-RE character '!' to start an RE as a signal to qregex to
+negate the action. As used above in the badmailfrom file, by negating the '@'
+symbol qregex will signal qmail-smtpd to deny the 'mail from' command whenever
+the address doesn't contain an @ symbol. When used inside a bracket expression,
+the '!' character looses this special meaning. This is shown in the badrcptto
+example.
+
+The norelay control files follow the same rules as the other control files but
+are intended to address two specific scenarios.
+The badmailfromnorelay file can be used to block mail trying to spoof a domain
+hosted on your mail server. It prevents a mail client that is not allowed to
+relay email through your server from using one of your hosted domains as its
+envelope sender.
+The badrcpttonorelay file can be used to create email addresses that cannot
+receive mail from any source not allowed to relay email through your server.
+This is handy for creating email addresses for use only within your own 
+domain(s) that can't receive spam from the world at large.
+
+
+INTERNALS:
+
+qregex (or regexmatch as the function is called) will be called during the
+`helo/ehlo`, `rcpt to` and `mail from` handling routines in "qmail-smtpd.c".
+When called, it will read the proper control file then one by one compile and
+execute the regex on the string passed into qmail-smtpd. If the regex matches
+it returns TRUE (1) and the qmail-smtpd process will deny the user the ability
+to continue. If you change anything and think it betters this patch please
+send me a new diff file so I can take a peek.
+
+
+CONTACT:
+qregex is maintained by:
+	Andrew St. Jean
+	andrew@arda.homeunix.net
+	www.arda.homeunix.net/store/qmail/
+
+Contributers to qregex:
+	Jeremy Kitchen	
+	kitchen at scriptkitchen dot com
+	http://www.scriptkitchen.com/qmail
+
+	Alex Pleiner
+	alex@zeitform.de
+	zeitform Internet Dienste
+	http://www.zeitform.de/
+
+	Thanos Massias
+
+Original qregex patch written by:
+	Evan Borgstrom
+	evan at unixpimps dot org

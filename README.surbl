@@ -1,0 +1,34 @@
+SURBL filter for netqmail
+=========================
+surblfilter reads an rfc822 email on stdin and prints it back on stdout.
+It extracts URL and checks them against SURBL. surblfilter can be used
+as a filter using qmail-qfilter(1) or as a qmail-queue(8) frontend by
+setting QMAILQUEUE environment variable to a wrapper
+/var/qmail/bin/surblqueue
+
+surbfilter caches the result in /var/qmail/control/cache. qmail-smtpd
+needs to have write permission for this directory.
+
+surbfilter does base64 decoding for base64 encoded text/html, text/plain
+to extract urls.
+
+surblfilter requires two control files level2-tlds and level3-tlds in
+/var/qmail/control. The same can be obtained from surbl.org website
+
+http://www.surbl.org/tld/three-level-tlds 
+http://www.surbl.org/tld/two-level-tlds
+
+surbfilter is a standone program and does not need you to patch qmail-smtpd
+or existing programs. It exits 88 in case it finds a SURBL listed URL. It
+exits 111 for temporary errors. It exits 0 if everyting is fine.
+
+surblfilter has been integrated with my qmail-dkim patch and is avaiable at
+
+https://sourceforge.net/projects/indimail/files/netqmail-addons/qmail-dkim-1.0/
+
+It has been integrated in dkim-netqmail-1.06.patch-1.9.gz. The older patches
+will not have surblfilter
+
+surbfilter is built on djb functions and some functions have been ruthlessly
+borrowed from qmail surbl interface by Pieter Droogendijk and the surblhost
+program at http://surblhost.sourceforge.net/

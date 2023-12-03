@@ -1,6 +1,6 @@
 cd QMAIL
 cd queue
-for dir in mess info local remote
+for dir in mess info local remote suppl*
 do
   ( cd $dir; find . -type f -print ) | (
     cd $dir

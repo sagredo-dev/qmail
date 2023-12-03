@@ -1,0 +1,136 @@
+.\" vim: tw=75
+.TH dk-filter 8
+
+.SH NAME
+dk-filter \- sign/verify using DK/DKIM (SSP/ADSP optionally) and deliver a
+mail message for delivery
+
+.SH SYNOPSIS
+\fBFILTERARGS=QMAILHOME/bin/dk-filter\fR
+
+.SH DESCRIPTION
+\fBdk-filter\fR is a qfilter which can be set as a filter for
+\fBspawn-filter\fR(8) or \fBqmail-qfilter\fR(1). The filter can be set
+either as \fBFILTERARGS\fR or in the control file \fBfilterargs\fR.
+
+\fBdk-filter\fR supports DK/DKIM signing and verification and can
+optionally use \fBSender Signing Practice (SSP)\fR or \fBAuthor Domain
+Signing Practice\fR. It uses the libdkim and OpenSSL libraries. To sign a
+message, set the \fBDKIMSIGN\fR environment variable (for DKIM signing) or
+\fBDKSIGIN\fR environment variable (for DK signing) to the pathname of the
+private key that will be used to sign the message. If there is a %
+character in the environment variable, it is removed and replaced by the
+domain name in the From: header. If, after substituting the %, that file
+does not exist, @controldir@/domainkeys/%/default will be used as the key.
+If again, after substituting the % sign, the file does not exist,
+@controldir@/domainkeys/default will be used as the key. After all
+substitutions, if the key file does not exist, the message will not be
+signed. If there is no % and the file does not exist, the message will be
+rejected with error 32. The default private key
+@controldir@/domainkeys/default can be overriden by the
+\fBDKIM_DEFAULT_KEY\fR environment variable.
+
+The selector (s=) will be taken from the basename of the file. The private
+key should be created by \fBdknewkey(8)\fR with RSA or ED25519 encryption
+method.
+
+You can set various DK options in getopt style, by setting the environment
+variable DKSIGNOPTIONS
+
+.nf
+b \fI<advice_length>\fR    Length of Advice
+c \fI<canonicalization>\fR simple, nofws
+s \fI<privkeyfile>\fR      Private key
+h                    show headers included
+r                    Skip Duplicate Headers
+.fi
+
+.EX
+DKSIGNOPTIONS="-h -r -c nofws"
+sets the h= tag, skips duplicate headers and sets nofws canonicalization
+.EE
+
+You can set various DKIM options in getopt style, by setting the
+environment variable DKIMSIGNOPTIONS
+
+.nf
+c <canonicalization> r for relaxed [DEFAULT], s - simple,
+                     t relaxed/simple, u - simple/relaxed
+l                    include body length tag
+q                    include query method tag;
+t                    include a timestamp tag
+h                    include copied headers. This adds the z= tag
+                     containing a copy of the message's original
+                     headers.
+i <identity>         the identity, if not provided it will not be included
+x <expire_time>      the expire time in seconds since epoch
+                     ( DEFAULT = current time + 604800)
+                     if set to - then it will not be included
+z <hash>             1 for sha1, 2 for sha256, 3 for both
+s <privkeyfile>
+y <selector>
+.fi
+
+.EX
+DKIMSIGNOPTIONS="-c r -q"
+sets relaxed canonicalization and include query method tag
+.EE
+
+When signing \fBdk-filter\fR uses the domain found in the Return-Path,
+Sender, From headers to set the domain tag. If not it uses the value
+of \fBBOUNCEDOMAIN\fR or \fBDKIMDOMAIN\fR environment variable.
+\fBBOUNCEDOMAIN\fR or \fBDKIMDOMAIN\fR can be set to an email address or a
+domain (without the at sign).
+
+In addition to \fBDKIMSIGN\fR environment variable, you can have the domain
+and the pathname of the private key in the control file \fIdkimkeys\fR
+which has the following format
+
+.EX
+domain:private_key_path:envstr
+.EE
+
+.fi
+Here \fIenvstr\fR is a string of environment variable additions or
+removals. e.g.
+
+.EX
+QREGEX=1,DKIMSIGNOPTIONS=-z 4
+.EX
+
+.fi
+If an entry for \fIdomain\fR exists in \fIdkimkeys\fR, the value of
+\fBDKIMSIGN\fR environment variable is ignored. You can disable
+\fIdkimkeys\fR by setting \fBNODKIMKEYS\fR environment variable.
+
+To verify a message, set the \fBDKIMVERIFY\fR environment variables.
+\fBdk-filter\fR always inserts the \fBDKIM-Status\fR or
+\fBDomainKey-Status\fR header, so that messages can be rejected later at
+delivery time, or in the mail reader. In that case you may set
+\fBDKIMVERIFY\fR to an empty string. The exit code of
+\fBdk-filter\fR can be fine tuned by setting \fBDKIMVERIFY\fR environment
+variable. See \fBdkim(8)\fR for a detailed description on setting the
+\fBDKIMVERIFY\fR environment variable.
+
+\fBdk-filter\fR does not use any signing practice by default. You can
+override this by setting the SIGN_PRACTICE to ssp or adsp (lowercase).
+
+If neither of these environment variables (DKIMSIGN, DKIMVERIFY) are
+defined, dk-filter will do signing by default.
+
+\fBdk-filter\fR can insert an additional DKIM-signature if
+\fBDKIMSIGNEXTRA\fR is set. This is useful for inserting both RSA and
+ED25519 signature when signing. As an example you can have \fBDKIMSIGN\fR
+pointing to a RSA private key, \fBDKIMSIGNOPTIONS\fR having "-z 2" along
+with other options if any. Additionally set \fBDKIMSIGNEXTRA\fR pointing to
+an ed25519 private key and set \fBDKIMSIGNOPTIONSEXTRA\fR to have "-z 4"
+along with other options if any.
+
+.SH "EXIT CODES"
+0 for success, non-zero failure
+
+.SH "SEE ALSO"
+qmail-qfilter(1),
+dknewkey(8),
+dkim(8),
+spawn-filter(8)

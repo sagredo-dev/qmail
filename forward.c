@@ -6,10 +6,10 @@
 #include "strerr.h"
 #include "substdio.h"
 #include "fmt.h"
+#include "stralloc.h"
+#include "srs.h"
 
 #define FATAL "forward: fatal: "
-
-void die_nomem() { strerr_die2x(111,FATAL,"out of memory"); }
 
 struct qmail qqt;
 
@@ -42,6 +42,16 @@ char **argv;
   dtline = env_get("DTLINE");
   if (!dtline)
     strerr_die2x(100,FATAL,"DTLINE not set");
+
+  if (str_len(sender)) {
+    switch(srsforward(sender)) {
+      case -3: strerr_die2x(100,FATAL,srs_error.s); break;
+      case -2: strerr_die2x(111,FATAL,"out of memory"); break;
+      case -1: strerr_die2x(111,FATAL,"unable to read controls"); break;
+      case 0: break; // nothing
+      case 1: sender = srs_result.s; break;
+    }
+  }
  
   if (qmail_open(&qqt) == -1)
     strerr_die2sys(111,FATAL,"unable to fork: ");

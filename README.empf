@@ -1,0 +1,106 @@
+config file is: /var/qmail/control/policy
+more info: http://www.qmailwiki.org/EMPF
+
+eMail Messaging Policy Framework (eMPF)
+
+What it does
+------------
+
+   eMPF follows a set of administrator-defined rules describing
+who can message whom.  With this, companies can segregate various
+parts of their organizations email activities, as well as provide
+a variety of security-enhancing services.
+
+How it does it
+--------------
+
+   During an SMTP session, when a sender identifies themselves, either
+via SMTP_AUTH, or via the message envelope, as well as a recipient,
+eMPF loads applicable message policies to determine if the sender is
+allowed to message the sender, and if the recipient is allowed to
+receive mail from the sender.
+
+What it doesn't do
+------------------
+
+   Because mail from outside your mail server cannot be authenticated,
+the policy framework cannot be entirely sure about the identities of
+senders messaging local users.  However, if SMTP_AUTH is enabled, and
+required by your local users, it can prevent local users from transmitting
+information to parties who should not view it.  It is HIGHLY recommended
+that a mail server implementing eMPF also require SMTP_AUTH by it's local
+users as well as use the POLICY_ENFORCE_AUTHENTICATION configuration so that
+senders from the outside cannot masquerade as local users.
+
+Policy configuration
+--------------------
+
+   A large, complicated policy may be rather intimidating at first, however,
+if the rules are documented well, and a basic knowledge of the format of a
+policy is known, they are rather simple to set up.
+
+   comment:
+	  # text
+	  ; text
+ 
+   policy:
+	  <domain>:<delivery policy>,[<user policy>,][<etc>,]
+
+   user policy:
+	  <username>:<delivery policy>[<delivery policy>]
+
+   delivery policy:
+	  <delivery type>[(<address>[,<address>])]
+
+   delivery types:
+	  L - Local
+	  R - Remote
+	  E - External
+	  I - Internal
+
+Delivery types specify what types of messaging can take place.  An uppercase
+delivery type allows a type of delivery, and a lowercase delivery type,
+disallows a type of delivery.  Delivery types may take a list of addresses.
+When a list of addresses is provided after a delivery type, those addresses
+are the only addresses covered by that delivery type.
+
+Certian delivery types apply only to either the sender of the recipient.
+Here is a more clear definition of each of the delivery types.
+
+   Local    - (Sender only) When sending a message to a user on the same domain
+   Internal - (Recipient only) When recieving a messages from a user of the
+              same domain
+   Remote   - (Sender only) When sending a message to a user on another
+              domain (even if that domain resides on the same mail server).
+   External - (Recipient only) When receiving a message from a user on
+              another domain (even if that domain resides on the same server).
+
+Samples
+-------
+
+In this example, example.com allows all messaging.  In this case,
+simply not defining a policy would be more efficient.
+
+   example.com:LREI,
+
+Now, example.com wishes all mail to stay internal.  As stated above,
+there are particular cases in which eMPF cannot authenticate a sender.
+This only occurs when a remote mail server is transmitting mail to a local
+user on your system.  In this case, a remote user could pretend to be a local
+user, and succesfully deliver mail to another local user.  However, the
+recipient would be unable to message back.
+
+   example.com:LIre,
+
+As in the above example, example.com wants all mail to stay internal, however,
+a few of their users are allowed to communicate with the outside world.  Sales
+can communicate with everybody, and Tasks can send messages only to their
+sister-site, example.org.
+
+   example.com:LIre,sales:RE,tasks:R(*@example.org)E(*@example.org),
+
+Something to keep in mind in this scenario, is that if example.org is hosted
+on the same system, and has similar policies to example.com, a policy must be
+established for example.org which allows messages from example.com.
+
+   example.org:LIre,sales:RE,tasks:E(*@example.com)R(*@example.com),

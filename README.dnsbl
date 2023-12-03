@@ -1,0 +1,18 @@
+Code and logic from rblsmtpd and qmail-dnsbl patch http://qmail-dnsbl.sourceforge.net/
+
+-added support for whitelists, TXT and A queries, configurable return codes 451 or 553 with custom messages
+
+  # - default file control/dnsbllist can be overridden with env variable DNSBLLIST
+  # - if DNSBLSKIP env variable is set, qmail-smtpd skips the rbl check
+  # - if control/dnsblfailclosed or DNSBLFAILCLOSED are defined, qmail-smtpd considers the source ip as blacklisted even in case of lookup failures (check rblsmtpd man page for more details)
+  # - support for environment variable RBLSMTPD (check rblsmtpd man page for more details)
+  # - dnsbllist can contain empty lines and comments with '#' at start or end of lines; leading and trailing spaces are automatically removed
+
+CONTROL FILES
+
+dnsbllist
+            A list of dnsbl providers that qmail-smtpd checks to identify blacklisted ip addresses.
+
+            Exception:  If  the  environment  variable DNSBLSKIP is set, qmail-smtpd ignores dnsbllist, and the dnsbl check is not performed.  The check is skipped even if
+            some other authentication method succedeed and authorized the client to relay (smtp-auth or tls client certificate), or if RELAYCLIENT enviromnent variable  is
+            set.

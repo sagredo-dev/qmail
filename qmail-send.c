@@ -31,6 +31,11 @@
 #include "constmap.h"
 #include "fmtqfn.h"
 #include "readsubdir.h"
+#include "srs.h"
+
+#include "auto_spawn.h"
+
+#include "channels.h"
 
 /* critical timing feature #1: if not triggered, do not busy-loop */
 /* critical timing feature #2: if triggered, respond within fixed time */
@@ -44,6 +49,8 @@
 
 int lifetime = 604800;
 
+int bouncemaxbytes = 50000;
+
 stralloc percenthack = {0};
 struct constmap mappercenthack;
 stralloc locals = {0};
@@ -55,17 +62,20 @@ stralloc bouncefrom = {0};
 stralloc bouncehost = {0};
 stralloc doublebounceto = {0};
 stralloc doublebouncehost = {0};
+stralloc srs_domain = {0};
 
 char strnum2[FMT_ULONG];
 char strnum3[FMT_ULONG];
 
-#define CHANNELS 2
-char *chanaddr[CHANNELS] = { "local/", "remote/" };
-char *chanstatusmsg[CHANNELS] = { " local ", " remote " };
-char *tochan[CHANNELS] = { " to local ", " to remote " };
-int chanfdout[CHANNELS] = { 1, 3 };
-int chanfdin[CHANNELS] = { 2, 4 };
-int chanskip[CHANNELS] = { 10, 20 };
+char *chanaddr[CHANNELS];
+char *chanstatusmsg[CHANNELS];
+char *tochan[CHANNELS];
+int chanfdout[CHANNELS];
+int chanfdin[CHANNELS];
+int chanskip[CHANNELS];
+struct constmap mapsuppl[SUPPL_CHANNELS];
+stralloc suppls[SUPPL_CHANNELS];
+stralloc newsuppls[SUPPL_CHANNELS];
 
 int flagexitasap = 0; void sigterm() { flagexitasap = 1; }
 int flagrunasap = 0; void sigalrm() { flagrunasap = 1; }
@@ -82,12 +92,10 @@ void spawndied(c) int c; { log1("alert: oh no! lost spawn connection! dying...\n
 
 datetime_sec recent;
 
-
-/* this file is too long ----------------------------------------- FILENAMES */
-
 stralloc fn = {0};
 stralloc fn2 = {0};
 char fnmake_strnum[FMT_ULONG];
+stralloc fname = {0};
 
 void fnmake_init()
 {
@@ -96,7 +104,7 @@ void fnmake_init()
 }
 
 void fnmake_info(id) unsigned long id; { fn.len = fmtqfn(fn.s,"info/",id,1); }
-void fnmake_todo(id) unsigned long id; { fn.len = fmtqfn(fn.s,"todo/",id,0); }
+void fnmake_todo(id) unsigned long id; { fn.len = fmtqfn(fn.s,"todo/",id,1); }
 void fnmake_mess(id) unsigned long id; { fn.len = fmtqfn(fn.s,"mess/",id,1); }
 void fnmake_foop(id) unsigned long id; { fn.len = fmtqfn(fn.s,"foop/",id,0); }
 void fnmake_split(id) unsigned long id; { fn.len = fmtqfn(fn.s,"",id,1); }
@@ -117,6 +125,7 @@ char *recip;
 {
   int i;
   int j;
+  int c;
   char *x;
   static stralloc addr = {0};
   int at;
@@ -159,6 +168,13 @@ char *recip;
  
   if (!stralloc_cat(&rwline,&addr)) return 0;
   if (!stralloc_0(&rwline)) return 0;
+
+  for (c = 0;c < SUPPL_CHANNELS;++c)
+  {
+      if (constmap(&mapsuppl[c],addr.s + at + 1,addr.len - at - 1))
+          return c + 3;
+  }
+
   return 2;
 }
 
@@ -228,7 +244,8 @@ unsigned long id;
 
 substdio sstoqc; char sstoqcbuf[1024];
 substdio ssfromqc; char ssfromqcbuf[1024];
-stralloc comm_buf[CHANNELS] = { {0}, {0} };
+
+stralloc comm_buf[CHANNELS];
 int comm_pos[CHANNELS];
 
 void comm_init()
@@ -261,6 +278,8 @@ char *recip;
  if (comm_buf[c].s && comm_buf[c].len) return;
  while (!stralloc_copys(&comm_buf[c],"")) nomem();
  ch = delnum;
+ while (!stralloc_append(&comm_buf[c],&ch)) nomem();
+ ch = delnum >> 8;
  while (!stralloc_append(&comm_buf[c],&ch)) nomem();
  fnmake_split(id);
  while (!stralloc_cats(&comm_buf[c],fn.s)) nomem();
@@ -382,7 +401,7 @@ void cleanup_do()
 /* this file is too long ----------------------------------- PRIORITY QUEUES */
 
 prioq pqdone = {0}; /* -todo +info; HOPEFULLY -local -remote */
-prioq pqchan[CHANNELS] = { {0}, {0} };
+prioq pqchan[CHANNELS];
 /* pqchan 0: -todo +info +local ?remote */
 /* pqchan 1: -todo +info ?local +remote */
 prioq pqfail = {0}; /* stat() failure; has to be pqadded again */
@@ -683,15 +702,39 @@ unsigned long id;
   }
  if (str_equal(sender.s,"#@[]"))
    log3("triple bounce: discarding ",fn2.s,"\n");
+ else if (!*sender.s && *doublebounceto.s == '@')
+   log3("double bounce: discarding ",fn2.s,"\n");
  else
   {
    if (qmail_open(&qqt) == -1)
     { log1("warning: unable to start qmail-queue, will try later\n"); return 0; }
    qp = qmail_qp(&qqt);
 
-   if (*sender.s) { bouncesender = ""; bouncerecip = sender.s; }
-   else { bouncesender = "#@[]"; bouncerecip = doublebounceto.s; }
-
+   if (*sender.s) {
+     if (srs_domain.len) {
+       int j = 0;
+       j = byte_rchr(sender.s, sender.len, '@');
+       if (j < sender.len) {
+         if (srs_domain.len == sender.len - j - 1 && stralloc_starts(&srs_domain, sender.s + j + 1)) {
+           switch(srsreverse(sender.s)) {
+             case -3: log1(srs_error.s); log1("\n"); _exit(111); break;
+             case -2: nomem(); break;
+             case -1: log1("alert: unable to read controls\n"); _exit(111); break;
+             case 0: break;
+             case 1: if (!stralloc_copy(&sender,&srs_result)) nomem(); break;
+           }
+           if (chdir(auto_qmail) == -1) { log1("alert: unable to switch to home directory\n"); _exit(111); }
+           if (chdir("queue") == -1) { log1("alert: unable to switch to queue directory\n"); _exit(111); }
+         }
+       }
+     }
+     bouncesender = "";
+     bouncerecip = sender.s;
+   } else {
+     bouncesender = "#@[]";
+     bouncerecip = doublebounceto.s;
+   }
+   
    while (!newfield_datemake(now())) nomem();
    qmail_put(&qqt,newfield_date.s,newfield_date.len);
    qmail_puts(&qqt,"From: ");
@@ -740,9 +783,17 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      qmail_fail(&qqt);
    else
     {
+     int bytestogo = bouncemaxbytes;
+     int bytestoget = (bytestogo < sizeof buf) ? bytestogo : sizeof buf;
      substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
-     while ((r = substdio_get(&ssread,buf,sizeof(buf))) > 0)
+     while (bytestoget > 0 && (r = substdio_get(&ssread,buf,bytestoget)) > 0) {
        qmail_put(&qqt,buf,r);
+       bytestogo -= bytestoget;
+       bytestoget = (bytestogo < sizeof buf) ? bytestogo : sizeof buf;
+     }
+     if (r > 0) {
+       qmail_puts(&qqt,"\n\n--- End of message stripped.\n");
+     }
      close(fd);
      if (r == -1)
        qmail_fail(&qqt);
@@ -780,8 +831,8 @@ struct del
 ;
 
 unsigned long masterdelid = 1;
-unsigned int concurrency[CHANNELS] = { 10, 20 };
-unsigned int concurrencyused[CHANNELS] = { 0, 0 };
+unsigned int concurrency[CHANNELS];
+unsigned int concurrencyused[CHANNELS];
 struct del *d[CHANNELS];
 stralloc dline[CHANNELS];
 char delbuf[2048];
@@ -808,9 +859,9 @@ void del_init()
  for (c = 0;c < CHANNELS;++c)
   {
    flagspawnalive[c] = 1;
-   while (!(d[c] = (struct del *) alloc(concurrency[c] * sizeof(struct del))))
+   while (!(d[c] = (struct del *) alloc(auto_spawn * sizeof(struct del))))
      nomem();
-   for (i = 0;i < concurrency[c];++i)
+   for (i = 0;i < auto_spawn;++i)
     { d[c][i].used = 0; d[c][i].recip.s = 0; }
    dline[c].s = 0;
    while (!stralloc_copys(&dline[c],"")) nomem();
@@ -906,41 +957,42 @@ int c;
      dline[c].len = REPORTMAX;
      /* qmail-lspawn and qmail-rspawn are responsible for keeping it short */
      /* but from a security point of view, we don't trust rspawn */
-   if (!ch && (dline[c].len > 1))
+   if (!ch && (dline[c].len > 2))
     {
      delnum = (unsigned int) (unsigned char) dline[c].s[0];
-     if ((delnum < 0) || (delnum >= concurrency[c]) || !d[c][delnum].used)
+     delnum += (unsigned int) ((unsigned int) dline[c].s[1]) << 8;
+     if ((delnum < 0) || (delnum >= auto_spawn) || !d[c][delnum].used)
        log1("warning: internal error: delivery report out of range\n");
      else
       {
        strnum3[fmt_ulong(strnum3,d[c][delnum].delid)] = 0;
-       if (dline[c].s[1] == 'Z')
+       if (dline[c].s[2] == 'Z')
 	 if (jo[d[c][delnum].j].flagdying)
 	  {
-	   dline[c].s[1] = 'D';
+	   dline[c].s[2] = 'D';
 	   --dline[c].len;
 	   while (!stralloc_cats(&dline[c],"I'm not going to try again; this message has been in the queue too long.\n")) nomem();
 	   while (!stralloc_0(&dline[c])) nomem();
 	  }
-       switch(dline[c].s[1])
+       switch(dline[c].s[2])
 	{
 	 case 'K':
 	   log3("delivery ",strnum3,": success: ");
-	   logsafe(dline[c].s + 2);
+	   logsafe(dline[c].s + 3);
 	   log1("\n");
 	   markdone(c,jo[d[c][delnum].j].id,d[c][delnum].mpos);
 	   --jo[d[c][delnum].j].numtodo;
 	   break;
 	 case 'Z':
 	   log3("delivery ",strnum3,": deferral: ");
-	   logsafe(dline[c].s + 2);
+	   logsafe(dline[c].s + 3);
 	   log1("\n");
 	   break;
 	 case 'D':
 	   log3("delivery ",strnum3,": failure: ");
-	   logsafe(dline[c].s + 2);
+	   logsafe(dline[c].s + 3);
 	   log1("\n");
-	   addbounce(jo[d[c][delnum].j].id,d[c][delnum].recip.s,dline[c].s + 2);
+	   addbounce(jo[d[c][delnum].j].id,d[c][delnum].recip.s,dline[c].s + 3);
 	   markdone(c,jo[d[c][delnum].j].id,d[c][delnum].mpos);
 	   --jo[d[c][delnum].j].numtodo;
 	   break;
@@ -1215,8 +1267,10 @@ void pass_do()
 
 /* this file is too long ---------------------------------------------- TODO */
 
+#ifndef EXTERNAL_TODO
 datetime_sec nexttodorun;
-DIR *tododir; /* if 0, have to opendir again */
+int flagtododir = 0; /* if 0, have to readsubdir_init again */
+readsubdir todosubdir;
 stralloc todoline = {0};
 char todobuf[SUBSTDIO_INSIZE];
 char todobufinfo[512];
@@ -1224,7 +1278,7 @@ char todobufchan[CHANNELS][1024];
 
 void todo_init()
 {
- tododir = 0;
+ flagtododir = 0;
  nexttodorun = now();
  trigger_set();
 }
@@ -1236,7 +1290,7 @@ datetime_sec *wakeup;
 {
  if (flagexitasap) return;
  trigger_selprep(nfds,rfds);
- if (tododir) *wakeup = 0;
+ if (flagtododir) *wakeup = 0;
  if (*wakeup > nexttodorun) *wakeup = nexttodorun;
 }
 
@@ -1253,8 +1307,7 @@ fd_set *rfds;
  char ch;
  int match;
  unsigned long id;
- unsigned int len;
- direntry *d;
+ int z;
  int c;
  unsigned long uid;
  unsigned long pid;
@@ -1265,32 +1318,26 @@ fd_set *rfds;
 
  if (flagexitasap) return;
 
- if (!tododir)
+ if (!flagtododir)
   {
    if (!trigger_pulled(rfds))
      if (recent < nexttodorun)
        return;
    trigger_set();
-   tododir = opendir("todo");
-   if (!tododir)
-    {
-     pausedir("todo");
-     return;
-    }
+   readsubdir_init(&todosubdir, "todo", pausedir);
+   flagtododir = 1;
    nexttodorun = recent + SLEEP_TODO;
   }
 
- d = readdir(tododir);
- if (!d)
+ switch(readsubdir_next(&todosubdir, &id))
   {
-   closedir(tododir);
-   tododir = 0;
+    case 1:
+      break;
+    case 0:
+      flagtododir = 0;
+    default:
    return;
   }
- if (str_equal(d->d_name,".")) return;
- if (str_equal(d->d_name,"..")) return;
- len = scan_ulong(d->d_name,&id);
- if (!len || d->d_name[len]) return;
 
  fnmake_todo(id);
 
@@ -1363,12 +1410,9 @@ fd_set *rfds;
        log1("\n");
        break;
      case 'T':
-       switch(rewrite(todoline.s + 1))
-	{
-	 case 0: nomem(); goto fail;
-	 case 2: c = 1; break;
-	 default: c = 0; break;
-        }
+       c = rewrite(todoline.s + 1);
+       if (c == 0) { nomem(); goto fail; }
+       c--;
        if (fdchan[c] == -1)
 	{
 	 fnmake_chanaddr(id,c);
@@ -1438,17 +1482,175 @@ fd_set *rfds;
    if (fdchan[c] != -1) close(fdchan[c]);
 }
 
+#endif
+
+/* this file is too long ------------------------------------- EXTERNAL TODO */
+
+#ifdef EXTERNAL_TODO
+stralloc todoline = {0};
+char todobuf[2048];
+int todofdin;
+int todofdout;
+int flagtodoalive;
+
+void tododied() { log1("alert: oh no! lost qmail-todo connection! dying...\n");
+ flagexitasap = 1; flagtodoalive = 0; }
+
+void todo_init()
+{
+  todofdout = 7;
+  todofdin = 8;
+  flagtodoalive = 1;
+  /* sync with external todo */
+  if (write(todofdout, "S", 1) != 1) tododied();
+  
+  return;
+}
+
+void todo_selprep(nfds,rfds,wakeup)
+int *nfds;
+fd_set *rfds;
+datetime_sec *wakeup;
+{
+  if (flagexitasap) {
+    if (flagtodoalive) {
+      write(todofdout, "X", 1);
+    }
+  }
+  if (flagtodoalive) {
+    FD_SET(todofdin,rfds);
+    if (*nfds <= todofdin)
+      *nfds = todofdin + 1;
+  }
+}
+
+void todo_del(char* s)
+{
+ int flagchan[CHANNELS];
+ struct prioq_elt pe;
+ unsigned long id;
+ unsigned int len;
+ int c;
+
+ for (c = 0;c < CHANNELS;++c) flagchan[c] = 0;
+
+ for (c = 0;c < CHANNELS;++c)
+ {
+  if (!*s)
+  {
+     log1("warning: qmail-send unable to understand qmail-todo\n");
+     return;
+  }
+
+  switch(*s++) {
+   case '0':
+     flagchan[c] = 0;
+     break;
+   case '1':
+     flagchan[c] = 1;
+     break;
+   default:
+     log1("warning: qmail-send unable to understand qmail-todo\n");
+     return;
+  }
+ }
+ 
+ len = scan_ulong(s,&id);
+ if (!len || s[len]) {
+  log1("warning: qmail-send unable to understand qmail-todo\n");
+  return;
+ }
+
+ pe.id = id; pe.dt = now();
+ for (c = 0;c < CHANNELS;++c)
+   if (flagchan[c])
+     while (!prioq_insert(&pqchan[c],&pe)) nomem();
+
+ for (c = 0;c < CHANNELS;++c) if (flagchan[c]) break;
+ if (c == CHANNELS)
+   while (!prioq_insert(&pqdone,&pe)) nomem();
+
+ return;
+}
+
+void todo_do(rfds)
+fd_set *rfds;
+{
+  int r;
+  char ch;
+  int i;
+  
+  if (!flagtodoalive) return;
+  if (!FD_ISSET(todofdin,rfds)) return;
+
+  r = read(todofdin,todobuf,sizeof(todobuf));
+  if (r == -1) return;
+  if (r == 0) {
+    if (flagexitasap)
+      flagtodoalive = 0;
+    else
+      tododied();
+    return;
+  }
+  for (i = 0;i < r;++i) {
+    ch = todobuf[i];
+    while (!stralloc_append(&todoline,&ch)) nomem();
+    if (todoline.len > REPORTMAX)
+      todoline.len = REPORTMAX;
+      /* qmail-todo is responsible for keeping it short */
+    if (!ch && (todoline.len > 1)) {
+      switch (todoline.s[0]) {
+	case 'D':
+	  if (flagexitasap) break;
+	  todo_del(todoline.s + 1);
+	  break;
+	case 'L':
+	  log1(todoline.s + 1);
+	  break;
+	case 'X':
+	  if (flagexitasap)
+	    flagtodoalive = 0;
+	  else
+	    tododied();
+	  break;
+	default:
+	  log1("warning: qmail-send unable to understand qmail-todo: report mangled\n");
+	  break;
+      }
+      todoline.len = 0;
+    }
+  }
+}
+
+#endif
 
 /* this file is too long ---------------------------------------------- MAIN */
 
-int getcontrols() { if (control_init() == -1) return 0;
+int getcontrols() {
+ int c;
+ int ck = 0;
+
+ if (control_init() == -1) return 0;
+ if (control_readint(&bouncemaxbytes,"control/bouncemaxbytes") == -1) return 0;
  if (control_readint(&lifetime,"control/queuelifetime") == -1) return 0;
  if (control_readint(&concurrency[0],"control/concurrencylocal") == -1) return 0;
  if (control_readint(&concurrency[1],"control/concurrencyremote") == -1) return 0;
+
+ for (c = 2,ck = 0;c < CHANNELS;++c)
+ {
+     strnum2[fmt_uint(strnum2,ck++)] = 0;
+     if (!stralloc_copys(&fname,"control/concurrencysuppl")) return 0;
+     if (!stralloc_cats(&fname,strnum2)) return 0;
+     if (!stralloc_0(&fname)) return 0;
+     if (control_readint(&concurrency[c],fname.s) == -1) return 0;
+ }
+
  if (control_rldef(&envnoathost,"control/envnoathost",1,"envnoathost") != 1) return 0;
  if (control_rldef(&bouncefrom,"control/bouncefrom",0,"MAILER-DAEMON") != 1) return 0;
  if (control_rldef(&bouncehost,"control/bouncehost",1,"bouncehost") != 1) return 0;
  if (control_rldef(&doublebouncehost,"control/doublebouncehost",1,"doublebouncehost") != 1) return 0;
+ if (control_readline(&srs_domain,"control/srs_domain") == -1) return 0;
+ if (srs_domain.len && !stralloc_0(&srs_domain)) return 0;
  if (control_rldef(&doublebounceto,"control/doublebounceto",0,"postmaster") != 1) return 0;
  if (!stralloc_cats(&doublebounceto,"@")) return 0;
  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
@@ -1467,6 +1669,21 @@ int getcontrols() { if (control_init() == -1) return 0;
    case 0: if (!constmap_init(&mapvdoms,"",0,1)) return 0; break;
    case 1: if (!constmap_init(&mapvdoms,vdoms.s,vdoms.len,1)) return 0; break;
   }
+
+ for (c = 0;c < SUPPL_CHANNELS;++c)
+ {
+     strnum2[fmt_uint(strnum2,c)] = 0;
+     if (!stralloc_copys(&fname,"control/suppls")) return 0;
+     if (!stralloc_cats(&fname,strnum2)) return 0;
+     if (!stralloc_0(&fname)) return 0;
+     switch (control_readfile(&suppls[c],fname.s,0))
+     {
+         case -1: return 0;
+         case 0: if (!constmap_init(&mapsuppl[c],"",0,0)) return 0; break;
+         case 1: if (!constmap_init(&mapsuppl[c],suppls[c].s,suppls[c].len,0)) return 0; break;
+     }
+ }
+
  return 1; }
 
 stralloc newlocals = {0};
@@ -1475,9 +1692,33 @@ stralloc newvdoms = {0};
 void regetcontrols()
 {
  int r;
+ int c;
+ int ck = 0;
+
+ if (control_readint(&concurrency[0],"control/concurrencylocal") == -1)
+  { log1("alert: unable to reread control/concurrencylocal\n"); return; }
+ if (control_readint(&concurrency[1],"control/concurrencyremote") == -1)
+  { log1("alert: unable to reread control/concurrencyremote\n"); return; }
+
+ for (c = 2,ck = 0;c < CHANNELS;++c)
+ {
+     strnum2[fmt_uint(strnum2,ck++)] = 0;
+     if (!stralloc_copys(&fname,"control/concurrencysuppl"))
+         { log3("alert: unable to reread ",fname.s,"\n"); return; }
+     if (!stralloc_cats(&fname,strnum2))
+         { log3("alert: unable to reread ",fname.s,"\n"); return; }
+     if (!stralloc_0(&fname))
+         { log3("alert: unable to reread ",fname.s,"\n"); return; }
+     if (control_readint(&concurrency[c],fname.s) == -1)
+         { log3("alert: unable to reread ",fname.s,"\n"); return; }
+ }
 
  if (control_readfile(&newlocals,"control/locals",1) != 1)
   { log1("alert: unable to reread control/locals\n"); return; }
+ if (control_readint(&concurrency[0],"control/concurrencylocal") == -1)
+  { log1("alert: unable to reread control/concurrencylocal\n",0); return; }
+ if (control_readint(&concurrency[1],"control/concurrencyremote") == -1)
+  { log1("alert: unable to reread control/concurrencyremote\n",0); return; }
  r = control_readfile(&newvdoms,"control/virtualdomains",0);
  if (r == -1)
   { log1("alert: unable to reread control/virtualdomains\n"); return; }
@@ -1495,6 +1736,28 @@ void regetcontrols()
   }
  else
    while (!constmap_init(&mapvdoms,"",0,1)) nomem();
+
+ for (c = 0;c < SUPPL_CHANNELS;++c)
+ {
+     strnum2[fmt_uint(strnum2,c)] = 0;
+     if (!stralloc_copys(&fname,"control/suppls")) nomem();
+     if (!stralloc_cats(&fname,strnum2)) nomem();
+     if (!stralloc_0(&fname)) nomem();
+     r = control_readfile(&newsuppls[c],fname.s,0);
+     if (r == -1)
+      { log3("alert: qmail-todo: unable to reread ", fname.s, "\n"); return; }
+
+     constmap_free(&mapsuppl[c]);
+
+     if (r)
+      {
+       while (!stralloc_copy(&suppls[c],&newsuppls[c])) nomem();
+       while (!constmap_init(&mapsuppl[c],suppls[c].s,suppls[c].len,0)) nomem();
+      }
+     else
+       while (!constmap_init(&mapsuppl[c],"",0,0)) nomem();
+ }
+
 }
 
 void reread()
@@ -1504,12 +1767,113 @@ void reread()
    log1("alert: unable to reread controls: unable to switch to home directory\n");
    return;
   }
+#ifdef EXTERNAL_TODO
+ write(todofdout, "H", 1);
+#endif
  regetcontrols();
  while (chdir("queue") == -1)
   {
    log1("alert: unable to switch back to queue directory; HELP! sleeping...\n");
    sleep(10);
   }
+}
+
+
+static int static_i = 0;
+static int static_j = 0;
+static void channels_init(void)
+{
+    chanaddr[0] = "local/";
+    chanaddr[1] = "remote/";
+    for (static_i=2,static_j=0;static_i<CHANNELS;static_i++,static_j++)
+    {
+        stralloc fnc = {0};
+        strnum2[fmt_uint(strnum2,static_j)] = 0;
+        if (!stralloc_copys(&fname,QDIR_BASENAME)) nomem();
+        if (!stralloc_cats(&fname,strnum2)) nomem();
+        if (!stralloc_cats(&fname,"/")) nomem();
+        if (!stralloc_0(&fname)) nomem();
+        if (!stralloc_copy(&fnc,&fname)) nomem();
+        chanaddr[static_i] = fnc.s;
+    }
+
+    chanstatusmsg[0] = " local ";
+    chanstatusmsg[1] = " remote ";
+    for (static_i=2,static_j=0;static_i<CHANNELS;static_i++,static_j++)
+    {
+        stralloc fnc = {0};
+        strnum2[fmt_uint(strnum2,static_j)] = 0;
+        if (!stralloc_copys(&fname," " QDIR_BASENAME)) nomem();
+        if (!stralloc_cats(&fname,strnum2)) nomem();
+        if (!stralloc_cats(&fname," ")) nomem();
+        if (!stralloc_0(&fname)) nomem();
+        if (!stralloc_copy(&fnc,&fname)) nomem();
+        chanstatusmsg[static_i] = fnc.s;
+    }
+
+    tochan[0] = " to local ";
+    tochan[1] = " to remote ";
+    static_j = 0;
+    for (static_i=2;static_i<CHANNELS;static_i++)
+    {
+        stralloc fnc = {0};
+        strnum2[fmt_uint(strnum2,static_j++)] = 0;
+        if (!stralloc_copys(&fname," to " QDIR_BASENAME)) nomem();
+        if (!stralloc_cats(&fname,strnum2)) nomem();
+        if (!stralloc_cats(&fname," ")) nomem();
+        if (!stralloc_0(&fname)) nomem();
+        if (!stralloc_copy(&fnc,&fname)) nomem();
+        tochan[static_i] = fnc.s;
+    }
+
+    chanfdout[0] = 1;
+    chanfdout[1] = 3;
+    static_j = 1+CHANNEL_FD_OFFSET;
+    for (static_i=2;static_i<CHANNELS;static_i++)
+    {
+        chanfdout[static_i] = static_j;
+        static_j+=2;
+    }
+
+    chanfdin[0] = 2;
+    chanfdin[1] = 4;
+    static_j = 2+CHANNEL_FD_OFFSET;
+    for (static_i=2;static_i<CHANNELS;static_i++)
+    {
+        chanfdin[static_i] = static_j;
+        static_j+=2;
+    }
+
+    chanskip[0] = 10;
+    chanskip[1] = 20;
+    static_j = 20;
+    for (static_i=2;static_i<CHANNELS;static_i++)
+    {
+        chanskip[static_i] = static_j;
+    }
+
+    for (static_i=0;static_i<CHANNELS;static_i++)
+        comm_buf[static_i].s = 0;
+
+    for (static_i=0;static_i<CHANNELS;static_i++)
+        pqchan[static_i].p = 0;
+
+    concurrency[0] = 10;
+    concurrency[1] = 20;
+    for (static_i=2;static_i<CHANNELS;static_i++)
+    {
+        concurrency[static_i] = 20;
+    }
+
+    for (static_i=0;static_i<CHANNELS;static_i++)
+        concurrencyused[static_i] = 0;
+
+    for (static_i=0;static_i<SUPPL_CHANNELS;static_i++)
+        suppls[static_i].s = 0;
+
+    for (static_i=0;static_i<SUPPL_CHANNELS;static_i++)
+        newsuppls[static_i].s = 0;
+
 }
 
 void main()
@@ -1521,6 +1885,8 @@ void main()
  int nfds;
  struct timeval tv;
  int c;
+
+ channels_init();
 
  if (chdir(auto_qmail) == -1)
   { log1("alert: cannot start: unable to switch to home directory\n"); _exit(111); }
@@ -1544,7 +1910,7 @@ void main()
  numjobs = 0;
  for (c = 0;c < CHANNELS;++c)
   {
-   char ch;
+   char ch, ch1;
    int u;
    int r;
    do
@@ -1552,7 +1918,13 @@ void main()
    while ((r == -1) && (errno == error_intr));
    if (r < 1)
     { log1("alert: cannot start: hath the daemon spawn no fire?\n"); _exit(111); }
+   do
+     r = read(chanfdin[c],&ch1,1);
+   while ((r == -1) && (errno == error_intr));
+   if (r < 1)
+    { log1("alert: cannot start: hath the daemon spawn no fire?\n"); _exit(111); }
    u = (unsigned int) (unsigned char) ch;
+   u += (unsigned int) ((unsigned char) ch1) << 8;
    if (concurrency[c] > u) concurrency[c] = u;
    numjobs += concurrency[c];
   }
@@ -1568,7 +1940,11 @@ void main()
  todo_init();
  cleanup_init();
 
+#ifdef EXTERNAL_TODO
+ while (!flagexitasap || !del_canexit() || flagtodoalive)
+#else
  while (!flagexitasap || !del_canexit())
+#endif
   {
    recent = now();
 

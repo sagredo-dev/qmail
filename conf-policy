@@ -1,0 +1,17 @@
+-DPOLICY_FILENAME="/var/qmail/control/policy" -DPOLICY_DEALLOCATE -DPOLICY_ENFORCE_AUTHENTICATION
+
+POLICY_FILENAME
+   Sets where the policy file is located
+
+POLICY_ENFORCE_AUTHENTICATION
+   Require that senders who use a local name for envelope
+   authenticate.  This is the recommended setting.
+
+POLICY_DEALLOCATE
+   For every MAIL FROM, RCPT TO combination, re-read all
+   policy information.  This makes policies more dynamic,
+   and stops remote users from causing lots of memory usage,
+   however, it also increases disk i/o, and slows down
+   policy enforcement.  If this is not defined, domain policies
+   will stay in memory until the SMTP session is ended.
+

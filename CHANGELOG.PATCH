@@ -1,0 +1,464 @@
+= Changelog
+
+2023.11.20
+-dkim:
+ * The patch now by default excludes X-Arc-Authentication-Results
+ * dkim can additionally use the environment variable EXCLUDE_DKIMSIGN to include colon separated list of
+ headers to be excluded from signing (just like qmail-dkim). If -X option is used with dk-filter,
+ it overrides the value of EXCLUDE_DKIMSIGN.
+
+2023.09.26
+-surblfilter logs the rejected URL in the qmail-smtpd log. It can now inspect both http and https URLs.
+-Improvements in man dkim.9, qmail-dkim.9 and surblfilter.9
+
+2023.09.05
+-DKIM patch upgraded to v. 1.42
+ *dk-filter.sh: "source $envfn" has been replaced with ". $envfn" in oder to work for pure bourne shells
+ *minor corrections to the man pages
+
+2023.08.20
+-install a sample control/smtpplugins file in case it does not exist yet,
+ to avoid "unable to read control" crash.
+ diff https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.08.20_patch.diff
+
+2023.07.05
+-vpopmail-dir.sh: now uses getent to gain compatibility with alpine/docker (tx BenV https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment3345)
+ https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.07.05_vpopmail-auto_patch.diff
+
+2023.07.03
+-bug fix in vpopmail-dir.sh: it was not searching the sed binary in /bin/sed as it is at least on Ubuntu systems (tx Mike G)
+
+2023.06.30
+-DKIM patch upgraded to v. 1.41
+ *dknewkey will allow domains in control/domainkey 
+ *Made a few adjustments to the man pages and dkimsign.cpp for DKIMDOMAIN to work with qmail-smtpd (in case some configures qmail-smtpd to sign instead
+  of the usual dk-filter/qmail-remote)
+-The broken link based on pobox.com in the default SPF error explanation was changed to https://mxtoolbox.com/SuperTool.aspx?action=spf
+
+2023.06.18
+-vpopmail install directory is determined dinamically by means of a shell script.
+ Now the variable in the conf-cc file is determined as well
+ Feel free to post any issue in the comments as I'm not sure that /bin/sh will work in all Linux.
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.18_patch.diff
+
+2023.06.04
+-vpopmail uid and gid are determined dinamically instead of assigning 89:89 ids by default
+-vpopmail install directory is determined dinamically
+diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.04_patch.diff
+
+2023.04.26
+-dkim patch updated to v. 1.40
+-qmail-dkim uses CUSTOM_ERR_FD as file descriptor for errors (more info https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3076)
+ 
+2023.03.27
+-chkuser.c: double hyphens "--" are now allowed also in the rcpt email (tx Ali Erturk TURKER)
+-chkuser_settings.h CHKUSER_SENDER_NOCHECK_VARIABLE commented out. Sender check is now enabled also for RELAYCLIENT
+-removed a couple of redundant log lines caused by qmail-smtpd-logging
+diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.27_patch.diff
+
+2023.03.18
+-bugfix in dkimverify.cpp: now it checks if k= tag is missing (tx Raisa for providing detailed info)
+-dropped redundant esmtp-size patch, as the SIZE check is already done by the qmail-authentication patch (tx Ali Erturk TURKER)
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.18_patch.diff
+
+2023.03.14
+-The split_str() function in dknewkey was modified in order to work on debian 11
+ tx J https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2922
+
+2023.03.12
+-The mail headers will change from "ESMTPA" to "ESMTPSA" when the user is authenticated via starttls/smtps (tx Ali Erturk TURKER)
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.12_patch.diff
+ more info here https://marc.info/?l=qmail&m=118763997501287&w=2
+
+2023.03.01
+-Added qmail-1.03-fastremote-3 qmail-remote patch (tx Ali Erturk TURKER for the advice)
+ While sending individual messages with qmail consumes very little CPU, sending multiple large messages in parallel can effectively DoS a sender
+ due to inefficiencies in qmail-remote's "blast" function. In its original form, this function scans the message one byte at a time to escape
+ leading periods and newlines, as required by SMTP.
+ This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change reduced the CPU time
+ consumed by qmail-remote by a factor of 10.
+ http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
+-qmail-remote CRLF patch removed
+
+2023.02.27
+-Now qmail-remote is rfc2821 compliant even for implicit TLS (SMTPS) connections (tx Ali Erturk TURKER)
+ https://notes.sagredo.eu/files/qmail/patches/aet_qmail_remote_smtps_correction_202302271346.patch
+
+2023.02.24
+-several missing references to control/badmailto and control/badmailtonorelay files were corrected to control/badrcptto and control/badrcpttonorelay
+ (tx Ali Erturk TURKER) diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.02.24_patch.diff
+
+2023.02.19
+-dkim patch upgraded to v. 1.37
+ - ed25519 support (RFC 8463)
+ - multiple signatures/selectors via the enhanced control/dkimkeys or DKIMSIGN / DKIMSIGNEXTRA / DKIMSIGNOPTIONS  DKIMSIGNOPTIONSEXTRA variables
+ - old yahoo's domainkeys stuff removed (no longer need the libdomainkeys.a library)
+ - man pages revised and enhanced
+ - domainkeys directory moved to /var/qmail/control/domainkeys
+
+2023.01.31
+-bug fix in qmail-smtpd.c. 4096 bit RSA key cannot be open (tx Ali Erturk TURKER)
+ more info here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment2758
+
+2023.01.01
+-bug fix in dk-filter. It was calling a non existent function (tx Andreas).
+ More info here:
+ https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2721
+
+2022.12.17
+-chkuser receipt check won't be disabled for RELAYCLIENT
+ * CHKUSER_DISABLE_VARIABLE commented out from chkuser_settings.h
+ More info here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.12.17_patch.diff
+
+2022.10.01
+-dkim patch updated to v. 1.30
+ * bug fix: it was returning an error in case of domains with no key. 
+
+2022.09.28
+-dkim patch updated to v. 1.29 (tx M. Bhangui and Computerism for troubleshooting)
+ * Custom selector via new control file /var/qmail/control/dkimkeys and DKIMKEY or DKIMSIGN variables
+   More info here https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#selectors
+
+2022.05.22
+-"qmail-smtpd pid, qp log" (http://iain.cx/qmail/patches.html#smtpd_pidqp) patch removed,
+ as its log informations are already contained in the qlogreceived line.
+-improved a couple of read_failed error messages
+
+2022.02.26
+-added REJECTNULLSENDERS env variable
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.26_patch.diff
+
+2022.02.10
+-Fixed a TLS Renegotiation DoS vulnerability. Disabled all renegotiation in TLSv1.2 and earlier.
+ (https://blog.qualys.com/product-tech/2011/10/31/tls-renegotiation-and-denial-of-service-attacks)
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.10_patch.diff
+
+2022.01.17
+-now qmail-smtpd logs rejects when client tries to auth when auth is not allowed, or it's not allowed without TLS
+ (a closed connection with no log at all appeared before).
+-added qmail-spp.o to the TARGET file so that it will be purged with "make clean".
+ diff https://notes.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06//2022.01.17_patch.diff
+
+2021.12.19
+-qmail-spp patch added (more infor here http://qmail-spp.sourceforge.net)
+
+2021.09.27
+-chkuser: now it allows double hyphens "--" in the sender email, like in y--s.co.jp
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.09.27_patch.diff
+
+2021.08.22
+-qlog: now it logs correctly the auth-type
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.08.22_patch.diff
+
+2021.06.19
+-chkuser: defined extra allowed characters in sender/rcpt addresses and added the slash to the list (tx Thomas).
+ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.06.19_patch.diff
+
+2021.06.12
+-RSA key and DH parameters are created 4096 bit long also in Makefile-cert. qmail-smtpd.c and qmail-remote.c
+ updated accordingly (tx Eric Broch).
+-Makefile-cert: the certs will be owned by vpopmail:vchkpw
+
+2021.03.21
+-update_tmprsadh.sh: RSA key and DH parameters increased to 4096 bits
+
+2020.12.04
+-received.c: some adjustment to compile with gcc-10
+ diff here https://notes.sagredo.eu/files/hacks/qmail/patches/roberto-netqmail-1.06/2020.12.04_gcc-10-compat.diff
+
+2020.07.29
+-dk-filter: corrected a bug where dk-filter was using DKIMDOMAIN unconditionally. Now it uses DKIMDOMAIN
+ only if _SENDER is null (tx Manvendra Bhangui).
+
+2020.07.27
+-added cve-2005-1513 patch
+
+2020.04.25
+-qmail-smtpd.c: added rcptcount = 0; in smtp_rset function to prevent the maxrcpto error if control/maxrcpt limit
+ has been exceeded in multiple messages sent sequentially rather than in a single mail (tx Alexandre Fonceca).
+ More info here: https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1594
+
+2020.04.16
+-qmail-remote-logging patch added
+
+2020.04.10
+-DKIM patch updated to v. 1.28
+ * outgoing messages from null sender ("<>") will be signed as well with the domain in env variable DKIMDOMAIN
+ * declaring NODK env variable disables old domainkeys signature, while defining NODKIM disables DKIM.
+
+2020.01.11
+-qmail-tls patch updated to v. 20200107
+ * working client cert authentication with TLSv1.3 (Rolf Eike Beer)
+
+2019.12.08
+-BUG qmail-smtpd.c: now TLS is defined before chkuser.h call, to avoid errors on closing the db connection
+ (tx ChangHo.Na https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1469)
+
+2019.08.07
+-a couple of adjustments to chkuser (tx Luca Franceschini)
+ more info here https://notes.sagredo.eu/files/qmail/patches/dmind/20190807/
+ * BUG - since any other definition of starting_string ends up as "DOMAIN", if starting_string is otherwise
+   defined, chkuser will be turned off.
+ * CHKUSER_ENABLE_ALIAS_DEFAULT, CHKUSER_VAUTH_OPEN_CALL and CHKUSER_DISABLE_VARIABLE are now defined in
+   chkuser_settings.h
+ * Now CHKUSER_DISABLE_VARIABLE, CHKUSER_SENDER_NOCHECK_VARIABLE, CHKUSER_SENDER_FORMAT_NOCHECK,
+   CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.
+
+2019.07.12
+-qmail-channels patch added
+ more info here http://www.thesmbexchange.com/eng/qmail-channels_patch.html
+-improved verbosity of die_read function in qmail-smtpd.c (qmail-smtpd: read failure)
+ more info here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/die_read.patch
+
+2019.06.19
+-DKIM patch updated to v. 1.26
+ * BUG - honor body length tag in verification
+
+2019.05.24
+-qmail-tls updated to v. 20190517
+ * bug: qmail-smtpd ssl_free before tls_out error string (K. Wheeler)
+
+2019.05.23
+-DKIM patch updated to v. 1.25
+ * SIGSEGV - when the txt data for domainkeys is very large exposed a bug in the way realloc() was used incorrectly.
+ * On 32 bit systems, variable defined as time_t overflows. Now qmail-dkim will skip expiry check in such conditions.
+
+2019.04.25
+-bug fixed on qmail-smtpd.c: it was selecting the wrong openssl version on line 2331 (tx ChangHo.Na)
+
+2019.04.09
+-qmail-tls updated to v. 20190408
+ * make compatible with openssl 1.1.0 (Rolf Eike Beer, Dirk Engling, Alexander Hof)
+ * compiler warnings on char * casts (Kai Peter)
+
+2019.03.22
+-fixed a bug causing crashes with qmail-remote when using openssl-1.1 (tx Luca Franceschini)
+(https://notes.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06/2019.03.22-fix.patch)
+
+2019.02.13
+-Port to openssl-1.1
+-DKIM patch updated to v. 1.24
+ * bug fix: restored signaturedomains/nosignaturedomains functionalities.
+
+2018.08.25
+-DKIM patch updated to v. 1.23
+ * fixed a bug where including round brackets in the From: field ouside the double quotes, i.e.
+   From: "Name Surname (My Company)" <name.surname@company.com>, results in a DKIMContext structure invalid
+   error (tx Mirko Buffoni).
+ * qmail-dkim and dkim were issuing a failure for emails which had multiple signature with at least one good
+   signature. Now qmail-dkim and dkim will issue a success if at least one good signature is found.
+
+2018.08.23
+-logging patch
+ * fixed a bug in logit and logit2 functions where after a RSET command and a subsequent brutal quit
+   of the smtp conversation '^]' by the client cause a segfault (tx Mirko Buffoni, more info here
+   https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1132)
+-patch info moved to 'README.PATCH' file
+
+2018.04.03
+-DKIM patch updated to v. 1.22
+ * openssl 1.1.0 port
+ * various improvements, bug fixes
+
+2018.01.10
+-maildir++
+ * fixed a bug where the filesize part of the S=<filesize> component of the Maildir++ compatible filename
+   is wrong (tx MG). More info here: http://notes.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-
+vpopmail-qmail-server-28.html#comment995
+-qmail-queue-extra
+ * removed, because it was causing more problems than advantages, as the domain of the log@yourdomain.tld
+   had to match the system domain inside control/me and shouldn't be a virtual domain as well.
+
+2017.10.11 (tx Luca Franceschini)
+-qlogfix
+ * log strings should terminate with \n to avoid trailing ^M using splogger
+ * bug reporting custom errors from qmail-queue in qlog
+-added dnscname patch
+-added rcptcheck patch
+
+2017.08.18
+-qmail-smtpd now retains authentication upon rset
+ (tx to Andreas http://notes.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment750)
+
+2017-05-14
+-DKIM patch updated to v. 1.20
+ It now manages long TXT records, avoiding the rejection of some hotmail.com messages.
+
+2016-12-19
+-Several new patches and improvements added (thanks to Luca Franceschini)
+More info here http://notes.sagredo.eu/node/178
+ -qregex patch
+ -brtlimit patch
+ -validrcptto patch
+ -rbl patch (updates qmail-dnsbl patch)
+ -reject-relay-test patch
+ -added DISABLETLS environment variable, useful if you want to disable TLS on a desired port
+ -added FORCEAUTHMAILFROM environment variable to REQUIRE that authenticated user and 'mail from' are identical
+ -fixed little bug in 'mail from' address handling (patch by Andre Opperman at http://qmail.cr.yp.narkive.com/kBry
+  6GJl/bug-in-qmail-smtpd-c-addrparse-function)
+ -added SMTPAUTHMETHOD, SMTPAUTHUSER and SMTP_AUTH_USER env variables for external plugins
+ -qlog patch
+ -reject null senders patch
+ -bouncecontrolmime patch
+ -qmail-taps-extended (updates qmail-tap)
+
+2016-12-02
+-fixed BUG in qmail-remote.c: in case of remote server who doesn't allow EHLO the response for an alternative
+ HELO was checked twice, making the connection to die. (Thanks to Luca Franceschini)
+ Patch applied: http://notes.sagredo.eu/files/qmail/patches/fix_sagredo_remotehelo.patch
+
+2016-09-19
+-qmail-tls patch updated to v. 20160918
+  * bug: qmail-remote accepting any dNSName, without checking that is matches (E. Surovegin)
+  * bug: documentation regarding RSA and DH keys (K. Peter, G. A. Bofill)
+
+2016-05-15
+-force-tls patch improved (a big thanks to Marcel Telka). Now qmail-smtpd avoids to write the auth verb if the
+ the STARTTLS command was not sent by the client
+
+2016-03-09
+-DKIM patch upgraded to v. 1.19
+ * verification will not fail when a dkim signature does not include the subject provided that the
+   UNSIGNED_SUBJECT environment variable is declared.
+
+2015-12-26
+-qmail-tls patch updated to v. 20151215
+ * typo in #if OPENSSL_VERSION_NUMBER for 2015-12-08 patch release (V. Smith)
+ * add ECDH to qmail-smtpd
+ * increase size of RSA and DH pregenerated keys to 2048 bits
+ * qmail-smtpd sets RELAYCLIENT if relaying allowed by cert
+ more info at http://inoa.net/qmail-tls/
+
+2015-12-15
+-DKIM patch by Manvendra Bhangui updated to v. 1.18
+
+2015-10-03
+-qmail-authentication: updated to v. 0.8.3
+
+2015-08-08
+-fixed a bug on qmail-remote.c that was causing the sending of an additionale ehlo greeting (thanks to Cristoph Gr
+over)
+
+2015-04-11
+-qmail-authentication: updated to v. 0.8.2
+-qmail-tls: upgraded to v. 20141216 (POODLE vulnerability fixed)
+
+2015-03-28
+-added qmail-eMPF patch
+
+2014-11-19
+-security fix: the SSLv3 connection is now switched off
+
+2014-11-15
+-modified the QUEUE_EXTRA variable in extra.h to improve the qmail-send's log
+
+2014-04-14
+-added maxrcpt patch
+
+2014-03-10
+-added qmail-0.95-liberal-lf patch
+
+2013-12-30
+-added qmail-srs
+-the character "=" is now considered valid in the sender address by chkuser in order to accept SRS
+
+2013-12-18
+-added qmail-date-localtime patch
+
+2013-12-14
+-added qmail-hide-ip patch
+
+2013-12-10
+-the original greetdelay by e.h. has been replaced with the improved patch by John Simpson. Now
+ communications trying to send commands before the greeting will be closed. Premature disconnections will be
+ logged as well.
+-CHKUSER_SENDER_FORMAT enabled to reject fake senders without any domain declared (like <foo>)
+-chkuser logging: I slightly modified the log line adding the variables' name just to facilitate its interpretation
+-added qmail-moreipme patch
+
+2013-12-07
+-added qmail-dnsbl patch
+
+2013-12-05
+-added two patches to make qmail rfc2821 compliant
+
+2013-11-23
+-added any-to-cname patch
+
+2013-09-27
+-DKIM patch upgraded to v. 1.17. Defined -DHAVE_SHA_256 while compiling dkimverify.cpp in the Makefile.
+ This solved an issue while verifying signatures using sha256.
+
+2013-09-16
+-Minor fixes to the DKIM patch.
+
+2013-09-13
+-DKIM patch upgraded to v. 1.16. The signing at qmail-remote level has been revised by its author.
+
+2013-08-25
+-qmail-qmqpc.c call to timeoutconn() needed a correction because the function signature was modified by the
+ outgoingip patch. Thanks to Robbie Walker (diff here http://notes.sagredo.eu/node/82#comment-373)
+
+2013-08-21
+-fixed a bug in hier.c which caused the installation not to build properly the queue/todo dir structure (thanks to
+ Scott Ramshaw)
+
+2013-08-18
+-DKIM-SURBL patch by Manvendra Bhangui updated to v. 1.14
+
+2013-08-12
+-DKIM patch upgraded to v. 1.12. The new patch adds surblfilter functionality.
+-added qmail-smtpd pid, qp log patch
+
+2013-08-08
+-qmail-SPF modified by Manvendra Bhangui to make it IPv6-mapped IPv4 addresses compliant. In order to have it
+ working with such addresses you have to patch tcpserver.c accordingly. You can use a patch fot ucspi-tcp6-0.98
+ by Manvendra Bhangui at http://notes.sagredo.eu/files/qmail/patches/tcpserver-ipv6mapped_ip
+ v4.patch or wait for v. 0.99 relase of ucspi-tcp6
+-added outgoingip patch
+-added qmail-bounce patch
+
+2013-03-31
+qmail-auth updated to latest v. 0.8.1 Added authentication by recipient domain for qmail-remote.
+Look at README.auth for further details
+
+2013-02-11
+some code adjustments in qmail-smtpd.c smtpd_ehlo() to restore total compatibility with esmtp-size patch
+
+2013-02-08
+qmail-auth updated to latest v. 0.7.6. Look at README.auth for further details
+
+2013-01-28
+fixed an issue on qmail-pop3d which was causing a double +OK after the pass command (thanks to Rakesh, Orbit
+and Simplex for helping in testing and troubleshooting)
+
+2013-01-06
+environment variable GREETDELAY renamed to SMTPD_GREETDELAY
+
+2012-10-31
+qmail-auth updated to latest v. 0.7.5. Look at README.auth for further details
+The qmail-forcetls patch was simplyfied accordingly.
+You MUST export SMTPAUTH="" in your run file now.
+
+2012-04-25
+-added qmail-remote CRLF (thanks to Pierre Lauriente for the help on testing and troubleshooting)
+The qmail-remote CRLF patch solved a problem of broken headers after sieve forwarding that was
+caused by a bad handling of the CR (carriage return) by qmail-remote.
+The issue is also reported here http://www.dt.e-technik.uni-dortmund.de/~ma/qmail-bugs.html
+
+2012.04.16
+-added qmail-tap
+
+2012.02.08
+-added smtp-size patch
+
+2012.01.29
+-added doublebounce-trim patch
+
+2011.12.12
+-file update_tmprsadh modified to chown the .pem files to vpopmail to avoid hang-ups during the smtp
+conversation on port 587 caused by permission problems.
+
+2011.10.06
+-qmail-remote.c: fixed. It was not going into tls on authentication (thanks to Krzysztof Gajdemski)
+-force-tls now quits if the starttls command is not provided when required (thanks to Jacekalex)

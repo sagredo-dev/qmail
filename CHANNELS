@@ -1,0 +1,100 @@
+CHANNELS by Reed Sandberg
+Copyright (c) 2007-2008 The SMB Exchange, INC
+
+This patch is free software; you can redistribute it and/or modify
+it under the Artistic License.
+
+This patch for (net)qmail comes with NO WARRANTY.
+
+RELEASE: November 15, 2008
+
+
+qmail manages two different queues
+with different configurable concurrency settings (rates) based on a set
+of domains - those delivered locally (control files: locals,
+virtualdomains, concurrencylocal) and those delivered remotely (domains
+not listed in  above control files and concurrencyremote). Luckily,
+qmail's author (DJB) spent some time abstracting the implementation of
+these channels and this patch advances the abstraction to add an
+arbitrary number of channels - each with a distinct set of domains and
+throttling capabilities.
+
+BIG PICTURE
+With ext_todo patch. Adapted from:
+EXTTODO by Claudio Jeker <jeker@n-r-g.com> and
+Andre Oppermann <opi@nrg4u.com>
+(c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
+
+
+               +-------+   +-------+       +-------+
+               | clean |   | clean |       | logger|
+               +--0-1--+   +--0-1--+       +---0---+           +-----------+
+         trigger  ^ |         ^ |              |             +->0,1 lspawn |
+            |     | v         | v              v            /  +-----------+
+ +-------+  v  +--2-3--+   +--5-6--------------0-------+   /
+ |       |  |  |       0<--7                         1,2<-+
+ | queue |--+--| todo  |   | send                      |
+ |       |  |  |       1-->8                         3,4<-+
+ +-------+     +-------+   +--11,12---...-------X,Y----+   \
+                                |                |          \  +-----------+
+                                v                v           +->0,1 rspwan |
+                            +--0,1-+         +--0,1-+          +-----------+
+                            |rspawn|  ...    |rspawn|    
+                            +------+         +------+       
+
+Communication between qmail-send and qmail-todo
+
+todo -> send:
+   D[01]{n}<mesgid>\0
+          Start delivery for a new message with id <mesgid>.
+          the character '0' or '1' indicates whether this message
+          will go through the corresponding channel (false/true)
+          by position where n is the number of channels. E.g. D1011<msgid>\0:
+          means there are four channels, the first 2 are always
+          the local and default remote channels, and the rest are
+          an optional number of supplemental channels (defined
+          at compile-time by conf-channels). So this message
+          has a local recipient, and a recipient on the first and
+          second supplemental channels.
+   L<string>\0
+          Dump string to the logger without adding additional \n or similar.
+send -> todo:
+   H      Got a SIGHUP, reread ~/control/locals, ~/control/virtualdomains,
+          ~/control/concurrencyremote, ~/control/concurrencylocal,
+          ~/control/concurrencysupplX, ~/control/supplsX
+   X      Quit ASAP.
+
+qmail-todo sends "\0" terminated messages whereas qmail-send just send one
+character to qmail-todo.
+
+
+CAVEATS
+qmail-qread ignores all supplemental channels - contributions are welcome!
+
+Supplemental channels use qmail-rspawn for remote recipients only.
+
+Dynamic throttling and resource limits
+File descriptor limits are imposed on a per-process basis (FD_SET), on a
+per-account basis (ulimit -n, /etc/security/limits.conf on Linux, pam limits, etc.)
+and then on a system-wide basis by the OS (/proc/sys/fs/file-max on Linux, etc).
+concurrencyremote, concurrencysupplX, etc are each subject to the hard limit in
+conf-spawn, which in turn is bounded by per-process limits. Note that this limit
+applies separately to each queue, not to all queues in total. The sum of all
+concurrency limits for each queue in total is bounded on a per-account basis
+(ulimit -n). These limits can easily be approached if you are running many
+supplemental channels.
+
+qmail double checks the concurrency limits on startup for each channel (using FD_SET)
+and silently curbs them if needed because bad things happen if this limit is breached.
+If you're sending qmail-send a HUP signal after editing concurrency limits (dynamic
+throttling) be aware that qmail's builtin checks can be circumvented, here's what
+qmail's author has to say on the subject (from chkspawn.c):
+This means that the qmail daemons could crash if you set the run-time concurrency higher
+than [the per-process limit].
+
+Even if the per-process limits are in check, per-account and system-wide file descriptor
+limits may still cause bad things to happen if you're not careful (you've been warned!).
+
+Enjoy!
+Reed Sandberg
+

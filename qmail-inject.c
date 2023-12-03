@@ -22,6 +22,7 @@
 #include "auto_qmail.h"
 #include "newfield.h"
 #include "constmap.h"
+#include "srs.h"
 
 #define LINELEN 80
 
@@ -61,6 +62,11 @@ void perm() { _exit(100); }
 void temp() { _exit(111); }
 void die_nomem() {
  substdio_putsflush(subfderr,"qmail-inject: fatal: out of memory\n"); temp(); }
+void die_srs() {
+ substdio_puts("qmail-inject: fatal: ");
+ substdio_puts(subfderr,srs_error.s);
+ substdio_putsflush(subfderr,"\n");
+ perm(); }
 void die_invalid(sa) stralloc *sa; {
  substdio_putsflush(subfderr,"qmail-inject: fatal: invalid header field: ");
  substdio_putflush(subfderr,sa->s,sa->len); perm(); }
@@ -99,6 +105,17 @@ void exitnicely()
    int i;
 
    if (!stralloc_0(&sender)) die_nomem();
+   
+   if (!env_get("QMAILINJECT_SKIP_SRS") && (env_get("QMAILINJECT_FORCE_SRS") || (env_get("EXT") && env_get("HOST")))) {
+     switch(srsforward(sender.s)) {
+       case -3: die_srs(); break;
+       case -2: die_nomem(); break;
+       case -1: die_read(); break;
+       case 0: break;
+       case 1: if (!stralloc_copy(&sender,&srs_result)) die_nomem(); break;
+     }
+   }
+   
    qmail_from(&qqt,sender.s);
 
    for (i = 0;i < reciplist.len;++i)
@@ -269,6 +286,10 @@ void rwgeneric(addr)
 token822_alloc *addr;
 {
  if (!addr->len) return; /* don't rewrite <> */
+ if (addr->len == 1 && str_equal(addr->t[0].s,"<>")) {
+ addr->len = 0;
+ return;
+ }
  if (addr->len >= 2)
    if (addr->t[1].type == TOKEN822_AT)
      if (addr->t[0].type == TOKEN822_LITERAL)

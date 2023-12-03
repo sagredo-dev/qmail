@@ -21,6 +21,9 @@ static int issafe(ch) char ch;
   return 0;
 }
 
+extern char *relayclient;
+extern int relayclientlen;
+
 void safeput(qqt,s)
 struct qmail *qqt;
 char *s;
@@ -58,9 +61,12 @@ char *helo;
   qmail_puts(qqt," (");
   if (remoteinfo) {
     safeput(qqt,remoteinfo);
-    qmail_puts(qqt,"@");
   }
-  safeput(qqt,remoteip);
+  char relayclient = env_get("RELAYCLIENT");
+  if (!relayclient) {
+    if (remoteinfo) { qmail_puts(qqt,"@"); }
+     safeput(qqt,remoteip);
+  }
   qmail_puts(qqt,")\n  by ");
   safeput(qqt,local);
   qmail_puts(qqt," with ");

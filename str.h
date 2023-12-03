@@ -8,6 +8,8 @@ extern unsigned int str_len();
 extern unsigned int str_chr();
 extern unsigned int str_rchr();
 extern int str_start();
+#include <sys/types.h>
+extern size_t str_cspn();
 
 #define str_equal(s,t) (!str_diff((s),(t)))
 

@@ -16,6 +16,11 @@
 #include "readwrite.h"
 #include "timeoutread.h"
 #include "timeoutwrite.h"
+#include <errno.h>
+#include "maildirquota.h"
+#include "maildirmisc.h"
+
+#define QUOTABUFSIZE 256
 
 void die() { _exit(0); }
 
@@ -45,19 +50,15 @@ void put(buf,len) char *buf; int len;
 {
   substdio_put(&ssout,buf,len);
 }
-void puts(s) char *s;
-{
-  substdio_puts(&ssout,s);
-}
 void flush()
 {
   substdio_flush(&ssout);
 }
 void err(s) char *s;
 {
-  puts("-ERR ");
-  puts(s);
-  puts("\r\n");
+  substdio_puts(&ssout,"-ERR ");
+  substdio_puts(&ssout,s);
+  substdio_puts(&ssout,"\r\n");
   flush();
 }
 
@@ -73,7 +74,7 @@ void err_toobig() { err("not that many messages"); }
 void err_nosuch() { err("unable to open that message"); }
 void err_nounlink() { err("unable to unlink all deleted messages"); }
 
-void okay(arg) char *arg; { puts("+OK \r\n"); flush(); }
+void okay() { substdio_puts(&ssout,"+OK \r\n"); flush(); }
 
 void printfn(fn) char *fn;
 {
@@ -153,11 +154,11 @@ void pop3_stat(arg) char *arg;
  
   total = 0;
   for (i = 0;i < numm;++i) if (!m[i].flagdeleted) total += m[i].size;
-  puts("+OK ");
+  substdio_puts(&ssout,"+OK ");
   put(strnum,fmt_uint(strnum,numm));
-  puts(" ");
+  substdio_puts(&ssout," ");
   put(strnum,fmt_ulong(strnum,total));
-  puts("\r\n");
+  substdio_puts(&ssout,"\r\n");
   flush();
 }
 
@@ -171,18 +172,41 @@ void pop3_rset(arg) char *arg;
 
 void pop3_last(arg) char *arg;
 {
-  puts("+OK ");
+  substdio_puts(&ssout,"+OK ");
   put(strnum,fmt_uint(strnum,last));
-  puts("\r\n");
+  substdio_puts(&ssout,"\r\n");
   flush();
 }
 
 void pop3_quit(arg) char *arg;
 {
   int i;
+  char quotabuf[QUOTABUFSIZE];
+  int has_quota=maildir_getquota(".", quotabuf);
+
+  long deleted_bytes=0;
+  long deleted_messages=0;
+
   for (i = 0;i < numm;++i)
     if (m[i].flagdeleted) {
-      if (unlink(m[i].fn) == -1) err_nounlink();
+      unsigned long un=0;
+      const char *filename=m[i].fn;
+      if (has_quota == 0 && !MAILDIR_DELETED(filename)) {
+          if (maildir_parsequota(filename, &un)) {
+              struct stat stat_buf;
+
+              if (stat(filename, &stat_buf) == 0)
+                  un=stat_buf.st_size;
+          }
+      }
+      if (unlink(m[i].fn) == -1) {
+          err_nounlink();
+          un=0;
+      }
+      if (un) {
+          deleted_bytes -= un;
+          deleted_messages -= 1;
+      }
     }
     else
       if (str_start(m[i].fn,"new/")) {
@@ -192,6 +216,21 @@ void pop3_quit(arg) char *arg;
 	if (!stralloc_0(&line)) die_nomem();
 	rename(m[i].fn,line.s); /* if it fails, bummer */
       }
+
+    if (deleted_messages < 0) {
+        int quotafd;
+
+        if (maildir_checkquota(".", &quotafd, quotabuf, deleted_bytes,
+                               deleted_messages) && errno != EAGAIN &&
+                               deleted_bytes >= 0)
+            {
+                if (quotafd >= 0) close (quotafd);
+            } else {
+                 maildir_addquota(".", quotafd, quotabuf,
+                                 deleted_bytes, deleted_messages);
+                 if (quotafd >= 0) close(quotafd);
+            }
+        }
   okay(0);
   die();
 }
@@ -222,10 +261,10 @@ int i;
 int flaguidl;
 {
   put(strnum,fmt_uint(strnum,i + 1));
-  puts(" ");
+  substdio_puts(&ssout," ");
   if (flaguidl) printfn(m[i].fn);
   else put(strnum,fmt_ulong(strnum,m[i].size));
-  puts("\r\n");
+  substdio_puts(&ssout,"\r\n");
 }
 
 void dolisting(arg,flaguidl) char *arg; int flaguidl;
@@ -234,7 +273,7 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
   if (*arg) {
     i = msgno(arg);
     if (i == -1) return;
-    puts("+OK ");
+    substdio_puts(&ssout,"+OK ");
     list(i,flaguidl);
   }
   else {
@@ -242,7 +281,7 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
     for (i = 0;i < numm;++i)
       if (!m[i].flagdeleted)
 	list(i,flaguidl);
-    puts(".\r\n");
+    substdio_puts(&ssout,".\r\n");
   }
   flush();
 }

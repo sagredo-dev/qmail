@@ -1,0 +1,54 @@
+chkuser 2.0 - README
+
+Description
+===========
+The original qmail-smtpd accepts by default all messages, checking later for
+the existence of the recipient. So, if the message is delivered to not existing
+recipients a lot of additional system work and network traffic are generated,
+with multiple expensive bouncing if the sender is a fake one.
+
+chkuser has been developed with the goal to improve the acceptance SMTP phase
+of qmail-smtpd. qmail-smtpd patched with chkuser may check the existance of
+e-mail recipients immediately in the SMTP acceptance phase of a message and
+rejects istantly all messages not directed to existing users, avoiding
+additional traffic, work and messages bounced more times.
+
+These goals are achieved enquirying the existing vpopmail archives (each
+format is supported: cdb, MySQL, LDAP, etc.) by using standard vpopmail calls,
+or using customized chkuser routines.
+
+Version 2.0 - From chkusr to chkuser
+====================================
+Version 2.0 is a lot different from previous versions, so it deserves a more
+evident change in the name.
+
+Version 2.0 has been designed with the goal to be modular, and to make more easy
+both adding new features to chkuser code and semplifing code update.
+
+Patching over original qmail files is done over a few points, while the most of
+chkuser code remains ouside, in dedicated chkuser's files.
+
+Same for settings, that are inside a dedicated chkuser_settings.h file.
+
+The intention is to semplify upgrading: for future chkuser releases, upgrading
+will require only to update chkuser specific files, leaving all the rest
+untouched, and changing chkuser_settings.h only if new features must be enabled.
+
+Logging and SPAM
+================
+chkuser 2.0 has detailed logging of accepted and refused recipients and senders,
+allowing a deep analysis of "who's sending to who". This can lead to more
+sophisticated future enhancements of anti-SPAM features.
+
+Intrusion rejection
+===================
+chkuser 2.0 can be tuned to reject sessions exceeding some recipients limits
+(limits can be set for max recipients and max not existing recipients). 
+
+URL Location
+============
+For any new release, support, FAQ, mailing lists, or other information, see:
+
+	http://www.interazioni.it/opensource
+
+

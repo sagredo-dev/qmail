@@ -102,6 +102,8 @@ void doit(server)
 char *server;
 {
   struct ip_address ip;
+  struct ip_address outip;
+  outip.d[0]=outip.d[1]=outip.d[2]=outip.d[3]=(unsigned char) 0;
   char ch;
 
   if (!ip_scan(server,&ip)) return;
@@ -109,7 +111,7 @@ char *server;
   qmqpfd = socket(AF_INET,SOCK_STREAM,0);
   if (qmqpfd == -1) die_socket();
 
-  if (timeoutconn(qmqpfd,&ip,PORT_QMQP,10) != 0) {
+  if (timeoutconn(qmqpfd,&ip,&outip,PORT_QMQP,10) != 0) {
     lasterror = 73;
     if (errno == error_timeout) lasterror = 72;
     close(qmqpfd);

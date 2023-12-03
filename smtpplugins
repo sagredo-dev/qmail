@@ -1,0 +1,12 @@
+# smtpplugins sample file
+[connection]
+
+[auth]
+
+[helo]
+
+[mail]
+
+[rcpt]
+
+[data]

@@ -15,6 +15,7 @@
 #include "auto_patrn.h"
 #include "auto_spawn.h"
 #include "auto_split.h"
+#include "spf.h"
 
 stralloc me = {0};
 int meok;
@@ -112,7 +113,7 @@ char *post;
   substdio_puts(subfdout,"\n");
   substdio_puts(subfdout,fn);
   substdio_puts(subfdout,": ");
-  switch(control_readfile(&line,fn)) {
+  switch(control_readfile(&line,fn, 0)) {
     case 0:
       substdio_puts(subfdout,"(Default.) ");
       substdio_puts(subfdout,def);
@@ -214,14 +215,22 @@ void main()
     _exit(111);
   }
 
-  do_lst("badmailfrom","Any MAIL FROM is allowed.",""," not accepted in MAIL FROM.");
+  do_lst("authsenders","No authenticated SMTP sender.","Authenicated SMTP sender: ","");
+  do_lst("badhelo","Any HELO host name is allowed.",""," HELO host name denied if it matches this pattern.");
+  do_lst("badhelonorelay","Any HELO host name is allowed.",""," HELO host name denied if it matches this pattern and RELAYCLIENT is not set.");
+  do_lst("badmailfrom","Any MAIL FROM is allowed.",""," MAIL FROM denied if it matches this pattern.");
+  do_lst("badmailfromnorelay","Any MAIL FROM is allowed.",""," MAIL FROM denied if it matches this pattern and RELAYCLIENT is not set.");
+  do_lst("badrcptto","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern.");
+  do_lst("badrcpttonorelay","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern and RELAYCLIENT is not set.");
   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
   do_str("bouncehost",1,"bouncehost","Bounce host name is ");
+  do_int("brtlimit","0","The brtlimit is ","");
   do_int("concurrencylocal","10","Local concurrency is ","");
   do_int("concurrencyremote","20","Remote concurrency is ","");
   do_int("databytes","0","SMTP DATA limit is "," bytes");
   do_str("defaultdomain",1,"defaultdomain","Default domain name is ");
   do_str("defaulthost",1,"defaulthost","Default host name is ");
+  do_lst("dnsbllist","No dnsbl list configured.","List at "," configured for dnsbl check.");
   do_str("doublebouncehost",1,"doublebouncehost","2B recipient host: ");
   do_str("doublebounceto",0,"postmaster","2B recipient user: ");
   do_str("envnoathost",1,"envnoathost","Presumed domain name is ");
@@ -230,6 +239,9 @@ void main()
   do_str("localiphost",1,"localiphost","Local IP address becomes ");
   do_lst("locals","Messages for me are delivered locally.","Messages for "," are delivered locally.");
   do_str("me",0,"undefined! Uh-oh","My name is ");
+  do_lst("moreipme","No additional IP addresses are me.","IP address "," is me.");
+  do_lst("notipme","All of my IP addresses are me.","IP address "," is not me.");
+  do_str("outgoingip",0,"0.0.0.0","Outgoing IP address is ");
   do_lst("percenthack","The percent hack is not allowed.","The percent hack is allowed for user%host@",".");
   do_str("plusdomain",1,"plusdomain","Plus domain name is ");
   do_lst("qmqpservers","No QMQP servers.","QMQP server: ",".");
@@ -257,6 +269,15 @@ void main()
 
   do_str("smtpgreeting",1,"smtpgreeting","SMTP greeting: 220 ");
   do_lst("smtproutes","No artificial SMTP routes.","SMTP route: ","");
+  do_int("spfbehavior","0","The SPF behavior is ","");
+  do_str("spfexp",0,SPF_DEFEXP,"The SPF default explanation is: 550 ");
+  do_str("spfguess",0,"","The guess SPF rules are: ");
+  do_str("spfrules",0,"","The local SPF rules are: ");
+  do_str("srs_domain",0,"","SRS domain name is ");
+  do_lst("srs_secrets","No secrets","","");
+  do_int("srs_maxage","21","SRS maxage is ","");
+  do_int("srs_hashlength","4","SRS hashlength is ","");
+  do_int("srs_hashmin","4","SRS hashmin is ","");
   do_int("timeoutconnect","60","SMTP client connection timeout is "," seconds");
   do_int("timeoutremote","1200","SMTP client data timeout is "," seconds");
   do_int("timeoutsmtpd","1200","SMTP server data timeout is "," seconds");
@@ -265,9 +286,12 @@ void main()
   while (d = readdir(dir)) {
     if (str_equal(d->d_name,".")) continue;
     if (str_equal(d->d_name,"..")) continue;
-    if (str_equal(d->d_name,"bouncefrom")) continue;
-    if (str_equal(d->d_name,"bouncehost")) continue;
+    if (str_equal(d->d_name,"authsenders")) continue;
     if (str_equal(d->d_name,"badmailfrom")) continue;
+    if (str_equal(d->d_name,"badhelo")) continue;
+    if (str_equal(d->d_name,"badmailfromnorelay")) continue;
+    if (str_equal(d->d_name,"badrcptto")) continue;
+    if (str_equal(d->d_name,"badrcpttonorelay")) continue;
     if (str_equal(d->d_name,"bouncefrom")) continue;
     if (str_equal(d->d_name,"bouncehost")) continue;
     if (str_equal(d->d_name,"concurrencylocal")) continue;
@@ -275,6 +299,7 @@ void main()
     if (str_equal(d->d_name,"databytes")) continue;
     if (str_equal(d->d_name,"defaultdomain")) continue;
     if (str_equal(d->d_name,"defaulthost")) continue;
+    if (str_equal(d->d_name,"dnsbllist")) continue;
     if (str_equal(d->d_name,"doublebouncehost")) continue;
     if (str_equal(d->d_name,"doublebounceto")) continue;
     if (str_equal(d->d_name,"envnoathost")) continue;
@@ -283,8 +308,10 @@ void main()
     if (str_equal(d->d_name,"localiphost")) continue;
     if (str_equal(d->d_name,"locals")) continue;
     if (str_equal(d->d_name,"me")) continue;
+    if (str_equal(d->d_name,"moreipme")) continue;
     if (str_equal(d->d_name,"morercpthosts")) continue;
     if (str_equal(d->d_name,"morercpthosts.cdb")) continue;
+    if (str_equal(d->d_name,"notipme")) continue;
     if (str_equal(d->d_name,"percenthack")) continue;
     if (str_equal(d->d_name,"plusdomain")) continue;
     if (str_equal(d->d_name,"qmqpservers")) continue;
@@ -292,6 +319,15 @@ void main()
     if (str_equal(d->d_name,"rcpthosts")) continue;
     if (str_equal(d->d_name,"smtpgreeting")) continue;
     if (str_equal(d->d_name,"smtproutes")) continue;
+    if (str_equal(d->d_name,"spfbehavior")) continue;
+    if (str_equal(d->d_name,"spfexp")) continue;
+    if (str_equal(d->d_name,"spfguess")) continue;
+    if (str_equal(d->d_name,"spfrules")) continue;
+    if (str_equal(d->d_name,"srs_domain")) continue;
+    if (str_equal(d->d_name,"srs_secrets")) continue;
+    if (str_equal(d->d_name,"srs_maxage")) continue;
+    if (str_equal(d->d_name,"srs_hashlength")) continue;
+    if (str_equal(d->d_name,"srs_hashmin")) continue;
     if (str_equal(d->d_name,"timeoutconnect")) continue;
     if (str_equal(d->d_name,"timeoutremote")) continue;
     if (str_equal(d->d_name,"timeoutsmtpd")) continue;

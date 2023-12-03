@@ -1,0 +1,4 @@
+2
+
+Total number of channels (queues) available for delivery. Must be at
+least 2, and anything above 2 are considered supplemental channels.

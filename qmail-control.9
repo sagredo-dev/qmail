@@ -20,7 +20,11 @@ other hostname-related control files.
 
 Comments are allowed
 in
+.IR badhelo ,
 .IR badmailfrom ,
+.IR badmailfromnorelay ,
+.IR badrcptto ,
+.IR badrcpttonorelay ,
 .IR locals ,
 .IR percenthack ,
 .IR qmqpservers ,
@@ -40,14 +44,25 @@ See the corresponding man pages for further details.
 .ta 5c 10c
 control	default	used by
 
+.I authsender	\fR(none)	\fRqmail-remote
+.I badhelo     \fR(none)       \fRqmail-smtpd
+.I badhelonorelay     \fR(none)       \fRqmail-smtpd
 .I badmailfrom	\fR(none)	\fRqmail-smtpd
+.I badmailfromnorelay  \fR(none)       \fRqmail-smtpd
+.I badrcptto   \fR(none)       \fRqmail-smtpd
+.I badrcpttonorelay    \fR(none)       \fRqmail-smtpd
 .I bouncefrom	\fRMAILER-DAEMON	\fRqmail-send
 .I bouncehost	\fIme	\fRqmail-send
+.I brtlimit	\fR0	\fRqmail-smtpd
+.I clientca.pem	\fR(none)	\fRqmail-smtpd
+.I clientcert.pem	\fR(none)	\fRqmail-remote
 .I concurrencylocal	\fR10	\fRqmail-send
 .I concurrencyremote	\fR20	\fRqmail-send
 .I defaultdomain	\fIme	\fRqmail-inject
 .I defaulthost	\fIme	\fRqmail-inject
 .I databytes	\fR0	\fRqmail-smtpd
+.I dnsbllist	\fR(none)	\fRqmail-smtpd
+.I dh4096.pem	\fR(none)	\fRqmail-smtpd
 .I doublebouncehost	\fIme	\fRqmail-send
 .I doublebounceto	\fRpostmaster	\fRqmail-send
 .I envnoathost	\fIme	\fRqmail-send
@@ -56,22 +71,35 @@ control	default	used by
 .I localiphost	\fIme	\fRqmail-smtpd
 .I locals	\fIme	\fRqmail-send
 .I morercpthosts	\fR(none)	\fRqmail-smtpd
+.I outgoingip	\fR0.0.0.0	\fRqmail-remote
 .I percenthack	\fR(none)	\fRqmail-send
 .I plusdomain	\fIme	\fRqmail-inject
 .I qmqpservers	\fR(none)	\fRqmail-qmqpc
 .I queuelifetime	\fR604800	\fRqmail-send
 .I rcpthosts	\fR(none)	\fRqmail-smtpd
+.I rsa4096.pem	\fR(none)	\fRqmail-smtpd
+.I servercert.pem	\fR(none)	\fRqmail-smtpd
 .I smtpgreeting	\fIme	\fRqmail-smtpd
 .I smtproutes	\fR(none)	\fRqmail-remote
+.I spfbehavior	\fR0	\fRqmail-smtpd
+.I spfexp	\fR(default)	\fRqmail-smtpd
+.I spfguess	\fR(none)	\fRqmail-smtpd
+.I spfrules	\fR(none)	\fRqmail-smtpd
+.I taps	\fR(none)	\fRqmail-queue
 .I timeoutconnect	\fR60	\fRqmail-remote
 .I timeoutremote	\fR1200	\fRqmail-remote
 .I timeoutsmtpd	\fR1200	\fRqmail-smtpd
+.I tlsclients 	\fR(none)	\fRqmail-smtpd
+.I tlsclientciphers	\fR(none)	\fRqmail-remote
+.I tlshosts/FQDN.pem	\fR(none)	\fRqmail-remote
+.I tlsserverciphers	\fR(none)	\fRqmail-smtpd
 .I virtualdomains	\fR(none)	\fRqmail-send
 .fi
 .RE
 .SH "SEE ALSO"
 qmail-inject(8),
 qmail-qmqpc(8),
+qmail-queue(8),
 qmail-remote(8),
 qmail-send(8),
 qmail-showctl(8),

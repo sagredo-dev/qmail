@@ -14,23 +14,65 @@
 #include "ipalloc.h"
 #include "stralloc.h"
 #include "ipme.h"
+#include "substdio.h"
+#include "readwrite.h"
 
 static int ipmeok = 0;
 ipalloc ipme = {0};
+ipalloc ipme_mask = {0};
+ipalloc notipme = {0};
+ipalloc notipme_mask = {0};
 
 int ipme_is(ip)
 struct ip_address *ip;
 {
-  int i;
   if (ipme_init() != 1) return -1;
-  for (i = 0;i < ipme.len;++i)
-    if (byte_equal(&ipme.ix[i].ip,4,ip))
-      return 1;
-  return 0;
+  return ipme_match(&ipme,&ipme_mask,ip) > ipme_match(&notipme,&notipme_mask,ip);
 }
 
+int ipme_match(ipa, ipa_mask, ip)
+struct ipalloc *ipa, *ipa_mask;
+struct ip_address *ip;
+{
+  int i,j;
+  struct ip_address masked;
+  int masklen, longest_masklen=-1;
+
+  for(i=0;i < ipa->len;++i)
+  {
+    masklen = 0;
+    for(j=0;j<4;++j)
+    {
+      switch(ipa_mask->ix[i].ip.d[j])
+      {
+        case 255:  masklen += 8; break;
+        case 254:  masklen += 7; break;
+        case 252:  masklen += 6; break;
+        case 248:  masklen += 5; break;
+        case 240:  masklen += 4; break;
+        case 224:  masklen += 3; break;
+        case 192:  masklen += 2; break;
+        case 128:  masklen += 1; break;
+        default:   masklen += 0; break;
+      }
+      if (ipa->ix[i].ip.d[j] != (ip->d[j] & ipa_mask->ix[i].ip.d[j]))
+        break;
+    }
+    if ( (j == 4) && (masklen > longest_masklen) )
+    {
+      longest_masklen = masklen;
+    }
+  }
+  return longest_masklen;
+}
 static stralloc buf = {0};
 
+#define ipme_init_retclean(ret) { \
+  if (moreipme.ix) alloc_free(moreipme.ix); \
+  if (moreipme_mask.ix) alloc_free(moreipme_mask.ix); \
+  if (buf.s) alloc_free(buf.s); \
+  return ret; }
+   
 int ipme_init()
 {
   struct ifconf ifc;
@@ -39,23 +81,45 @@ int ipme_init()
   struct sockaddr_in *sin;
   int len;
   int s;
-  struct ip_mx ix;
- 
+  struct ip_mx ix, ix_mask;
+  ipalloc moreipme = {0};
+  ipalloc moreipme_mask = {0};
+  int i;
+
   if (ipmeok) return 1;
-  if (!ipalloc_readyplus(&ipme,0)) return 0;
+  if (!ipalloc_readyplus(&ipme,0)) ipme_init_retclean(0);
+  if (!ipalloc_readyplus(&ipme_mask,0)) ipme_init_retclean(0);
+  if (!ipalloc_readyplus(&notipme,0)) ipme_init_retclean(0);
+  if (!ipalloc_readyplus(&notipme_mask,0)) ipme_init_retclean(0);
+  if (!ipalloc_readyplus(&moreipme,0)) ipme_init_retclean(0);
+  if (!ipalloc_readyplus(&moreipme_mask,0)) ipme_init_retclean(0);
+
   ipme.len = 0;
-  ix.pref = 0;
- 
-  /* 0.0.0.0 is a special address which always refers to 
-   * "this host, this network", according to RFC 1122, Sec. 3.2.1.3a.
+  ix.pref = ix_mask.pref = 0;
+
+  if (!ipme_readipfile(&notipme, &notipme_mask, "control/notipme")) ipme_init_retclean(0);
+
+  /* 127.0.0.0/255.0.0.0 is the localhost network.  Linux will treat
+     every address in this range as a local interface, even if it
+     isn't explicitly configured.
   */
+  byte_copy(&ix.ip,4,"\x7f\0\0\0");
+  byte_copy(&ix_mask.ip,4,"\xff\0\0\0");
+  if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
+  if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
+
+  /* 0.0.0.0 is a special address which always refers to
+   * "this host, this network", according to RFC 1122, Sec. 3.2.1.3a.  */
   byte_copy(&ix.ip,4,"\0\0\0\0");
-  if (!ipalloc_append(&ipme,&ix)) { return 0; }
-  if ((s = socket(AF_INET,SOCK_STREAM,0)) == -1) return -1;
- 
+  byte_copy(&ix_mask.ip,4,"\xff\xff\xff\xff");
+  if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
+  if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
+
+  if ((s = socket(AF_INET,SOCK_STREAM,0)) == -1) ipme_init_retclean(-1);
+
   len = 256;
   for (;;) {
-    if (!stralloc_ready(&buf,len)) { close(s); return 0; }
+    if (!stralloc_ready(&buf,len)) { close(s); ipme_init_retclean(0); }
     buf.len = 0;
     ifc.ifc_buf = buf.s;
     ifc.ifc_len = len;
@@ -64,7 +128,7 @@ int ipme_init()
         buf.len = ifc.ifc_len;
         break;
       }
-    if (len > 200000) { close(s); return -1; }
+    if (len > 200000) { close(s);  ipme_init_retclean(-1); }
     len += 100 + (len >> 2);
   }
   x = buf.s;
@@ -79,7 +143,10 @@ int ipme_init()
       byte_copy(&ix.ip,4,&sin->sin_addr);
       if (ioctl(s,SIOCGIFFLAGS,x) == 0)
         if (ifr->ifr_flags & IFF_UP)
-          if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
+        {
+          if (!ipalloc_append(&ipme,&ix)) { close(s);  ipme_init_retclean(0); }
+          if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
+        }
     }
 #else
     len = sizeof(*ifr);
@@ -89,12 +156,60 @@ int ipme_init()
 	  if (ifr->ifr_addr.sa_family == AF_INET) {
 	    sin = (struct sockaddr_in *) &ifr->ifr_addr;
 	    byte_copy(&ix.ip,4,&sin->sin_addr);
-	    if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
+            if (!ipalloc_append(&ipme,&ix)) { close(s);  ipme_init_retclean(0); }
+            if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
 	  }
 #endif
     x += len;
   }
   close(s);
+
+  if (!ipme_readipfile(&moreipme, &moreipme_mask, "control/moreipme"))  ipme_init_retclean(0);
+  for(i = 0;i < moreipme.len;++i)
+  {
+    if (!ipalloc_append(&ipme,&moreipme.ix[i])) ipme_init_retclean(0);
+    if (!ipalloc_append(&ipme_mask,&moreipme_mask.ix[i])) ipme_init_retclean(0);
+  }
   ipmeok = 1;
-  return 1;
+  ipme_init_retclean(1);
 }
+
+
+int ipme_readipfile(ipa, ipa_mask, fn)
+  ipalloc *ipa, *ipa_mask;
+  char *fn;
+{
+  int fd = -1;
+  char inbuf[1024];
+  substdio ss;
+  stralloc l = {0};
+  int match;
+  struct ip_mx ix, ix_mask;
+  int ret = 1;
+  int slash = 0;
+
+  if ( (fd = open_read(fn)) != -1) {
+    substdio_fdbuf(&ss, read, fd, inbuf, sizeof(inbuf));
+    while ( (getln(&ss,&l,&match,'\n') != -1) && (match || l.len) ) {
+      l.len--;
+      if (!stralloc_0(&l)) { ret = 0; break; }
+      if (l.s[slash=str_chr(l.s,'/')]!='\0')
+      {
+        l.s[slash]='\0';
+        if (!ip_scan(l.s+slash+1,&ix_mask.ip))
+          continue;
+      }
+      else
+        if (!ip_scan("255.255.255.255",&ix_mask.ip)) { ret = 0; break; }
+
+      if (!ip_scan(l.s, &ix.ip)) continue;
+      if (!ipalloc_append(ipa,&ix)) { ret = 0; break; }
+      if (!ipalloc_append(ipa_mask,&ix_mask.ip)) { ret = 0; break; }
+    }
+    if (l.s) alloc_free(l.s);
+    if ( (fd >= 0) && (close(fd) == -1) )
+      ret = 0;
+  }
+  return ret;
+}
+
