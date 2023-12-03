@@ -1,0 +1,87 @@
+diff -u orig/error.3 ./error.3
+--- orig/error.3	1998-08-30 17:39:27.000000000 -0400
++++ ./error.3	2004-09-06 12:17:26.000000000 -0400
+@@ -3,8 +3,8 @@
+ error \- syscall error codes
+ .SH SYNTAX
+ .B #include <error.h>
+-
+-extern int \fBerrno\fP;
++.br
++.B #include <errno.h>
+ 
+ extern int \fBerror_intr\fP;
+ .br
+diff -u orig/error.c ./error.c
+--- orig/error.c	1998-08-30 17:39:27.000000000 -0400
++++ ./error.c	2004-09-06 12:17:26.000000000 -0400
+@@ -1,4 +1,3 @@
+-#include <errno.h>
+ #include "error.h"
+ 
+ /* warning: as coverage improves here, should update error_{str,temp} */
+diff -u orig/error.h ./error.h
+--- orig/error.h	1998-08-30 17:39:27.000000000 -0400
++++ ./error.h	2004-09-06 12:17:26.000000000 -0400
+@@ -1,7 +1,7 @@
+ #ifndef ERROR_H
+ #define ERROR_H
+ 
+-extern int errno;
++#include <errno.h>
+ 
+ extern int error_intr;
+ extern int error_nomem;
+diff -u orig/Makefile ./Makefile
+--- orig/Makefile	1998-08-30 17:39:26.000000000 -0400
++++ ./Makefile	2004-09-06 12:17:26.000000000 -0400
+@@ -259,7 +259,7 @@
+ matchup.o: \
+ compile matchup.c stralloc.h gen_alloc.h gen_alloc.h gen_allocdefs.h \
+ strerr.h getln.h substdio.h subfd.h substdio.h readwrite.h exit.h \
+-str.h fmt.h scan.h case.h
++str.h fmt.h scan.h case.h alloc.h
+ 	./compile matchup.c
+ 
+ open.a: \
+diff -u orig/matchup.c ./matchup.c
+--- orig/matchup.c	1998-08-30 17:39:27.000000000 -0400
++++ ./matchup.c	2004-09-06 12:23:20.000000000 -0400
+@@ -1,3 +1,4 @@
++#include "alloc.h"
+ #include "stralloc.h"
+ #include "gen_alloc.h"
+ #include "gen_allocdefs.h"
+@@ -439,6 +440,32 @@
+     if (getln(subfdin,&line,&match,'\n') == -1) die_read();
+     if (!match) break;
+ 
++    if (line.s[0] == '@' && line.len >= 25) {
++      unsigned long secs;
++      unsigned long nanosecs;
++      unsigned long u;
++
++      secs = 0;
++      nanosecs = 0;
++      for (i = 1; i < line.len;i++) {
++        u = line.s[i] - '0';
++        if (u >= 10) {
++          u = line.s[i] - 'a';
++          if (u >= 6) break;
++          u += 10;
++        }
++        secs <<= 4;
++        secs += nanosecs >> 28;
++        nanosecs &= 0xfffffff;
++        nanosecs <<= 4;
++        nanosecs += u;
++      }
++      secs -= 4611686018427387914ULL;
++      i = fmt_uint0(line.s,secs,9);
++      line.s[i++] = '.';
++      i += fmt_uint0(line.s+i,nanosecs,9);
++      while (i < 25) line.s[i++] = ' ';
++    }
+     if (!stralloc_copy(&outline,&line)) nomem();
+ 
+     for (i = 0;i < line.len;++i) {

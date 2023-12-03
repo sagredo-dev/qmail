@@ -1,0 +1,33 @@
+diff -u mess822-0.58.old/cdb_seek.c mess822-0.58/cdb_seek.c
+--- mess822-0.58.old/cdb_seek.c	1998-09-04 21:33:37.000000000 -0500
++++ mess822-0.58/cdb_seek.c	2003-01-13 23:17:30.000000000 -0600
+@@ -1,6 +1,5 @@
+ #include <sys/types.h>
+ #include <errno.h>
+-extern int errno;
+ #include "cdb.h"
+ 
+ #ifndef SEEK_SET
+diff -u mess822-0.58.old/error.h mess822-0.58/error.h
+--- mess822-0.58.old/error.h	1998-09-04 21:33:37.000000000 -0500
++++ mess822-0.58/error.h	2003-01-13 23:18:09.000000000 -0600
+@@ -1,7 +1,7 @@
+ #ifndef ERROR_H
+ #define ERROR_H
+ 
+-extern int errno;
++#include <errno.h>
+ 
+ extern int error_intr;
+ extern int error_nomem;
+diff -u mess822-0.58.old/leapsecs_read.c mess822-0.58/leapsecs_read.c
+--- mess822-0.58.old/leapsecs_read.c	1998-09-04 21:33:37.000000000 -0500
++++ mess822-0.58/leapsecs_read.c	2003-01-13 23:19:17.000000000 -0600
+@@ -2,7 +2,6 @@
+ #include <sys/stat.h>
+ #include <fcntl.h>
+ #include <errno.h>
+-extern int errno;
+ #include "tai.h"
+ #include "leapsecs.h"
+ 

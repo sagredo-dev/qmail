@@ -1,0 +1,22 @@
+diff -u fastforward-0.51.orig/cdb_seek.c fastforward-0.51/cdb_seek.c
+--- fastforward-0.51.orig/cdb_seek.c	1998-05-19 11:25:42.000000000 -0500
++++ fastforward-0.51/cdb_seek.c	2004-01-29 11:22:24.000000000 -0600
+@@ -1,6 +1,5 @@
+ #include <sys/types.h>
+ #include <errno.h>
+-extern int errno;
+ #include "cdb.h"
+ 
+ #ifndef SEEK_SET
+diff -u fastforward-0.51.orig/error.h fastforward-0.51/error.h
+--- fastforward-0.51.orig/error.h	1998-05-19 11:25:42.000000000 -0500
++++ fastforward-0.51/error.h	2004-01-29 11:14:47.000000000 -0600
+@@ -1,7 +1,7 @@
+ #ifndef ERROR_H
+ #define ERROR_H
+ 
+-extern int errno;
++#include <errno.h>
+ 
+ extern int error_intr;
+ extern int error_nomem;

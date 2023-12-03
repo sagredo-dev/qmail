@@ -1,0 +1,12 @@
+diff -u dot-forward-0.71.orig/error.h dot-forward-0.71/error.h
+--- dot-forward-0.71.orig/error.h	1998-05-19 05:15:50.000000000 -0500
++++ dot-forward-0.71/error.h	2004-01-29 11:16:01.000000000 -0600
+@@ -1,7 +1,7 @@
+ #ifndef ERROR_H
+ #define ERROR_H
+ 
+-extern int errno;
++#include <errno.h>
+ 
+ extern int error_intr;
+ extern int error_nomem;

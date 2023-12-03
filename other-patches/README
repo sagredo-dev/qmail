@@ -1,0 +1,51 @@
+If you have glibc-2.3.1 or later then none of the software written by
+djb will compile because of an incompatible declaration of errno.
+
+Here you can find patches correcting this problem for software likely
+you need if you run qmail.
+
+To use the patches
+==================
+
+From the top distribution directory, apply the appropriate errno patch
+with -p1.  So, for example, for mess822, you would do
+
+tar zxvf mess822-0.58.tar.gz
+cd mess822-0.58
+patch -p1 < /path/to/mess822-0.58.errno.patch
+
+In case of daemontools, you need the following adjustment:
+
+tar zxvf daemontools-0.76.tar.gz
+cd admin/daemontools-0.76
+patch -p1 /path/to/daemontools-0.76.errno.patch
+
+Notes
+-----
+
+ucspi-tcp: 
+
+	In addition to the errno patch, there are two other patches
+	included here; both update rblsmtpd's behavior to current
+	practices on the net.
+
+	The a_record patch allows you to specify the error that will
+	be returned by rblsmtpd for a zone that has only A records in
+	it.
+
+	The nodefaultrbl patch changes the behavior of rblsmtpd so
+	that if no `-r' flag is given, than instead of falling back to
+	rbl.maps.vix.com as the default RBL, rblsmtpd assumes that no
+	RBL is to be used.
+
+qmailanalog:
+
+	In addition to the required errno change, the qmailanalog
+	patch also changes qmailanalog to accept both tai and tai64n
+	times.  This is necessary because djb never updated qmailanalog
+	after he changed daemontools to tai64n.
+
+These notes were originally written by Mate Wierdl, and have been
+modified for this distribution by Russell Nelson, and then were rewritten
+by Mate again, and then added to by Russell Nelson.
+
