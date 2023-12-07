@@ -1,3 +1,5 @@
+# My patched qmail
+
 More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
 
 This qmail distribution puts together netqmail-1.06 with the following patches (more info in the README file):
