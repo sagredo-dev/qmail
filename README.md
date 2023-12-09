@@ -1,4 +1,8 @@
-# My patched qmail
+# qmail
+
+[qmail](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent originally. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+
+## My patched qmail
 
 More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
 
