@@ -242,3 +242,7 @@ make setup check
 * You have to export SURBL=1 in your run file if you want to enable SURBL
 * /var/qmail/control/cache must be owned by the user who runs qmail-smtpd, vpopmail:vchkpwd in my case.
   Change the permissions according to your qmail configuration.
+
+Info and support
+----------------
+You can find more info and ask for support here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html.
