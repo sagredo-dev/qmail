@@ -2,7 +2,7 @@
 .TH dk-filter 8
 
 .SH NAME
-dk-filter \- sign/verify using DK/DKIM (SSP/ADSP optionally) and deliver a
+dk-filter \- sign/verify using DKIM (SSP/ADSP optionally) and deliver a
 mail message for delivery
 
 .SH SYNOPSIS
@@ -13,11 +13,10 @@ mail message for delivery
 \fBspawn-filter\fR(8) or \fBqmail-qfilter\fR(1). The filter can be set
 either as \fBFILTERARGS\fR or in the control file \fBfilterargs\fR.
 
-\fBdk-filter\fR supports DK/DKIM signing and verification and can
+\fBdk-filter\fR supports DKIM signing and verification and can
 optionally use \fBSender Signing Practice (SSP)\fR or \fBAuthor Domain
 Signing Practice\fR. It uses the libdkim and OpenSSL libraries. To sign a
-message, set the \fBDKIMSIGN\fR environment variable (for DKIM signing) or
-\fBDKSIGIN\fR environment variable (for DK signing) to the pathname of the
+message, set the \fBDKIMSIGN\fR environment variable to the pathname of the
 private key that will be used to sign the message. If there is a %
 character in the environment variable, it is removed and replaced by the
 domain name in the From: header. If, after substituting the %, that file
@@ -33,22 +32,6 @@ rejected with error 32. The default private key
 The selector (s=) will be taken from the basename of the file. The private
 key should be created by \fBdknewkey(8)\fR with RSA or ED25519 encryption
 method.
-
-You can set various DK options in getopt style, by setting the environment
-variable DKSIGNOPTIONS
-
-.nf
-b \fI<advice_length>\fR    Length of Advice
-c \fI<canonicalization>\fR simple, nofws
-s \fI<privkeyfile>\fR      Private key
-h                    show headers included
-r                    Skip Duplicate Headers
-.fi
-
-.EX
-DKSIGNOPTIONS="-h -r -c nofws"
-sets the h= tag, skips duplicate headers and sets nofws canonicalization
-.EE
 
 You can set various DKIM options in getopt style, by setting the
 environment variable DKIMSIGNOPTIONS
@@ -66,7 +49,7 @@ i <identity>         the identity, if not provided it will not be included
 x <expire_time>      the expire time in seconds since epoch
                      ( DEFAULT = current time + 604800)
                      if set to - then it will not be included
-z <hash>             1 for sha1, 2 for sha256, 3 for both
+z <hash>             1 for sha1, 2 for sha256, 3 for both, 4 for ed25519
 s <privkeyfile>
 y <selector>
 .fi
