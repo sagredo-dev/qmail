@@ -1,5 +1,8 @@
 = Changelog
 
+Dec 9, 2023
+-sources moved to https://github.com/sagredo-dev/qmail
+
 2023.11.20
 -dkim:
  * The patch now by default excludes X-Arc-Authentication-Results

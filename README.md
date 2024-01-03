@@ -1,6 +1,12 @@
+# qmail
+
+[qmail](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+
+## My patched qmail
+
 More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
 
-This qmail distribution puts together netqmail-1.06 with the following patches (more info in the README file):
+This distribution of qmail puts together netqmail-1.06 with the following patches (more info in the [README](https://github.com/sagredo-dev/qmail/blob/main/README) file):
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.
@@ -240,3 +246,7 @@ make setup check
 * You have to export SURBL=1 in your run file if you want to enable SURBL
 * /var/qmail/control/cache must be owned by the user who runs qmail-smtpd, vpopmail:vchkpwd in my case.
   Change the permissions according to your qmail configuration.
+
+Info and support
+----------------
+You can find more info and ask for support here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html.
