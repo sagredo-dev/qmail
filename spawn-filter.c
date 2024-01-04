@@ -165,6 +165,7 @@ static int      run_mailfilter(char *, char *, char **);
 int             wildmat_internal(char *, char *);
 
 static int      remotE;
+extern dtype    delivery;
 stralloc        sender = { 0 };
 stralloc        recipient = { 0 };
 
@@ -384,6 +385,7 @@ main(int argc, char **argv)
 		ext = argv[6];
 		domain = argv[7];
 		remotE = 0;
+		delivery = local_delivery;
 		if (!env_unset("QMAILREMOTE"))
 			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
 		/*- sender */
@@ -410,6 +412,7 @@ main(int argc, char **argv)
 		mailprog = "bin/qmail-remote";
 		domain = argv[1];
 		remotE = 1;
+		delivery = remote_delivery;
 		if (!env_unset("QMAILLOCAL"))
 			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
 		/*- sender */

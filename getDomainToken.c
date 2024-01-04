@@ -89,7 +89,7 @@ getDomainToken(char *domain, stralloc *sa)
 						ptr = sa->s + len;
 						continue; /*- skip remote directives for local mails */
 					}
-				} if (delivery == local_or_remote) { /*- local/remote delivery */
+				} else { /*- local/remote delivery */
 					if (!str_diffn(p1 + 1, "local:", 6))
 						return (p1 + 7);
 					if (!str_diffn(p1 + 1, "remote:", 7))

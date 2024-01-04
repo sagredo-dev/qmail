@@ -16,13 +16,13 @@ either as \fBFILTERARGS\fR or in the control file \fBfilterargs\fR.
 \fBdk-filter\fR supports DKIM signing and verification and can
 optionally use \fBSender Signing Practice (SSP)\fR or \fBAuthor Domain
 Signing Practice\fR. It uses the libdkim and OpenSSL libraries. To sign a
-message, set the \fBDKIMSIGN\fR environment variable to the pathname of the
-private key that will be used to sign the message. If there is a %
-character in the environment variable, it is removed and replaced by the
-domain name in the From: header. If, after substituting the %, that file
-does not exist, @controldir@/domainkeys/%/default will be used as the key.
-If again, after substituting the % sign, the file does not exist,
-@controldir@/domainkeys/default will be used as the key. After all
+message, set the \fBDKIMSIGN\fR environment variable (for DKIM signing)
+to the pathname of the private key that will be used to sign the message.
+If there is a % character in the environment variable, it is removed and
+replaced by the domain name in the From: header. If, after substituting the
+%, that file does not exist, @controldir@/domainkeys/%/default will be used
+as the key.  If again, after substituting the % sign, the file does not
+exist, @controldir@/domainkeys/default will be used as the key. After all
 substitutions, if the key file does not exist, the message will not be
 signed. If there is no % and the file does not exist, the message will be
 rejected with error 32. The default private key
@@ -32,6 +32,14 @@ rejected with error 32. The default private key
 The selector (s=) will be taken from the basename of the file. The private
 key should be created by \fBdknewkey(8)\fR with RSA or ED25519 encryption
 method.
+
+.nf
+b \fI<advice_length>\fR    Length of Advice
+c \fI<canonicalization>\fR simple, nofws
+s \fI<privkeyfile>\fR      Private key
+h                    show headers included
+r                    Skip Duplicate Headers
+.fi
 
 You can set various DKIM options in getopt style, by setting the
 environment variable DKIMSIGNOPTIONS
@@ -87,10 +95,9 @@ If an entry for \fIdomain\fR exists in \fIdkimkeys\fR, the value of
 \fIdkimkeys\fR by setting \fBNODKIMKEYS\fR environment variable.
 
 To verify a message, set the \fBDKIMVERIFY\fR environment variables.
-\fBdk-filter\fR always inserts the \fBDKIM-Status\fR or
-\fBDomainKey-Status\fR header, so that messages can be rejected later at
-delivery time, or in the mail reader. In that case you may set
-\fBDKIMVERIFY\fR to an empty string. The exit code of
+\fBdk-filter\fR always inserts the \fBDKIM-Status\fR header, so that
+messages can be rejected later at delivery time, or in the mail reader. In
+that case you may set \fBDKIMVERIFY\fR to an empty string. The exit code of
 \fBdk-filter\fR can be fine tuned by setting \fBDKIMVERIFY\fR environment
 variable. See \fBdkim(8)\fR for a detailed description on setting the
 \fBDKIMVERIFY\fR environment variable.
