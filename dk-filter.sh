@@ -81,6 +81,9 @@ dkim_setoptions()
 	yopt=0
 	sopt=0
 	dkimopts="$prefix/bin/dkim"
+	if [ -n "$BOUNCEDOMAIN" -a -z "$_SENDER" ] ; then
+		dkimopts="$dkimopts -d $BOUNCEDOMAIN"
+	fi  
 	while [ $1 != -- ]
 	do
 		case $1 in
@@ -227,7 +230,9 @@ if [ "$prefix" = "/usr" ] ; then
 	priv_key_err=35 # indimail
 else
 	priv_key_err=32 # netqmail, notqmail
-	BOUNCEDOMAIN=$DKIMDOMAIN
+	if [ -z "$BOUNCEDOMAIN" -a -n "$DKIMDOMAIN" ] ; then
+		BOUNCEDOMAIN=$DKIMDOMAIN
+	fi
 fi
 if [ " $CONTROLDIR" = " " ] ; then
 	CONTROLDIR=@controldir@
