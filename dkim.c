@@ -554,6 +554,7 @@ main(int argc, char **argv)
 	sopts.nIncludeCopiedHeaders = 0;
 	strcpy(sopts.szRequiredHeaders, "NonExistent");
 	sopts.pfnHeaderCallback = SignThisHeader;
+	excl = getenv("EXCLUDE_DKIMSIGN");
 	while (1) {
 		if ((ch = getopt(argc, argv, "lqtfhHSvVp:b:c:d:i:s:x:X:y:z:T:")) == -1)
 			break;
