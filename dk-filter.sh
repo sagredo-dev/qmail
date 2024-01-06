@@ -83,7 +83,11 @@ dkim_setoptions()
 	dkimopts="$prefix/bin/dkim"
 	if [ -n "$BOUNCEDOMAIN" -a -z "$_SENDER" ] ; then
 		dkimopts="$dkimopts -d $BOUNCEDOMAIN"
-	fi  
+	fi
+	if [ -n "$USE_SENDER" -a -n "$_SENDER" ] ; then
+		domain=$(echo $_SENDER | cut -d@ -f2)
+		dkimopts="$dkimopts -d $domain"
+	fi
 	while [ $1 != -- ]
 	do
 		case $1 in

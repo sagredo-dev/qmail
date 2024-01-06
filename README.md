@@ -29,7 +29,7 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   Now CHKUSER_DISABLE_VARIABLE, CHKUSER_SENDER_NOCHECK_VARIABLE, CHKUSER_SENDER_FORMAT_NOCHECK,
   CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.
 * Flavio Curti's qmail-queue-custom-error patch
-  enables simscan and qmail-dkim to return the appropriate message for each e-mail it refuses to deliver.
+  enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.
   https://notes.sagredo.eu/files/qmail/patches/qmail-queue-custom-error-v2.netqmail-1.05.patch
 * Christophe Saout's qmail-SPF rc5 patch
   Modified by Manvendra Bhangui to make it IPv4-mapped IPv6 addresses compliant.
@@ -63,7 +63,7 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   adds a user-definable delay after SMTP clients have initiated SMTP sessions, prior to qmail-smtpd responding
   with "220 ESMTP". It can reject connections from clients which tried to send commands before greeting.
   https://notes.sagredo.eu/files/qmail/patches/qmail-greetdelay.patch
-* Manvendra Bhangui's DKIM and SURBL filter v.1.44 patch
+* Manvendra Bhangui's DKIM and SURBL filter v.1.45 patch
   adds DKIM signing & verification and SURBL filtering support to qmail.
   qmail-dk is based on Russ Nelson's patch: http//:www.qmail.org/qmail-1.03-dk-0.54.patch
   qmail-dkim uses hacked libdkim libraries from libdkim project at http://libdkim.sourceforge.net/
