@@ -1,5 +1,17 @@
 = Changelog
 
+Jan 10, 2024
+-DKIM patch upgraded to v. 1.46
+ * dk-filter.sh has been dropped
+ * The ariables USE_FROM, USE_SENDER and DKIMDOMAIN have been dropped
+ * when signing at qmail-remote level qmail-dkim now has to be called directly by spawn-filter in the rc file.
+   man spawn-filter for more info
+ * In case of bounces the signature will be automatically based on the from: field.
+   This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
+ * In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from
+   control/bouncehost and, if doesn't exist, from control/me
+ More info at https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote
+
 Jan 6, 2024
 -DKIM patch upgraded to v. 1.45
  * if USE_SENDER is passed to dk-filter it will always retrieve the domain from _SENDER and not from the
