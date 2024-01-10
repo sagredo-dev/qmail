@@ -131,9 +131,13 @@ while :; do
 	shift 1
 	;;
 	-d | --domain)
-	grep -w "$2" $controldir/rcpthosts $controldir/dkimdomain >/dev/null 2>&1
+	if [ -f $controldir/bouncehost ] ; then
+		grep -w "$2" $controldir/rcpthosts $controldir/bouncehost >/dev/null 2>&1
+	else
+		grep -w "$2" $controldir/rcpthosts $controldir/me >/dev/null 2>&1
+	fi
 	if [ $? -ne 0 ] ; then
-		echo "$domain not in rcpthosts or dkimdomain" 1>&2
+		echo "$domain not in rcpthosts or bouncehost/me" 1>&2
 		exit 1
 	fi
 	domain="$2"

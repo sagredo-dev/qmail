@@ -50,7 +50,8 @@ QREGEX=1,DKIMSIGNOPTIONS=-z 4
 
 .fi
 If an entry for \fIdomain\fR exists in \fIdkimkeys\fR, the value of
-\fBDKIMSIGN\fR environment variable is ignored. You can disable
+\fBDKIMSIGN\fR environment variable is ignored. Also \fBDKIMSIGN\fR is one
+variable that you cannot set in \fIenvstr\fR. You can disable
 \fIdkimkeys\fR by setting \fBNODKIMKEYS\fR environment variable.
 
 If a private key file does not exist and does not have a % character, the
@@ -94,11 +95,12 @@ expire time by setting \fBDKIMIDENTITY\fR and \fBDKIMEXPIRE\fR
 respectively. \fBDKIMIDENTITY\fR takes precedence over -i option specified
 in \fBDKIMSIGNOPTIONS\fR. Similarly, \fBDKIMEXPIRE\fR takes precedence over
 -x option specifed in \fBR DKIMSIGNOPTIONS\fR. \fBqmail-dkim\fR uses the
-domain found in the Return-Path, Sender, From headers to set the domain
-tag. If not it uses the \fBBOUNCEDOMAIN\fR environment variable.
-\fBBOUNCEDOMAIN\fR can be set to an email address or a domain (without the
-at sign). You can also use \fBDKIMDOMAIN\fR environment variable instead of
-the \fBBOUNCEDOMAIN\fR environment variable.
+domain found in the Return-Path, Sender, From, X-Bounced-Address headers to
+set the domain tag. If not it uses the value in \fIbouncehost\fR control
+file. If \fIbouncehost\fR is missing, \fIme\fR is used. You can use
+\fBBOUNCEDOMAIN\fR environment variable to override the value in the
+control file. \fBBOUNCEDOMAIN\fR can be set to an email address or a domain
+(without the at sign).
 
 As a default \fBqmail-dkim\fR inserts RSA-SHA256 DKIM-Signature and expects
 the private key file to be a RSA private key. This can be changed by

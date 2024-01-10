@@ -61,6 +61,7 @@ static char    *dkimsignoptions;
 static char    *binqqargs[2] = { "bin/qmail-queue", 0 };
 static char    *controldir;
 static stralloc fntmp = {0};
+static stralloc bouncehost = {0};
 
 char          **MakeArgs(char *);
 void            FreeMakeArgs(char **);
@@ -314,6 +315,8 @@ dkim_setoptions(DKIMSignOptions *opts, char *signOptions)
 	int             ch, argc;
 	char          **argv;
 
+	sgoptind = 1;
+	sgoptpos = 0;
 	opts->nCanon = DKIM_SIGN_RELAXED;					/*- c */
 	opts->nIncludeBodyLengthTag = 0;					/*- l */
 	opts->nIncludeQueryMethod = 0;						/*- q */
@@ -443,6 +446,10 @@ write_signature(char *domain, DKIMSignOptions *opts, size_t selector_size)
 			i = 0;
 			keyfn = dkimsign;
 		} else {
+			ptr = env_get("DKIMSIGN");
+			/*- don't allow DKIMSIGN to be altered by last field in dkimkeys */
+			if (str_diff(ptr, keyfn) && !env_put2("DKIMSIGN", keyfn))
+				die(51, 1);
 			ptr = env_get("DKIMSIGNOPTIONS");
 			if (!dkimsignoptions || str_diff(dkimsignoptions, ptr)) {
 				dkimsignoptions = ptr;
@@ -1075,6 +1082,11 @@ main(int argc, char *argv[])
 		}
 	}
 	if (dkimsign) {
+		if ((ret = control_readfile(&bouncehost, "control/bouncehost", 1)) == -1)
+			custom_error("qmail-dkim", "Z", "unable to read bouncehost.", 0, "X.3.0");
+		else
+		if (ret && !env_put2("BOUNCEDOMAIN", bouncehost.s))
+			die(51, 0);
 		/* selector */
 		ptr = dkimsign;
 		selector = ptr;

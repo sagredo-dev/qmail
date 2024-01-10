@@ -23,16 +23,15 @@ after running the mail through the filter. Hence QMAILLOCAL should be set as QMA
 for filtering local mails and QMAILREMOTE as QMAILHOME/bin/spawn-filter for filtering
 remote mails.
 
-Filters can be run by setting the environment variable
-.B FILTERARGS
-or by using a control file
-.BR filterargs.
-The environment variable overrides the control file.
-.B spawn-filter
-uses /bin/sh to run the filter (with arguments) specified by the FILTERARGS environment variable or the control file
-.BR filterargs .
-The environment variable FILTERARGS apply to both local and remote mails. For individual domain level control,
-it is best to set using the control file filterargs.
+Filters can be run by defining the environment variable \fBFILTERARGS\fR or
+by using the control file \fIfilterargs\fR (see below). \fBspawn-filter\fR
+uses /bin/sh to run the filter (with arguments) specified by the
+\fBFILTERARGS\fR environment variable (or the control file
+\fIfilterargs\fR). The environment variable \fBFILTERARGS\fR apply to both
+local and remote mails. For individual domain level control, it is best to
+set using the control file \fIfilterargs\fR (see below the section on
+control files). The environment variable \fBFILTERARGS\fR takes precedence
+over the control file.
 
 .TP 5
 .I filterargs
@@ -45,7 +44,7 @@ for remote mails and
 for local mails.
 
 .EX
-indimail.org:remote:QMAILHOME/bin/dk-filter
+indimail.org:remote:QMAILHOME/bin/qmail-dkim:DKIMQUEUE=/bin/cat
 .EE
 
 .TP 0

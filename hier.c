@@ -132,7 +132,6 @@ void hier()
   c(auto_qmail,"bin","qmail-local",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","spawn-filter",auto_uido,auto_gidq,0711);
   c(auto_qmail,"bin","surblfilter",auto_uido,auto_gidq,0711);
-  c(auto_qmail,"bin","dk-filter",auto_uido,auto_gidq,0555);
   c(auto_qmail,"bin","dknewkey", auto_uido, auto_gidq, 0711);
   c(auto_qmail,"bin","surblqueue",auto_uido,auto_gidq,0555);
   c(auto_qmail,"bin","qmail-remote",auto_uido,auto_gidq,0711);
@@ -243,8 +242,6 @@ void hier()
   c(auto_qmail,"man/man8","dkim.8",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/man8","qmail-dkim.8",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat8","qmail-dkim.0",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"man/man8","dk-filter.8",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"man/cat8","dk-filter.0",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/man8","surblfilter.8",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat8","surblfilter.0",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/man8","spawn-filter.8",auto_uido,auto_gidq,0644);

@@ -877,7 +877,7 @@ qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast dnscname \
 dnsptr dnsip dnsmxip dnsfq dnstxt hostname ipmeprint ipmetest qreceipt qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
 maildir2mbox maildirwatch qail elq pinq idedit install-big install \
-qmail-dkim dkim spawn-filter dk-filter surblfilter \
+qmail-dkim dkim spawn-filter surblfilter \
 instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
 binm3 binm3+df srsfilter surblqueue dknewkey qmail-todo spfquery update_tmprsadh
 
@@ -1038,7 +1038,7 @@ preline.0 condredirect.0 bouncesaying.0 except.0 maildirmake.0 \
 maildir2mbox.0 maildirwatch.0 qmail.0 qmail-limits.0 qmail-log.0 \
 qmail-control.0 qmail-header.0 qmail-users.0 dot-qmail.0 dknewkey.8 \
 qmail-command.0 tcp-environ.0 maildir.0 mbox.0 addresses.0 dkim.8 \
-envelopes.0 forgeries.0 qmail-dkim.0 dk-filter.0 spawn-filter.0 \
+envelopes.0 forgeries.0 qmail-dkim.0 spawn-filter.0 \
 surblfilter.0
 
 mbox.0: \
@@ -1261,13 +1261,6 @@ qmail-dkim.8: qmail-dkim.9
 dkim.8: dkim.9
 	cat dkim.9 | sed s}@controldir\@}"`head -1 conf-qmail`/control"}g \
 	> dkim.8
-
-dk-filter.0: dk-filter.8
-	nroff -man dk-filter.8 > dk-filter.0
-dk-filter.8: dk-filter.9
-	cat dk-filter.9 \
-	| sed s}@controldir\@}"`head -1 conf-qmail`/control"}g \
-	> dk-filter.8
 
 dknewkey: dknewkey.sh warn-auto.sh
 	cat warn-auto.sh dknewkey.sh \
@@ -2530,15 +2523,6 @@ tryulong64.c compile load uint64.h1 uint64.h2
 base64sub.o: \
 compile base64sub.c base64.h stralloc.h substdio.h str.h
 	./compile base64sub.c
-
-dk-filter: \
-warn-auto.sh dk-filter.sh conf-qmail
-	cat warn-auto.sh dk-filter.sh \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}PREFIX}"`head -1 conf-qmail`"}g \
-	| sed s}@controldir\@}"`head -1 conf-qmail`/control"}g \
-	> dk-filter
-	chmod +x $@
 
 DKIMHDRS = dkim.h dkimbase.h dkimsign.h dkimverify.h time_t_size.h
 DKIMSRCS = dkimfuncs.cpp dkimbase.cpp
