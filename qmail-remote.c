@@ -433,16 +433,13 @@ int tls_init()
     }
   }
 
-  SSL_library_init();
-  ctx = SSL_CTX_new(SSLv23_client_method());
+  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+  ctx = SSL_CTX_new(TLS_client_method());
   if (!ctx) {
     if (!smtps && !servercert) return 0;
     smtptext.len = 0;
     tls_quit_error("ZTLS error initializing ctx");
   }
-
-  /* POODLE vulnerability */
-  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
 
   if (servercert) {
     if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
@@ -483,7 +480,10 @@ int tls_init()
     ciphers = saciphers.s;
   }
   else ciphers = "DEFAULT";
+  /* TLSv1.2 and lower*/
   SSL_set_cipher_list(myssl, ciphers);
+  /* TLSv1.3 and above*/
+  SSL_set_ciphersuites(myssl, ciphers);
   alloc_free(saciphers.s);
 
   SSL_set_fd(myssl, smtpfd);
