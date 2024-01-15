@@ -1,5 +1,9 @@
 = Changelog
 
+Jan 15, 2024
+-TLS patch by F. Vermeulen upgraded to version 20231230 (more info at https://inoa.net/qmail-tls/)
+ * support to openssl 3.0.11
+
 Jan 10, 2024
 -DKIM patch upgraded to v. 1.46
  * dk-filter.sh has been dropped. If signing at qmail-remote level, before upgrading, you have to review the configuration as explained below.

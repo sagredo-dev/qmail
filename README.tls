@@ -1,4 +1,4 @@
-Frederik Vermeulen <qmail-tls akrul inoa.net> 20200107
+Frederik Vermeulen <qmail-tls akrul inoa.net> 20231230
 http://inoa.net/qmail-tls/
 
 This patch implements RFC 3207 in qmail. 
@@ -7,9 +7,8 @@ authenticated SMTP between the MTAs and from MUA to MTA.
 The code is considered experimental (but has worked for
 many since its first release on 1999-03-21).
 
-Usage: - install OpenSSL-1.1.0 http://www.openssl.org/ or later
-         (any version since 0.9.8 is presumed to work)
-       - apply patch to netqmail-1.06 http://www.usenix.org.uk/mirrors/qmail/netqmail
+Usage: - install OpenSSL-3.0.11 http://www.openssl.org/ or later
+       - apply patch to notqmail-1.08 (https://notqmail.org)
          The patches to qmail-remote.c and qmail-smtpd.c can be applied 
          separately.
        - provide a server certificate in /var/qmail/control/servercert.pem.
@@ -27,12 +26,6 @@ Optional: - when DEBUG is defined, some extra TLS info will be logged
             /var/qmail/control/clientcert.pem. By preference this is
             the same as servercert.pem, where nsCertType should be 
             == server,client or be a generic certificate (no usage specified). 
-          - when a 2048 bit RSA key is provided in /var/qmail/control/rsa2048.pem,
-            this key will be used instead of (slow) on-the-fly generation by
-            qmail-smtpd. Idem for 2048 DH param in control/dh2048.pem.
-            `make tmprsadh` does this.
-            Periodical replacement can be done by crontab:
-            01 01 * * * /var/qmail/bin/update_tmprsadh > /dev/null 2>&1
           - server authentication:
             qmail-remote requires authentication from servers for which
             /var/qmail/control/tlshosts/host.dom.ain.pem exists.
@@ -72,8 +65,6 @@ Caveats: - do a `make clean` after patching
            recompilation when the shared openssl libs are upgraded.
          - this patch could conflict with other patches (notably those
            replacing \n with \r\n, which is a bad idea on encrypted links).
-         - needs working /dev/urandom (or EGD for openssl versions >0.9.7)
-           for seeding random number generator.
          - packagers should make sure that installing without a valid 
            servercert is impossible
          - when applied in combination with AUTH patch, AUTH patch
@@ -81,9 +72,6 @@ Caveats: - do a `make clean` after patching
            will fail. This error can be ignored. Packagers should
            cut the first 12 lines of this patch to make a happy
            patch
-         - `make tmprsadh` is recommended (or should I say required), 
-           otherwise DH generation can be unpredictably slow
-         - some need "-I/usr/kerberos/include" to be added in conf-cc
 
 Copyright: GPL
            Links with OpenSSL
@@ -95,4 +83,3 @@ Copyright: GPL
            openssl examples of E. Rescorla <ekr@rtfm.com>.
 
 Bug reports: mailto:<qmail-tls akrul inoa.net>
-
