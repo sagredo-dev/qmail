@@ -30,14 +30,14 @@
  * Uncomment the following define if you want chkuser ALWAYS enabled.
  * If uncommented, it will check for rcpt existance despite any .qmail-default
  * setting.
- * So, unsomments this if you are aware that ALL rcpt in all domains will be
+ * So, uncomment this if you are aware that ALL rcpt in all domains will be
  * ALWAYS checked.
  */
 /* #define CHKUSER_ALWAYS_ON */
 
 /*
  * The following defines which virtual manager is used.
- * Up to know, only vpopmail, but versions with pure qmail are in the mind.
+ * Up to now, only vpopmail, but versions with pure qmail are in the mind.
  */
 #define CHKUSER_VPOPMAIL
 
