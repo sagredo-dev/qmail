@@ -130,6 +130,8 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   allow qmail-smtpd to accept messages that are terminated with a single \n instead of the required \r\n
   sequence.
   http://www.arctic.org/~dean/patches/qmail-0.95-liberal-lf.patch
+  Disabled by default due to smuggling vulnerability (CVE-2023-51765
+  https://nvd.nist.gov/vuln/detail/CVE-2023-51765). Enable bare LF by defining ALLOW_BARELF in tcprules.
 * Michael Samuel's maxrcpt patch
   allows you to set a limit on how many recipients are specified for any one email message by setting
   control/maxrcpt. RFC 2821 section 4.5.3.1 says that an MTA MUST allow at least 100 recipients for each
