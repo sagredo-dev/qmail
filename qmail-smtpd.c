@@ -1730,31 +1730,63 @@ int *hops;
       }
       if (ch == '\n') { pos = 0; flagmaybex = flagmaybey = flagmaybez = 1; }
     }
-    switch(state) {
-      case 0:
-        if (ch == '\n') { state = 1; break; }
-        if (ch == '\r') { state = 4; continue; }
-        break;
-      case 1: /* \r\n */
-        if (ch == '.') { state = 2; continue; }
-        if (ch == '\r') { state = 4; continue; }
-        if (ch != '\n') state = 0;
-        break;
-      case 2: /* \r\n + . */
-        if (ch == '\n') return;        /* this is what sendmail-8.8.4 does -djg */
-        if (ch == '\r') { state = 3; continue; }
-        state = 0;
-        break;
-      case 3: /* \r\n + .\r */
-        if (ch == '\n') return;
-        put(".");
-        put("\r");
-        if (ch == '\r') { state = 4; continue; }
-        state = 0;
-        break;
-      case 4: /* + \r */
-        if (ch == '\n') { state = 1; break; }
-        if (ch != '\r') { put("\r"); state = 0; }
+    /* Allow bare LF if env variable ALLOW_BARELF is defined */
+    if (env_get("ALLOW_BARELF")) {
+      switch(state) {
+        case 0:
+          if (ch == '\n') { state = 1; break; }
+          if (ch == '\r') { state = 4; continue; }
+          break;
+        case 1: /* \r\n */
+          if (ch == '.') { state = 2; continue; }
+          if (ch == '\r') { state = 4; continue; }
+          if (ch != '\n') state = 0;
+          break;
+        case 2: /* \r\n + . */
+          if (ch == '\n') return;       /* this is what sendmail-8.8.4 does -djg */
+          if (ch == '\r') { state = 3; continue; }
+          state = 0;
+          break;
+        case 3: /* \r\n + .\r */
+          if (ch == '\n') return;
+          put(".");
+          put("\r");
+          if (ch == '\r') { state = 4; continue; }
+          state = 0;
+          break;
+        case 4: /* + \r */
+          if (ch == '\n') { state = 1; break; }
+          if (ch != '\r') { put("\r"); state = 0; }
+      }
+    }
+    else {
+      switch(state) {
+        case 0:
+          if (ch == '\n') straynewline();
+          if (ch == '\r') { state = 4; continue; }
+          break;
+        case 1: /* \r\n */
+          if (ch == '\n') straynewline();
+          if (ch == '.') { state = 2; continue; }
+          if (ch == '\r') { state = 4; continue; }
+          state = 0;
+          break;
+        case 2: /* \r\n + . */
+          if (ch == '\n') straynewline();
+          if (ch == '\r') { state = 3; continue; }
+          state = 0;
+          break;
+        case 3: /* \r\n + .\r */
+          if (ch == '\n') return;
+          put(".");
+          put("\r");
+          if (ch == '\r') { state = 4; continue; }
+          state = 0;
+          break;
+        case 4: /* + \r */
+          if (ch == '\n') { state = 1; break; }
+          if (ch != '\r') { put("\r"); state = 0; }
+      }
     }
     put(&ch);
   }
