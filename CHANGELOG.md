@@ -2,7 +2,6 @@
 
 - Jan 20, 2024 [diff](https://github.com/sagredo-dev/qmail/pull/2/commits/3caabe095eae6ab74508b3d56a0398f64a4a5c73)
   - liberal-lf: bare LF no longer allowed due to smuggling vulnerability ([CVE-2023-51765](https://nvd.nist.gov/vuln/detail/CVE-2023-51765)). Enable bare LF by defining ALLOW_BARELF in tcprules or in run file.
- diff here https://github.com/sagredo-dev/qmail/commit/2d11862220bc46663c04f0718a654d648d8a0b8a
 
 - Jan 15, 2024
   - TLS patch by F. Vermeulen upgraded to version 20231230 (more info at https://inoa.net/qmail-tls/)
@@ -16,7 +15,7 @@
       - man spawn-filter for more info
     - In case of bounces the signature will be automatically based on the from: field. This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
     - In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from control/bouncehost and, if doesn't exist, from control/me
-    - More info at https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote
+    - More info [here](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote)
 
 - Jan 6, 2024
   - DKIM patch upgraded to v. 1.45
