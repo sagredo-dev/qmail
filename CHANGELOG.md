@@ -1,6 +1,6 @@
 # Changelog
 
-- Jan 20, 2024 diff #2
+- Jan 20, 2024 [diff](https://github.com/sagredo-dev/qmail/pull/2/commits/3caabe095eae6ab74508b3d56a0398f64a4a5c73)
   - liberal-lf: bare LF no longer allowed due to smuggling vulnerability ([CVE-2023-51765](https://nvd.nist.gov/vuln/detail/CVE-2023-51765)). Enable bare LF by defining ALLOW_BARELF in tcprules or in run file.
  diff here https://github.com/sagredo-dev/qmail/commit/2d11862220bc46663c04f0718a654d648d8a0b8a
 
