@@ -1,48 +1,40 @@
-= Changelog
+# Changelog
 
-Jan 20, 2024
--liberal-lf: bare LF no longer allowed due to smuggling vulnerability (CVE-2023-51765
- https://nvd.nist.gov/vuln/detail/CVE-2023-51765). Enable bare LF by defining ALLOW_BARELF in tcprules or
- in run file.
+- Jan 20, 2024 diff #2
+  - liberal-lf: bare LF no longer allowed due to smuggling vulnerability ([CVE-2023-51765](https://nvd.nist.gov/vuln/detail/CVE-2023-51765)). Enable bare LF by defining ALLOW_BARELF in tcprules or in run file.
  diff here https://github.com/sagredo-dev/qmail/commit/2d11862220bc46663c04f0718a654d648d8a0b8a
 
-Jan 15, 2024
--TLS patch by F. Vermeulen upgraded to version 20231230 (more info at https://inoa.net/qmail-tls/)
- * support to openssl 3.0.11
+- Jan 15, 2024
+  - TLS patch by F. Vermeulen upgraded to version 20231230 (more info at https://inoa.net/qmail-tls/)
+    - support to openssl 3.0.11
 
-Jan 10, 2024
--DKIM patch upgraded to v. 1.46
- * dk-filter.sh has been dropped. If signing at qmail-remote level, before upgrading, you have to review the configuration as explained below.
- * The variables USE_FROM, USE_SENDER and DKIMDOMAIN have been dropped
- * when signing at qmail-remote level qmail-dkim now has to be called directly by spawn-filter in the rc file.
-   man spawn-filter for more info
- * In case of bounces the signature will be automatically based on the from: field.
-   This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
- * In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from
-   control/bouncehost and, if doesn't exist, from control/me
- More info at https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote
+- Jan 10, 2024
+  - DKIM patch upgraded to v. 1.46
+    - dk-filter.sh has been dropped. If signing at qmail-remote level, before upgrading, you have to review the configuration as explained below.
+    - The variables USE_FROM, USE_SENDER and DKIMDOMAIN have been dropped
+    - when signing at qmail-remote level qmail-dkim now has to be called directly by spawn-filter in the rc file.
+      - man spawn-filter for more info
+    - In case of bounces the signature will be automatically based on the from: field. This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
+    - In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from control/bouncehost and, if doesn't exist, from control/me
+    - More info at https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote
 
-Jan 6, 2024
--DKIM patch upgraded to v. 1.45
- * if USE_SENDER is passed to dk-filter it will always retrieve the domain from _SENDER and not from the
-   From field
+- Jan 6, 2024
+  - DKIM patch upgraded to v. 1.45
+    - if USE_SENDER is passed to dk-filter it will always retrieve the domain from _SENDER and not from the From field
 
-Jan 4, 2024
--DKIM patch upgraded to v. 1.44
- * fixed an issue with filterargs where spawn-filter is trying to execute remote:env xxxxx.... dk-filter.
-   This issue happens when FILTERARGS environment variable is not defined in the qmail-send rc script.
- * dkim.c fix: https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3668
- * adjustments fo dk-filter and dknewkey man pages
+- Jan 4, 2024
+  - DKIM patch upgraded to v. 1.44
+    - fixed an issue with filterargs where spawn-filter is trying to execute remote:env xxxxx.... dk-filter. This issue happens when FILTERARGS environment variable is not defined in the qmail-send rc script.
+    - dkim.c fix: https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3668
+    - adjustments fo dk-filter and dknewkey man pages
 
-Dec 9, 2023
--sources moved to https://github.com/sagredo-dev/qmail
+- Dec 9, 2023
+  - sources moved to https://github.com/sagredo-dev/qmail
 
-2023.11.20
--dkim:
- * The patch now by default excludes X-Arc-Authentication-Results
- * dkim can additionally use the environment variable EXCLUDE_DKIMSIGN to include colon separated list of
- headers to be excluded from signing (just like qmail-dkim). If -X option is used with dk-filter,
- it overrides the value of EXCLUDE_DKIMSIGN.
+- 2023.11.20
+  - dkim:
+    - The patch now by default excludes X-Arc-Authentication-Results
+    - dkim can additionally use the environment variable EXCLUDE_DKIMSIGN to include colon separated list of headers to be excluded from signing (just like qmail-dkim). If -X option is used with dk-filter, it overrides the value of EXCLUDE_DKIMSIGN.
 
 2023.09.26
 -surblfilter logs the rejected URL in the qmail-smtpd log. It can now inspect both http and https URLs.
