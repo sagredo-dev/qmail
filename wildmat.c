@@ -129,7 +129,7 @@ wildmat_internal(text, p)
 }
 
 #if	defined(TEST)
-include < stdio.h >
+#include <stdio.h>
 /*- Yes, we use gets not fgets.  Sue me.  */
 
 int

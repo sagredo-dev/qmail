@@ -1,5 +1,9 @@
 # Changelog
 
+- Feb 6, 2023
+  - DKIM patch upgraded to v. 1.47
+    - fixed a bug which was preventing filterargs' wildcards to work properly on sender domain
+
 - Jan 20, 2024 [diff](https://github.com/sagredo-dev/qmail/pull/2/commits/3caabe095eae6ab74508b3d56a0398f64a4a5c73)
   - liberal-lf: bare LF no longer allowed due to smuggling vulnerability ([CVE-2023-51765](https://nvd.nist.gov/vuln/detail/CVE-2023-51765)). Enable bare LF by defining ALLOW_BARELF in tcprules or in run file.
 

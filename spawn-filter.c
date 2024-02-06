@@ -1,7 +1,505 @@
 /*
- * netqmail-version without spam filter
- *
+ * $Id: spawn-filter.c,v 1.87 2024-01-23 01:23:36+05:30 Cprogrammer Exp mbhangui $
+ */
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include "fmt.h"
+#include "str.h"
+#include "strerr.h"
+#include "env.h"
+#include "substdio.h"
+#include "stralloc.h"
+#include "error.h"
+#include "wait.h"
+#include "scan.h"
+#include "makeargs.h"
+#include "control.h"
+#include "report.h"
+#include "getDomainToken.h"
+#include "qregex.h"
+#include "auto_qmail.h"
+
+static int      mkTempFile(int);
+static int      run_mailfilter(char *, char *, char *, char **);
+static int      check_size(char *);
+static void     set_environ(char *, char *, char *, char *);
+
+extern dtype    delivery;
+static stralloc sender = { 0 };
+static stralloc recipient = { 0 };
+static stralloc q = { 0 };
+
+static void
+set_environ(char *host, char *ext, char *sender_p, char *recipient_p)
+{
+	if (ext && !env_put2("_EXT", ext))	
+		report(111, "spawn-filter: out of memory", ". (#4.3.0)", 0, 0, 0, 0);
+	if (!env_put2("DOMAIN", host) ||
+			!env_put2("_SENDER", sender_p) ||
+			!env_put2("_RECIPIENT", recipient_p))
+		report(111, "spawn-filter: out of memory", ". (#4.3.0)", 0, 0, 0, 0);
+	return;
+}
+
+static int
+run_mailfilter(char *domain, char *ext, char *mailprog, char **argv)
+{
+	char            strnum[FMT_ULONG];
+	pid_t           filt_pid;
+	int             pipefd[2], pipefe[2];
+	int             wstat, filt_exitcode, e, len = 0;
+	char           *filterargs;
+	static stralloc filterdefs = { 0 };
+	static char     errstr[1024];
+	char            inbuf[1024];
+	char            ch;
+	static substdio errbuf;
+
+	if (!(filterargs = env_get("FILTERARGS"))) {
+		if (control_readfile(&filterdefs, "control/filterargs", 0) == -1)
+			report(111, "spawn-filter: Unable to read filterargs: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		filterargs = getDomainToken(domain, &filterdefs);
+	}
+	if (!filterargs) {
+		/*- Avoid loop if program(s) defined by FILTERARGS call qmail-inject, etc */
+		if (!env_unset("FILTERARGS") || !env_unset("SPAMFILTER") ||
+				!env_unset("QMAILREMOTE") || !env_unset("QMAILLOCAL"))
+			report(111, "spawn-filter: out of memory", ". (#4.3.0)", 0, 0, 0, 0);
+		execv(mailprog, argv); /*- do the delivery (qmail-local/qmail-remote) */
+		report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
+		_exit(111); /*- To make compiler happy */
+	}
+	if (pipe(pipefd) == -1)
+		report(111, "spawn-filter: Trouble creating pipes: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	if (pipe(pipefe) == -1)
+		report(111, "spawn-filter: Trouble creating pipes: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	switch ((filt_pid = fork()))
+	{
+	case -1:
+		report(111, "spawn-filter: Trouble creating child filter: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	case 0: /*- Filter Program */
+		set_environ(domain, ext, sender.s, recipient.s);
+		/*- Mail content read from fd 0 */
+		if (mkTempFile(0))
+			report(111, "spawn-filter: lseek error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		/*- stdout will go here */
+		if (dup2(pipefd[1], 1) == -1 || close(pipefd[0]) == -1)
+			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		if (pipefd[1] != 1)
+			close(pipefd[1]);
+		/*- stderr will go here */
+		if (dup2(pipefe[1], 2) == -1 || close(pipefe[0]) == -1)
+			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		if (pipefe[1] != 2)
+			close(pipefe[1]);
+		/*- Avoid loop if program(s) defined by FILTERARGS call qmail-inject, etc */
+		if (!env_unset("FILTERARGS") || !env_unset("SPAMFILTER"))
+			report(111, "spawn-filter: out of memory", ". (#4.3.0)", 0, 0, 0, 0);
+		execl("/bin/sh", "sh", "-c", filterargs, (char *) 0);
+		report(111, "spawn-filter: could not exec /bin/sh: ",  filterargs, ": ", error_str(errno), ". (#4.3.0)", 0);
+	default:
+		close(pipefe[1]);
+		close(pipefd[1]);
+		if (dup2(pipefd[0], 0)) {
+			e = errno;
+			close(pipefd[0]);
+			close(pipefe[0]);
+			wait_pid(&wstat, filt_pid);
+			errno = e;
+			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		}
+		if (pipefd[0] != 0)
+			close(pipefd[0]);
+		if (mkTempFile(0)) {
+			e = errno;
+			close(0);
+			close(pipefe[0]);
+			wait_pid(&wstat, filt_pid);
+			errno = e;
+			report(111, "spawn-filter: lseek error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+		}
+		break;
+	}
+	/*- Process message if exit code is 0, bounce if 100 */
+	if (wait_pid(&wstat, filt_pid) != filt_pid) {
+		e = errno;
+		close(0);
+		close(pipefe[0]);
+		errno = e;
+		report(111, "spawn-filter: waitpid surprise: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	}
+	if (wait_crashed(wstat)) {
+		e = errno;
+		close(0);
+		close(pipefe[0]);
+		errno = e;
+		report(111, "spawn-filter: filter crashed: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	}
+	switch (filt_exitcode = wait_exitcode(wstat))
+	{
+	case 0:
+		execv(mailprog, argv); /*- do the delivery (qmail-local/qmail-remote) */
+		report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
+	case 2:
+		report(0, "blackholed", filterargs, 0, 0, 0, 0); /*- Blackhole */
+	case 100:
+		report(100, "Mail Rejected by ", filterargs, " (#5.7.1)", 0, 0, 0);
+	default:
+		e = errno;
+		substdio_fdbuf(&errbuf, read, pipefe[0], inbuf, sizeof(inbuf));
+		for (len = 0; substdio_bget(&errbuf, &ch, 1) && len < (sizeof(errstr) - 1); len++)
+			errstr[len] = ch;
+		errstr[len] = 0;
+		strnum[fmt_ulong(strnum, filt_exitcode)] = 0;
+		errno = e;
+		report(111, filterargs, ": (spawn-filter) exit code: ", strnum, *errstr ? ": " : 0, *errstr ? errstr : 0, ". (#4.3.0)");
+	}
+	/*- Not reached */
+	return(111);
+}
+
+static int
+mkTempFile(int seekfd)
+{
+	char            inbuf[2048], outbuf[2048], strnum[FMT_ULONG];
+	char           *tmpdir;
+	static stralloc tmpFile = {0};
+	struct substdio _ssin;
+	struct substdio _ssout;
+	int             fd;
+
+	if (lseek(seekfd, 0, SEEK_SET) == 0)
+		return (0);
+	if (errno == EBADF) {
+		strnum[fmt_ulong(strnum, seekfd)] = 0;
+		report(111, "spawn-filter: fd ", strnum, ": ", error_str(errno), ". (#4.3.0)", 0);
+	}
+	if (!(tmpdir = env_get("TMPDIR")))
+		tmpdir = "/tmp";
+	if (!stralloc_copys(&tmpFile, tmpdir) ||
+			!stralloc_cats(&tmpFile, "/qmailFilterXXX") ||
+			!stralloc_catb(&tmpFile, strnum, fmt_ulong(strnum, (unsigned long) getpid())) ||
+			!stralloc_0(&tmpFile))
+		report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+	if ((fd = open(tmpFile.s, O_RDWR | O_EXCL | O_CREAT, 0600)) == -1)
+		report(111, "spawn-filter: ", tmpFile.s, ": ", error_str(errno), ". (#4.3.0)", 0);
+	unlink(tmpFile.s);
+	substdio_fdbuf(&_ssout, write, fd, outbuf, sizeof(outbuf));
+	substdio_fdbuf(&_ssin, read, seekfd, inbuf, sizeof(inbuf));
+	switch (substdio_copy(&_ssout, &_ssin))
+	{
+	case -2: /*- read error */
+		report(111, "spawn-filter: read error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	case -3: /*- write error */
+		report(111, "spawn-filter: write error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	}
+	if (substdio_flush(&_ssout) == -1)
+		report(111, "spawn-filter: write error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	if (dup2(fd, seekfd) == -1)
+		report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	if (lseek(seekfd, 0, SEEK_SET) != 0)
+		report(111, "spawn-filter: lseek: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	return (0);
+}
+
+static int
+check_size(char *size)
+{
+	char           *x;
+	unsigned long   databytes = -1, msgsize;
+
+	if (!(x = env_get("DATABYTES"))) {
+		if (control_readulong(&databytes, "control/databytes") == -1)
+			report(111, "spawn-filter: Unable to read databytes: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+	} else
+		scan_ulong(x, &databytes);
+	if (databytes == -1)
+		return (0);
+	scan_ulong(size, &msgsize);
+	if (msgsize > databytes)
+		return(1);
+	else
+		return(0);
+}
+
+static char *setup_qargs(char t)
+{
+	static char    *qargs;
+
+	if (!qargs)
+		qargs= env_get(t == 'l' ? "QLOCAL" : "QREMOTE");
+	if (!qargs) {
+		if (!stralloc_copys(&q, auto_qmail) ||
+				!stralloc_catb(&q, t == 'l' ? "/bin/qmail-local" : "/bin/qmail-remote", t == 'l' ? 16 : 17) ||
+				!stralloc_0(&q))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		qargs = q.s;
+	}
+	return qargs;
+}
+
+int
+main(int argc, char **argv)
+{
+	char           *ptr, *mailprog, *domain, *size = "0", *ext;
+	char            sizebuf[FMT_ULONG];
+	int             at, len, i;
+	struct stat     statbuf;
+	stralloc        defaultdomain = { 0 };
+
+	len = str_len(argv[0]);
+	for (ptr = argv[0] + len;*ptr != '/' && ptr != argv[0];ptr--);
+	if (*ptr && *ptr == '/')
+		ptr++;
+	ptr += 6;
+	if (*ptr == 'l') { /*- qmail-local Filter */
+		if (!str_diff(argv[1], "-n") || !str_diff(argv[1], "-N")) {
+			i = 8;
+			ext = argv[6];
+		} else {
+			i = 7;
+			ext = argv[5];
+		}
+		if (env_get("MATCH_SENDER_DOMAIN")) {
+			at = str_rchr(argv[i], '@');
+			if (argv[i][at] && argv[i][at + 1])
+				domain = argv[i] + at + 1;
+			else {
+				if (!(domain = env_get("DEFAULT_DOMAIN"))) {
+					if (control_readfile(&defaultdomain, "control/defaultdomain", 0) == -1)
+						report(111, "spawn-filter: Unable to read defaultdomain: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+					domain = defaultdomain.s;
+				}
+			}
+		} else /*- default for qmail-local is to match on recipient domain */
+			domain = argv[i - 1]; /*- recipient domain */
+		delivery = local_delivery;
+		if (!env_unset("QMAILREMOTE"))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		/*- sender */
+		if (!stralloc_copys(&sender, i == 8 ? argv[8] : argv[7]) || !stralloc_0(&sender))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		/*- recipient */
+		if (*ext) { /*- EXT */
+			if (!stralloc_copys(&recipient, ext))
+				report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		} else /*- user */
+		if (!stralloc_copys(&recipient, i == 8 ? argv[2] : argv[1]) ||
+				!stralloc_cats(&recipient, "@") ||
+				!stralloc_cats(&recipient, i == 8 ? argv[7] : argv[6]) ||
+				!stralloc_0(&recipient))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+	} else
+	if (*ptr == 'r') { /*- qmail-remote Filter */
+		if (env_get("MATCH_RECIPIENT_DOMAIN"))
+			domain = argv[1];
+		else { /*- default for qmail-remote is to match on sender domain */
+			at = str_rchr(argv[2], '@');
+			if (argv[2][at] && argv[2][at + 1])
+				domain = argv[2] + at + 1;
+			else {
+				if (!(domain = env_get("DEFAULT_DOMAIN"))) {
+					if (control_readfile(&defaultdomain, "control/defaultdomain", 0) == -1)
+						report(111, "spawn-filter: Unable to read defaultdomain: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
+					domain = defaultdomain.s;
+				}
+			}
+		}
+		ext = argv[3];
+		delivery = remote_delivery;
+		if (!env_unset("QMAILLOCAL"))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		/*- sender */
+		if (!stralloc_copys(&sender, argv[2]) || !stralloc_0(&sender))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+		/*- recipient */
+		if (!stralloc_copys(&recipient, argv[5]) || !stralloc_0(&recipient))
+			report(111, "spawn-filter: out of memory. (#4.3.0)", 0, 0, 0, 0, 0);
+	} else {
+		report(111, "spawn-filter: Incorrect usage. ", argv[0], " (#4.3.0)", 0, 0, 0);
+		_exit(111);
+	}
+	if (chdir(auto_qmail) == -1)
+		report(111, "spawn-filter: Unable to switch to ", auto_qmail, ": ", error_str(errno), ". (#4.3.0)", 0);
+
+	mailprog = setup_qargs(*ptr); /*- take care not to modify ptr before this line */
+
+	if (!fstat(0, &statbuf)) {
+		sizebuf[fmt_ulong(sizebuf, statbuf.st_size)] = 0;
+		size = sizebuf;
+	} else
+		size = "0";
+	/*- DATABYTES Check */
+	if (check_size(size))
+		report(100, "sorry, that message size exceeds my databytes limit (#5.3.4)", 0, 0, 0, 0, 0);
+	run_mailfilter(domain, ext, mailprog, argv);
+	report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
+	_exit(111);
+	/*- Not reached */
+	return(0);
+}
+
+#ifndef lint
+void
+getversion_qmail_spawn_filter_c()
+{
+	static char    *x = "$Id: spawn-filter.c,v 1.87 2024-01-23 01:23:36+05:30 Cprogrammer Exp mbhangui $";
+
+	x = sccsidreporth;
+	x = sccsidgetdomainth;
+	x = sccsidmakeargsh;
+	x++;
+}
+#endif
+
+/*
  * $Log: spawn-filter.c,v $
+ * Revision 1.87  2024-01-23 01:23:36+05:30  Cprogrammer
+ * include buffer_defs.h for buffer size definitions
+ *
+ * Revision 1.86  2024-01-09 12:38:29+05:30  Cprogrammer
+ * display filter used for mail rejected message
+ *
+ * Revision 1.85  2023-12-05 23:19:48+05:30  Cprogrammer
+ * setup qmail-local, qmail-remote arguments after envrules
+ *
+ * Revision 1.84  2023-10-04 23:19:41+05:30  Cprogrammer
+ * use env variable QLOCAL, QREMOTE to execute alternate qmail-local, qmail-remote
+ *
+ * Revision 1.83  2022-03-05 13:39:33+05:30  Cprogrammer
+ * use auto_prefix/bin for qmail-inject, auto_prefix/sbin for qmail-local, qmail-remote paths
+ *
+ * Revision 1.82  2021-08-28 23:08:25+05:30  Cprogrammer
+ * moved dtype enum delivery variable from variables.h to getDomainToken.h
+ *
+ * Revision 1.81  2021-08-28 21:48:46+05:30  Cprogrammer
+ * match sender domain for remote delivery
+ * match recipient domain for local delivery
+ * allow overrides with MATCH_SENDER_DOMAIN, MATCH_RECIPIENT_DOMAIN
+ *
+ * Revision 1.80  2021-06-15 12:21:12+05:30  Cprogrammer
+ * moved makeargs.h to libqmail
+ *
+ * Revision 1.79  2021-06-01 01:55:17+05:30  Cprogrammer
+ * removed rate limit code, added to qmail-send, slowq-send
+ *
+ * Revision 1.78  2021-05-26 10:47:10+05:30  Cprogrammer
+ * handle access() error other than ENOENT
+ *
+ * Revision 1.77  2021-05-26 07:38:04+05:30  Cprogrammer
+ * moved getDomainToken() to getDomainToken.c
+ *
+ * Revision 1.76  2021-05-23 07:12:36+05:30  Cprogrammer
+ * moved report() to report.c
+ * moved rate functions to get_rate.c
+ *
+ * Revision 1.75  2021-01-28 18:15:34+05:30  Cprogrammer
+ * fixed indentation
+ *
+ * Revision 1.74  2020-12-08 14:15:41+05:30  Cprogrammer
+ * save original errno
+ *
+ * Revision 1.73  2020-11-26 22:23:03+05:30  Cprogrammer
+ * indicate the filter name in report to qmail-rspawn
+ *
+ * Revision 1.72  2020-11-01 23:11:56+05:30  Cprogrammer
+ * unset FILTERARGS, SPAMFILTER, QMAILLOCAL, QMAILREMOTE before calling qmail-local, qmail-remote
+ *
+ * Revision 1.71  2020-05-11 10:59:51+05:30  Cprogrammer
+ * fixed shadowing of global variables by local variables
+ *
+ * Revision 1.70  2020-04-08 15:59:13+05:30  Cprogrammer
+ * fixed spamignore control file not being read
+ *
+ * Revision 1.69  2020-04-01 16:14:54+05:30  Cprogrammer
+ * added header for makeargs() function
+ *
+ * Revision 1.68  2019-09-30 22:59:06+05:30  Cprogrammer
+ * use sh as argv0 instead of IndiMailfilter
+ *
+ * Revision 1.67  2019-07-18 10:48:31+05:30  Cprogrammer
+ * use strerr_die?x macro instead of strerr_die() function
+ *
+ * Revision 1.66  2018-01-31 12:08:27+05:30  Cprogrammer
+ * moved qmail-local, qmail-remote to sbin
+ *
+ * Revision 1.65  2016-06-05 13:22:05+05:30  Cprogrammer
+ * fixed stupid error message
+ *
+ * Revision 1.64  2014-03-26 15:32:26+05:30  Cprogrammer
+ * report deliveries blackholed by filters in delivery log
+ *
+ * Revision 1.63  2014-03-12 15:36:37+05:30  Cprogrammer
+ * define REG_NOERROR for OSX / Systems with REG_NOERROR undefined
+ *
+ * Revision 1.62  2014-03-07 02:07:42+05:30  Cprogrammer
+ * do not abort if regcomp() fails
+ *
+ * Revision 1.61  2014-03-04 02:41:38+05:30  Cprogrammer
+ * fix BUG by doing chdir back to auto_qmail
+ * ability to have regular expressions on rate control
+ * ability to have global definition for rate control
+ *
+ * Revision 1.60  2014-01-22 15:43:29+05:30  Cprogrammer
+ * apply envrules for RATELIMIT_DIR
+ *
+ * Revision 1.59  2013-09-06 13:58:23+05:30  Cprogrammer
+ * added comments
+ *
+ * Revision 1.58  2013-09-05 09:20:05+05:30  Cprogrammer
+ * changed variables to double
+ *
+ * Revision 1.57  2013-08-29 18:27:15+05:30  Cprogrammer
+ * switched to switch statement
+ *
+ * Revision 1.56  2013-08-27 09:42:18+05:30  Cprogrammer
+ * added rate limiting by domain
+ *
+ * Revision 1.55  2011-06-09 21:28:11+05:30  Cprogrammer
+ * blackhole mails if filter program exits 2
+ *
+ * Revision 1.54  2011-02-08 22:17:37+05:30  Cprogrammer
+ * added missing unset of QMAILLOCAL when executing qmail-remote
+ *
+ * Revision 1.53  2011-01-08 16:41:27+05:30  Cprogrammer
+ * added comments
+ *
+ * Revision 1.52  2010-07-10 10:43:09+05:30  Cprogrammer
+ * fixed matching of local/remote directives in filterargs control file
+ *
+ * Revision 1.51  2010-07-10 09:36:11+05:30  Cprogrammer
+ * standardized environment variables set for filters
+ *
+ * Revision 1.50  2010-07-09 08:22:42+05:30  Cprogrammer
+ * implemented sender based envrules using control file fromd.envrules
+ *
+ * Revision 1.49  2009-11-09 20:32:52+05:30  Cprogrammer
+ * Use control file queue_base to process multiple indimail queues
+ *
+ * Revision 1.48  2009-09-08 13:22:28+05:30  Cprogrammer
+ * removed dependency of indimail on spam filtering
+ *
+ * Revision 1.47  2009-05-01 10:43:40+05:30  Cprogrammer
+ * added errstr argument to envrules(), address_match()
+ *
+ * Revision 1.46  2009-04-29 21:03:40+05:30  Cprogrammer
+ * check address_match() for failure
+ *
+ * Revision 1.45  2009-04-29 14:18:50+05:30  Cprogrammer
+ * conditional declaration of spf_fn
+ *
+ * Revision 1.44  2009-04-29 09:01:03+05:30  Cprogrammer
+ * spamignore can be a cdb file
+ *
+ * Revision 1.43  2009-04-29 08:24:37+05:30  Cprogrammer
+ * change for address_match() function
+ *
+ * Revision 1.42  2009-04-19 13:40:07+05:30  Cprogrammer
+ * set environment variable DOMAIN for use in programs called as FILTERS
+ *
  * Revision 1.41  2009-04-03 11:42:48+05:30  Cprogrammer
  * create pipe for error messages
  *
@@ -137,311 +635,3 @@
  * Initial revision
  *
  */
-#include "fmt.h"
-#include "str.h"
-#include "strerr.h"
-#include "env.h"
-#include "substdio.h"
-#include "subfd.h"
-#include "stralloc.h"
-#include "error.h"
-#include "control.h"
-#include "wait.h"
-#include "qregex.h"
-#include "getDomainToken.h"
-#include "auto_qmail.h"
-#include <regex.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <fcntl.h>
-
-#define REGCOMP(X,Y)    regcomp(&X, Y, REG_EXTENDED|REG_ICASE)
-#define REGEXEC(X,Y)    regexec(&X, Y, (size_t) 0, (regmatch_t *) 0, (int) 0)
-
-static int      mkTempFile(int);
-static void     report(int, char *, char *, char *, char *, char *, char *);
-static int      run_mailfilter(char *, char *, char **);
-int             wildmat_internal(char *, char *);
-
-static int      remotE;
-extern dtype    delivery;
-stralloc        sender = { 0 };
-stralloc        recipient = { 0 };
-
-static void
-report(int errCode, char *s1, char *s2, char *s3, char *s4, char *s5, char *s6)
-{
-	if (!remotE) /*- strerr_die does not return */
-		strerr_die(errCode, s1, s2, s3, s4, s5, s6, 0, 0, (struct strerr *) 0);
-	/*- h - hard, s - soft */
-	if (substdio_put(subfdoutsmall, errCode == 111 ? "s" : "h", 1) == -1)
-		_exit(111);
-	if (s1 && substdio_puts(subfdoutsmall, s1) == -1)
-		_exit(111);
-	if (s2 && substdio_puts(subfdoutsmall, s2) == -1)
-		_exit(111);
-	if (s3 && substdio_puts(subfdoutsmall, s3) == -1)
-		_exit(111);
-	if (s4 && substdio_puts(subfdoutsmall, s4) == -1)
-		_exit(111);
-	if (s5 && substdio_puts(subfdoutsmall, s5) == -1)
-		_exit(111);
-	if (s6 && substdio_puts(subfdoutsmall, s6) == -1)
-		_exit(111);
-	if (substdio_put(subfdoutsmall, "\0", 1) == -1)
-		_exit(111);
-	if (substdio_puts(subfdoutsmall, 
-		errCode == 111 ?  "Zspawn-filter said: Message deferred" : "DGiving up on spawn-filter\n") == -1)
-		_exit(111);
-	if (substdio_put(subfdoutsmall, "\0", 1) == -1)
-		_exit(111);
-	substdio_flush(subfdoutsmall);
-	/*- For qmail-rspawn to stop complaining unable to run qmail-remote */
-	_exit(0);
-}
-
-void
-set_environ(char *host, char *sender, char *recipient)
-{
-	if (!env_put2("DOMAIN", host)) 
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (!env_put2("_SENDER", sender))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (!env_put2("_RECIPIENT", recipient))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	return;
-}
-
-static int
-run_mailfilter(char *domain, char *mailprog, char **argv)
-{
-	char            strnum[FMT_ULONG];
-	pid_t           filt_pid;
-	int             pipefd[2], pipefe[2];
-	int             wstat, filt_exitcode, len = 0;
-	char           *filterargs;
-	static stralloc filterdefs = { 0 };
-	static char     errstr[1024];
-	char            inbuf[1024];
-	char            ch;
-	static substdio errbuf;
-
-	if (!(filterargs = env_get("FILTERARGS")))
-	{
-		if (control_readfile(&filterdefs, "control/filterargs", 0) == -1)
-			report(111, "spawn-filter: Unable to read filterargs: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		filterargs = getDomainToken(domain, &filterdefs);
-	}
-	if (!filterargs)
-	{
-		execv(mailprog, argv);
-		report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
-		_exit(111); /*- To make compiler happy */
-	}
-	if (pipe(pipefd) == -1)
-		report(111, "spawn-filter: Trouble creating pipes: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (pipe(pipefe) == -1)
-		report(111, "spawn-filter: Trouble creating pipes: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	switch ((filt_pid = fork()))
-	{
-	case -1:
-		report(111, "spawn-filter: Trouble creating child filter: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	case 0: /*- Filter Program */
-		set_environ(domain, sender.s, recipient.s);
-		/*- Mail content read from fd 0 */
-		if (mkTempFile(0))
-			report(111, "spawn-filter: lseek error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		/*- stdout will go here */
-		if (dup2(pipefd[1], 1) == -1 || close(pipefd[0]) == -1)
-			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (pipefd[1] != 1)
-			close(pipefd[1]);
-		/*- stderr will go here */
-		if (dup2(pipefe[1], 2) == -1 || close(pipefe[0]) == -1)
-			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (pipefe[1] != 2)
-			close(pipefe[1]);
-		/*- Avoid loop if program(s) defined by FILTERARGS call qmail-inject, etc */
-		if (!env_unset("FILTERARGS") || !env_unset("SPAMFILTER"))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		execl("/bin/sh", "/bin/sh", "-c", filterargs, (char *) 0);
-		report(111, "spawn-filter: could not exec /bin/sh: ",  filterargs, ": ", error_str(errno), ". (#4.3.0)", 0);
-	default:
-		close(pipefe[1]);
-		close(pipefd[1]);
-		if (dup2(pipefd[0], 0))
-		{
-			close(pipefd[0]);
-			close(pipefe[0]);
-			wait_pid(&wstat, filt_pid);
-			report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		}
-		if (pipefd[0] != 0)
-			close(pipefd[0]);
-		if (mkTempFile(0))
-		{
-			close(0);
-			close(pipefe[0]);
-			wait_pid(&wstat, filt_pid);
-			report(111, "spawn-filter: lseek error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		}
-		break;
-	}
-	/*- Process message if exit code is 0, bounce if 100 */
-	if (wait_pid(&wstat, filt_pid) != filt_pid)
-	{
-		close(0);
-		close(pipefe[0]);
-		report(111, "spawn-filter: waitpid surprise: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	}
-	if (wait_crashed(wstat))
-	{
-		close(0);
-		close(pipefe[0]);
-		report(111, "spawn-filter: filter crashed: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	}
-	switch (filt_exitcode = wait_exitcode(wstat))
-	{
-	case 0:
-		execv(mailprog, argv);
-		report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
-	case 100:
-		report(100, "Mail Rejected (#5.7.1)", 0, 0, 0, 0, 0);
-	default:
-		substdio_fdbuf(&errbuf, read, pipefe[0], inbuf, sizeof(inbuf));
-		for (len = 0; substdio_bget(&errbuf, &ch, 1) && len < (sizeof(errstr) - 1); len++)
-			errstr[len] = ch;
-		errstr[len] = 0;
-		strnum[fmt_ulong(strnum, filt_exitcode)] = 0;
-		report(111, filterargs, ": (spawn-filter) exit code: ", strnum, *errstr ? ": " : 0, *errstr ? errstr : 0, ". (#4.3.0)");
-	}
-	/*- Not reached */
-	return(111);
-}
-
-int
-mkTempFile(int seekfd)
-{
-	char            inbuf[2048], outbuf[2048], strnum[FMT_ULONG];
-	char           *tmpdir;
-	static stralloc tmpFile = {0};
-	struct substdio _ssin;
-	struct substdio _ssout;
-	int             fd;
-
-	if (lseek(seekfd, 0, SEEK_SET) == 0)
-		return (0);
-	if (errno == EBADF)
-	{
-		strnum[fmt_ulong(strnum, seekfd)] = 0;
-		report(111, "spawn-filter: fd ", strnum, ": ", error_str(errno), ". (#4.3.0)", 0);
-	}
-	if (!(tmpdir = env_get("TMPDIR")))
-		tmpdir = "/tmp";
-	if (!stralloc_copys(&tmpFile, tmpdir))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (!stralloc_cats(&tmpFile, "/qmailFilterXXX"))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (!stralloc_catb(&tmpFile, strnum, fmt_ulong(strnum, (unsigned long) getpid())))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (!stralloc_0(&tmpFile))
-		report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if ((fd = open(tmpFile.s, O_RDWR | O_EXCL | O_CREAT, 0600)) == -1)
-		report(111, "spawn-filter: ", tmpFile.s, ": ", error_str(errno), ". (#4.3.0)", 0);
-	unlink(tmpFile.s);
-	substdio_fdbuf(&_ssout, write, fd, outbuf, sizeof(outbuf));
-	substdio_fdbuf(&_ssin, read, seekfd, inbuf, sizeof(inbuf));
-	switch (substdio_copy(&_ssout, &_ssin))
-	{
-	case -2: /*- read error */
-		report(111, "spawn-filter: read error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	case -3: /*- write error */
-		report(111, "spawn-filter: write error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	}
-	if (substdio_flush(&_ssout) == -1)
-		report(111, "spawn-filter: write error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (dup2(fd, seekfd) == -1)
-		report(111, "spawn-filter: dup2 error: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	if (lseek(seekfd, 0, SEEK_SET) != 0)
-		report(111, "spawn-filter: lseek: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	return (0);
-}
-
-int
-main(int argc, char **argv)
-{
-	char           *ptr, *mailprog, *domain, *ext;
-	int             len;
-
-	len = str_len(argv[0]);
-	for (ptr = argv[0] + len;*ptr != '/' && ptr != argv[0];ptr--);
-	if (*ptr && *ptr == '/')
-		ptr++;
-	ptr += 6;
-	if (*ptr == 'l') /*- qmail-local Filter */
-	{
-		mailprog = "bin/qmail-local";
-		ext = argv[6];
-		domain = argv[7];
-		remotE = 0;
-		delivery = local_delivery;
-		if (!env_unset("QMAILREMOTE"))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		/*- sender */
-		if (!stralloc_copys(&sender, argv[8]))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_0(&sender))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		/*- recipient */
-		if (*ext) { /*- EXT */
-			if (!stralloc_copys(&recipient, ext))
-				report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		} else /*- user */
-		if (!stralloc_copys(&recipient, argv[2]))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_cats(&recipient, "@"))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_cats(&recipient, domain))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_0(&recipient))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	} else
-	if (*ptr == 'r') /*- qmail-remote Filter */
-	{
-		mailprog = "bin/qmail-remote";
-		domain = argv[1];
-		remotE = 1;
-		delivery = remote_delivery;
-		if (!env_unset("QMAILLOCAL"))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		/*- sender */
-		if (!stralloc_copys(&sender, argv[2]))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_0(&sender))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		/*- recipient */
-		if (!stralloc_copys(&recipient, argv[3]))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-		if (!stralloc_0(&recipient))
-			report(111, "spawn-filter: out of mem: ", error_str(errno), ". (#4.3.0)", 0, 0, 0);
-	} else
-	{
-		report(111, "spawn-filter: Incorrect usage. ", argv[0], " (#4.3.0)", 0, 0, 0);
-		_exit(111);
-	}
-	if (chdir(auto_qmail) == -1)
-		report(111, "spawn-filter: Unable to switch to ", auto_qmail, ": ", error_str(errno), ". (#4.3.0)", 0);
-	run_mailfilter(domain, mailprog, argv);
-	report(111, "spawn-filter: could not exec ", mailprog, ": ", error_str(errno), ". (#4.3.0)", 0);
-	/*- Not reached */
-	return(0);
-}
-
-void
-getversion_qmail_spawn_filter_c()
-{
-	static char    *x = "$Id: spawn-filter.c,v 1.41 2009-04-03 11:42:48+05:30 Cprogrammer Stab mbhangui $";
-
-	x++;
-}

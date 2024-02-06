@@ -1,5 +1,5 @@
 /*
- * $Id: qmail-dkim.c,v 1.71 2023-01-30 10:42:16+05:30 Cprogrammer Exp mbhangui $
+ * $Id: qmail-dkim.c,v 1.76 2024-01-10 23:01:23+05:30 Cprogrammer Exp mbhangui $
  */
 #include <unistd.h>
 #include <stdlib.h>
@@ -26,6 +26,7 @@
 #include "control.h"
 #include "error.h"
 #include "getDomainToken.h"
+#include "makeargs.h"
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -62,9 +63,6 @@ static char    *binqqargs[2] = { "bin/qmail-queue", 0 };
 static char    *controldir;
 static stralloc fntmp = {0};
 static stralloc bouncehost = {0};
-
-char          **MakeArgs(char *);
-void            FreeMakeArgs(char **);
 
 void
 die(int e, int what)
@@ -332,7 +330,7 @@ dkim_setoptions(DKIMSignOptions *opts, char *signOptions)
 			!stralloc_cats(&dkimopts, signOptions) ||
 			!stralloc_0(&dkimopts))
 		die(51, 0);
-	if (!(argv = MakeArgs(dkimopts.s)))
+	if (!(argv = makeargs(dkimopts.s)))
 		die(51, 0);
 	for (argc = 0;argv[argc];argc++);
 	while ((ch = sgopt(argc, argv, "b:c:li:qthx:z:")) != sgoptdone) {
@@ -356,7 +354,7 @@ dkim_setoptions(DKIMSignOptions *opts, char *signOptions)
 				opts->nCanon = DKIM_SIGN_SIMPLE_RELAXED;
 				break;
 			default:
-				FreeMakeArgs(argv);
+				free_makeargs(argv);
 				return (1);
 			}
 			break;
@@ -404,16 +402,16 @@ dkim_setoptions(DKIMSignOptions *opts, char *signOptions)
 				break;
 #endif
 			default:
-				FreeMakeArgs(argv);
+				free_makeargs(argv);
 				return (1);
 			}
 			break;
 		default:
-			FreeMakeArgs(argv);
+			free_makeargs(argv);
 			return (1);
 		} /*- switch (ch) */
 	} /*- while (1) */
-	FreeMakeArgs(argv);
+	free_makeargs(argv);
 	return (0);
 }
 
@@ -1358,7 +1356,7 @@ main(int argc, char *argv[])
 void
 getversion_qmail_dkim_c()
 {
-	static char    *x = "$Id: qmail-dkim.c,v 1.72 2023-02-01 18:15:33+05:30 Cprogrammer Exp mbhangui $";
+	static char    *x = "$Id: qmail-dkim.c,v 1.76 2024-01-10 23:01:23+05:30 Cprogrammer Exp mbhangui $";
 
 #ifdef HASDKIM
 	x = sccsidmakeargsh;
@@ -1372,7 +1370,18 @@ getversion_qmail_dkim_c()
 
 /*
  * $Log: qmail-dkim.c,v $
- * Revision 1.75  2023-02-17 11:49:48+05:30  Cprogrammer
+ * Revision 1.76  2024-01-10 23:01:23+05:30  Cprogrammer
+ * reset sgoptind, sgoptpos for repeated calls to subgetopt
+ *
+ * Revision 1.75  2024-01-10 10:05:58+05:30  Cprogrammer
+ * use bouncehost/me control file if BOUNCEDOMAIN is not set
+ * set DKIMSIGN to private key from dkimkeys control file
+ *
+ * Revision 1.74  2023-11-20 11:03:04+05:30  Cprogrammer
+ * Added env variable EXCLUDE_DKIMSIGN to exclude headers from DKIM signing
+ * exclude Arc-Authentication-Results header from DKIM signing
+ *
+ * Revision 1.73  2023-02-17 11:49:48+05:30  Cprogrammer
  * added env variable NODKIMKEYS to disable reading of dkimkeys control file
  * disable dkimkeys when doing DKIMSIGNEXTRA
  *

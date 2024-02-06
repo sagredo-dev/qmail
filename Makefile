@@ -1213,13 +1213,13 @@ qmail-control.9 conf-break conf-spawn
 
 qmail-dkim: \
 load qmail-dkim.o triggerpull.o fmtqfn.o now.o date822fmt.o \
-subgetopt.o MakeArgs.o datetime.a seek.a ndelay.a \
+subgetopt.o makeargs.o datetime.a seek.a ndelay.a \
 dns_text.o open.a sig.a alloc.a substdio.a error.a \
 wildmat.o str.a case.a fs.a auto_qmail.o auto_split.o \
 parse_env.o auto_uids.o fd.a wait.a getDomainToken.o \
 env.a getln.a control.o stralloc.a dns.lib libdkim.a
 	g++ -o qmail-dkim qmail-dkim.o triggerpull.o fmtqfn.o now.o \
-	subgetopt.o MakeArgs.o date822fmt.o datetime.a seek.a ndelay.a \
+	subgetopt.o makeargs.o date822fmt.o datetime.a seek.a ndelay.a \
 	dns_text.o open.a sig.a substdio.a error.a auto_qmail.o \
 	wildmat.o auto_split.o auto_uids.o fd.a wait.a \
 	getDomainToken.o parse_env.o \
@@ -2398,28 +2398,29 @@ compile wait_nohang.c haswaitp.h
 wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
-MakeArgs.o: compile MakeArgs.c alloc.h str.h alloc.h stralloc.h
-	./compile MakeArgs.c
+makeargs.o: compile makeargs.c alloc.h str.h alloc.h stralloc.h
+	./compile makeargs.c
 
 spawn-filter: \
 load spawn-filter.o auto_qmail.o getDomainToken.o \
 parse_env.o fmt_ulong.o scan_ulong.o control.o \
-open_read.o wildmat.o qregex.o MakeArgs.o \
+open_read.o wildmat.o qregex.o makeargs.o report.o \
 case_lowerb.o constmap.o byte_chr.o byte_cr.o case_diffb.o \
 error.a env.a stralloc.a wait.a strerr.a str.a \
 getln.a substdio.a alloc.a
 	./load spawn-filter getDomainToken.o parse_env.o \
 	fmt_ulong.o scan_ulong.o control.o open_read.o \
-	wildmat.o qregex.o MakeArgs.o case_lowerb.o \
+	wildmat.o qregex.o makeargs.o case_lowerb.o \
 	constmap.o byte_chr.o byte_cr.o case_diffb.o \
-	auto_qmail.o \
+	auto_qmail.o report.o \
 	error.a env.a stralloc.a wait.a strerr.a str.a \
 	getln.a substdio.a alloc.a
 
 spawn-filter.o: \
 compile spawn-filter.c fmt.h str.h strerr.h env.h \
-substdio.h stralloc.h error.h \
-wait.h qregex.h
+substdio.h stralloc.h error.h wait.h qregex.h \
+getDomainToken.h makeargs.h scan.h control.h \
+report.h qregex.h auto_qmail.h
 	./compile spawn-filter.c
 
 qregex.o: \
@@ -2438,6 +2439,11 @@ compile parse_env.c parse_env.h
 wildmat.o: \
 compile wildmat.c
 	./compile wildmat.c
+
+report.o: \
+compile report.c substdio.h subfd.h strerr.h report.h \
+getDomainToken.h
+	./compile report.c
 
 spawn-filter.0: \
 spawn-filter.8

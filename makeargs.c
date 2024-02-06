@@ -36,6 +36,7 @@
 #include "stralloc.h"
 #include "env.h"
 #include <ctype.h>
+#include "makeargs.h"
 
 #define isEscape(ch) ((ch) == '"' || (ch) == '\'')
 
@@ -48,7 +49,7 @@
  *
  */
 char          **
-MakeArgs(char *cmmd)
+makeargs(char *cmmd)
 {
 	char           *ptr, *marker;
 	char          **argv;
@@ -128,7 +129,7 @@ MakeArgs(char *cmmd)
 }
 
 void
-FreeMakeArgs(char **argv)
+free_makeargs(char **argv)
 {
 	alloc_free(argv);
 	return;
