@@ -1,9 +1,11 @@
+#include <string.h>
 #include "substdio.h"
 #include "subfd.h"
 #include "stralloc.h"
 #include "alloc.h"
 #include "spf.h"
 #include "exit.h"
+#include "dns.h"
 
 void die(e,s) int e; char *s; { substdio_putsflush(subfderr,s); _exit(e); }
 void die_usage() { die(100,"fatal: invalid usage\nusage: spfquery <sender-ip> <sender-helo/ehlo> <envelope-from> [<local rules>] [<best guess rules>]\n"); }

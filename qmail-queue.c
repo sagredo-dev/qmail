@@ -18,10 +18,13 @@
 #include "fmtqfn.h"
 #include "stralloc.h"
 #include "constmap.h"
+#include "control.h"
 
 #define DEATH 86400 /* 24 hours; _must_ be below q-s's OSSIFIED (36 hours) */
 #define ADDR 1003
 
+extern int matchregex(char *text, char *regex);
+int tapcheck(char t);
 char inbuf[2048];
 struct substdio ssin;
 char outbuf[256];
@@ -306,7 +309,7 @@ char t;
   int x = 0;
   int negate = 0;
   stralloc curregex = {0};
-  char tmpbuf[200];
+//  char tmpbuf[200]; not used anymore
 
   while (j < tap.len) {
     i = j;
@@ -323,8 +326,11 @@ char t;
 
             stralloc_copyb(&curregex,tap.s + j,(i - j));
             stralloc_0(&curregex);
-            x = matchregex(chkaddr.s, curregex.s, tmpbuf);
-
+            /*
+              matchregex function from qregex.h has only 2 params. Correcting
+              x = matchregex(chkaddr.s, curregex.s, tmpbuf);
+             */
+            x = matchregex(chkaddr.s, curregex.s);
 
             if ((negate) && (x == 0)) {
               return 1;

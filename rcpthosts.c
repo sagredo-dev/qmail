@@ -6,6 +6,7 @@
 #include "constmap.h"
 #include "stralloc.h"
 #include "rcpthosts.h"
+#include "case.h"
 
 static int flagrh = 0;
 static stralloc rh = {0};

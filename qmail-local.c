@@ -29,6 +29,9 @@
 #include "gfrom.h"
 #include "auto_patrn.h"
 #include "srs.h"
+#include "maildirgetquota.h"
+
+extern int user_over_maildirquota( const char *dir, const char *q);
 
 void usage() { strerr_die1x(100,"qmail-local: usage: qmail-local [ -nN ] user homedir local dash ext domain sender aliasempty"); }
 

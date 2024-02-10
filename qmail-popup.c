@@ -38,7 +38,7 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 char ssinbuf[128];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-void puts(s) char *s;
+void puts2(s) char *s;
 {
   substdio_puts(&ssout,s);
 }
@@ -48,9 +48,9 @@ void flush()
 }
 void err(s) char *s;
 {
-  puts("-ERR ");
-  puts(s);
-  puts("\r\n");
+  puts2("-ERR ");
+  puts2(s);
+  puts2("\r\n");
   flush();
 }
 
@@ -66,7 +66,7 @@ void err_syntax() { err("syntax error"); }
 void err_wantuser() { err("USER first"); }
 void err_authoriz(arg) char *arg; { err("authorization first"); }
 
-void okay(arg) char *arg; { puts("+OK \r\n"); flush(); }
+void okay(arg) char *arg; { puts2("+OK \r\n"); flush(); }
 void pop3_quit(arg) char *arg; { okay(0); die(); }
 
 
@@ -127,10 +127,10 @@ void pop3_greet()
   s += fmt_ulong(s,(unsigned long) now());
   *s++ = '@';
   *s++ = 0;
-  puts("+OK <");
-  puts(unique);
-  puts(hostname);
-  puts(">\r\n");
+  puts2("+OK <");
+  puts2(unique);
+  puts2(hostname);
+  puts2(">\r\n");
   flush();
 }
 void pop3_user(arg) char *arg;

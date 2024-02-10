@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "stralloc.h"
 #include "strsalloc.h"
 #include "alloc.h"

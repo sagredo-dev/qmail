@@ -2,6 +2,7 @@
 #include <sys/socket.h>
 #include <sys/param.h>
 #include <netinet/in.h>
+#include <unistd.h>
 #include "sig.h"
 #include "stralloc.h"
 #include "str.h"

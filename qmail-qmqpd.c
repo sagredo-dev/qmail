@@ -8,6 +8,8 @@
 #include "now.h"
 #include "fmt.h"
 #include "env.h"
+#include "byte.h"
+#include "str.h"
 
 void resources() { _exit(111); }
 
@@ -105,7 +107,7 @@ int getbuf()
 
 int flagok = 1;
 
-main()
+void main()
 {
   char *result;
   unsigned long qp;

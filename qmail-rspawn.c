@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "env.h"
 #include "fd.h"
 #include "wait.h"

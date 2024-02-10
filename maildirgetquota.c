@@ -13,6 +13,7 @@
 #include	<fcntl.h>
 #include	<sys/types.h>
 #include	<sys/stat.h>
+#include	<unistd.h>
 
 int	maildir_getquota(const char *dir, char buf[QUOTABUFSIZE])
 {

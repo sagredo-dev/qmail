@@ -8,6 +8,7 @@
 #include "fmt.h"
 #include "stralloc.h"
 #include "srs.h"
+#include "str.h"
 
 #define FATAL "srsfilter: fatal: "
 #define IGNORE "srsfilter: ignore: "

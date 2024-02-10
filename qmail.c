@@ -7,6 +7,7 @@
 #include "qmail.h"
 #include "auto_qmail.h"
 #include "env.h"
+#include "scan.h"
 
 static char *binqqargs[2] = { 0, 0 } ;
 
