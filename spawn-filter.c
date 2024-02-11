@@ -256,7 +256,7 @@ main(int argc, char **argv)
 		ptr++;
 	ptr += 6;
 	if (*ptr == 'l') { /*- qmail-local Filter */
-		if (!str_diff(argv[1], "-n") || !str_diff(argv[1], "-N")) {
+		if (!str_diff(argv[1], "-n") || !str_diff(argv[1], "-N") || !str_diff(argv[1], "--")) {
 			i = 8;
 			ext = argv[6];
 		} else {
