@@ -137,7 +137,7 @@ char *server;
 
 stralloc servers = {0};
 
-main()
+void main()
 {
   int i;
   int j;

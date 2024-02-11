@@ -17,6 +17,7 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #include <errno.h>
+#include "maildirgetquota.h"
 #include "maildirquota.h"
 #include "maildirmisc.h"
 

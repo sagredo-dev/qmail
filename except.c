@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "fork.h"
 #include "strerr.h"
 #include "wait.h"

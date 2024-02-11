@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <sys/stat.h>
 #include "strerr.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -7,8 +9,13 @@
 #include "open.h"
 #include "auto_qmail.h"
 #include "cdbmss.h"
+#include "case.h"
 
 #define FATAL "qmail-newmvrt: fatal: "
+
+extern int cdbmss_start(struct cdbmss *c, int fd);
+extern int cdbmss_add(struct cdbmss *c, unsigned char *key, unsigned int keylen, unsigned char *data, unsigned int datalen);
+extern int cdbmss_finish(struct cdbmss *c);
 
 void die_read()
 {

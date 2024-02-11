@@ -1,4 +1,3 @@
-
 /*
  *
  * 'chkuser.c' v.2.0.9
@@ -21,10 +20,12 @@
 /* required by vpopmail */
 #include <stdio.h>
 
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include "case.h"
 #include "dns.h"
 #include "env.h"
 #include "ipme.h"
@@ -48,6 +49,9 @@
 
 extern void flush();
 extern void out (char *s);
+extern int  addrallowed();
+extern unsigned int byte_rchr();
+extern int vmaildir_readquota(const char *dir,  const char *quota);
 
 extern char *remotehost;
 extern char *remoteip;

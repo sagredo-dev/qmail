@@ -15,6 +15,8 @@
 
 int fd;
 
+int wait_pid(int *wstat, int pid);
+
 void byte(pos,value)
 char *pos;
 unsigned int value;

@@ -16,12 +16,19 @@
 #include "ipme.h"
 #include "substdio.h"
 #include "readwrite.h"
+#include "alloc.h"
+#include "open.h"
+#include "getln.h"
+#include "str.h"
 
 static int ipmeok = 0;
 ipalloc ipme = {0};
 ipalloc ipme_mask = {0};
 ipalloc notipme = {0};
 ipalloc notipme_mask = {0};
+
+int ipme_match(struct ipalloc *ipa, struct ipalloc *ipa_mask, struct ip_address *ip);
+int ipme_readipfile(ipalloc *ipa, ipalloc *ipa_mask, char *fn);
 
 int ipme_is(ip)
 struct ip_address *ip;

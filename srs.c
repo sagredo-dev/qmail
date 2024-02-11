@@ -1,9 +1,13 @@
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include </usr/local/include/srs2.h>
 #include "auto_qmail.h"
 #include "stralloc.h"
 #include "srs.h"
+#include "rcpthosts.h"
+#include "control.h"
+#include "str.h"
 
 static stralloc srs_domain = {0};
 static stralloc srs_secrets = {0};

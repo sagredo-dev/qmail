@@ -1,3 +1,5 @@
+#include "sys/stat.h"
+#include <stdio.h>
 #include "readwrite.h"
 #include "prioq.h"
 #include "env.h"

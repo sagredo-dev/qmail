@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "fd.h"
 #include "env.h"
 #include "wait.h"
@@ -14,6 +15,8 @@
 #include "auto_qmail.h"
 #include "auto_uids.h"
 #include "qlx.h"
+#include "open.h"
+#include "byte.h"
 
 char *aliasempty;
 

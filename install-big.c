@@ -1,11 +1,11 @@
+#include <stdio.h>
 #include "auto_qmail.h"
 #include "auto_split.h"
 #include "auto_uids.h"
+#include "channels.h"
 #include "fmt.h"
 #include "fifo.h"
-
-#include <stdio.h>
-#include "channels.h"
+#include "install.h"
 
 char buf[100 + FMT_ULONG];
 

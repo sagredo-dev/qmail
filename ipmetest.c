@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <unistd.h>
 #include "subfd.h"
 #include "substdio.h"
 #include "ip.h"

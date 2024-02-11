@@ -12,6 +12,7 @@
 #include "readwrite.h"
 #include "control.h"
 #include "received.h"
+#include "scan.h"
 
 void badproto() { _exit(100); }
 void resources() { _exit(111); }
@@ -75,7 +76,7 @@ stralloc failure = {0};
 char *relayclient;
 int relayclientlen;
 
-main()
+void main()
 {
   char ch;
   int i;

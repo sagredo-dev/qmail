@@ -12,6 +12,7 @@
 #include "fmt.h"
 #include "stralloc.h"
 #include "srs.h"
+#include "str.h"
 
 #define FATAL "condredirect: fatal: "
 

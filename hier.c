@@ -4,7 +4,7 @@
 #include "auto_uids.h"
 #include "fmt.h"
 #include "fifo.h"
-
+#include "install.h"
 #include <stdio.h>
 #include "channels.h"
 

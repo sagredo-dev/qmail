@@ -1,3 +1,5 @@
+#include <sys/stat.h>
+#include "fifo.h"
 #include "substdio.h"
 #include "strerr.h"
 #include "error.h"

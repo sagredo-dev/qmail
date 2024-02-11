@@ -1,3 +1,5 @@
+#include <grp.h>
+#include <unistd.h>
 #include "hasshsgr.h"
 #include "prot.h"
 

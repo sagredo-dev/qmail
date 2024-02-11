@@ -1,3 +1,4 @@
+#include "env.h"
 #include "fmt.h"
 #include "qmail.h"
 #include "now.h"
@@ -62,7 +63,8 @@ char *helo;
   if (remoteinfo) {
     safeput(qqt,remoteinfo);
   }
-  char relayclient = env_get("RELAYCLIENT");
+  char *relayclient;
+  relayclient = env_get("RELAYCLIENT");
   if (!relayclient) {
     if (remoteinfo) { qmail_puts(qqt,"@"); }
      safeput(qqt,remoteip);

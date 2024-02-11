@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <sys/types.h>
 #include <time.h>
 #include "datetime.h"
@@ -10,6 +11,7 @@
 #include "subfd.h"
 #include "readwrite.h"
 #include "exit.h"
+#include "sig.h"
 
 #define FATAL "predate: fatal: "
 

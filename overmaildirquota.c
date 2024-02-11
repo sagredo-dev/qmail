@@ -11,6 +11,7 @@
 #include        <string.h>
 #include        <errno.h>
 #include        <sys/stat.h>
+#include        <unistd.h>
 
 static const char rcsid[]="$Id: qmail-maildir++.patch,v 1.1.1.1.2.1 2005/01/19 23:35:23 tomcollins Exp $";
 

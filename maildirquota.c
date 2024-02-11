@@ -7,6 +7,7 @@
 #include "config.h"
 #endif
 
+#include <unistd.h>
 #include <sys/types.h>
 /* #if HAVE_DIRENT_H */
 #include <dirent.h>

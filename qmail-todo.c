@@ -3,6 +3,7 @@
 #include "alloc.h"
 #include "auto_qmail.h"
 #include "byte.h"
+#include "channels.h"
 #include "constmap.h"
 #include "control.h"
 #include "direntry.h"
@@ -18,12 +19,11 @@
 #include "readwrite.h"
 #include "scan.h"
 #include "select.h"
+#include "sig.h"
 #include "str.h"
 #include "stralloc.h"
 #include "substdio.h"
 #include "trigger.h"
-
-#include "channels.h"
 
 /* critical timing feature #1: if not triggered, do not busy-loop */
 /* critical timing feature #2: if triggered, respond within fixed time */

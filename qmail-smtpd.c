@@ -29,6 +29,13 @@
 #include "dns.h"
 #include "wait.h"
 #include "qmail-spp.h"
+#include "base64.h"
+#include "fd.h"
+#include "open.h"
+#include "policy.h"
+#include <string.h>
+
+extern void spp_rcpt_accepted();
 
 /* chkuser.h will check if TLS_H is defined, so this has to come before chkuser.h */
 #ifdef TLS

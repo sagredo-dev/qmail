@@ -13,7 +13,7 @@ static aligned realspace[SPACE / ALIGNMENT];
 static unsigned int avail = SPACE; /* multiple of ALIGNMENT; 0<=avail<=SPACE */
 
 /*@null@*//*@out@*/char *alloc(n)
-unsigned int n;
+long unsigned int n;
 {
   char *x;
   if (n >= (INT_MAX >> 3)) {
