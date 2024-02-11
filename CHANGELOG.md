@@ -1,5 +1,12 @@
 # Changelog
 
+- Feb 12, 2024
+  - DKIM patch upgraded to v. 1.48
+    - fixed minor bug using filterargs for local deliveries [diff](https://github.com/sagredo-dev/qmail/commit/2550509ec15049dfae09c3d27b5c4daf8ad1f644)
+  - Fixed several compilation warnings [diff](https://github.com/sagredo-dev/qmail/commit/2e0095be3ede7e1e3091d9890d087a3ed16b8fb7)
+  - Fixed incompatible redeclaration of library function 'log2' in qmail-send.c qsutil.c as showed by @notqmail friends [here](https://github.com/notqmail/notqmail/commit/c3d3c72e3ca7bb5102f710aad7bf9ab105bde27e)
+  - removed FILES, shar target from Makefile
+
 - Feb 6, 2023
   - DKIM patch upgraded to v. 1.47
     - fixed a bug which was preventing filterargs' wildcards to work properly on sender domain
