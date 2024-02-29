@@ -426,16 +426,16 @@
  */
 #define CHKUSER_ALLOW_SENDER_CHAR_1 '$'
 #define CHKUSER_ALLOW_SENDER_CHAR_2 '%'
-#define CHKUSER_ALLOW_SENDER_CHAR_3 '£'
+#define CHKUSER_ALLOW_SENDER_CHAR_3 '\''
 #define CHKUSER_ALLOW_SENDER_CHAR_4 '?'
 #define CHKUSER_ALLOW_SENDER_CHAR_5 '*'
 #define CHKUSER_ALLOW_SENDER_CHAR_6 '^'
 #define CHKUSER_ALLOW_SENDER_CHAR_7 '~'
-#define CHKUSER_ALLOW_SENDER_CHAR_8 '&'	  /* available for other characters */
-#define CHKUSER_ALLOW_SENDER_CHAR_9 '#'   /* available for other characters */
-#define CHKUSER_ALLOW_SENDER_CHAR_10 '='  /* available for other characters */
-#define CHKUSER_ALLOW_SENDER_CHAR_11 '/'  /* available for other characters */
-#define CHKUSER_ALLOW_SENDER_CHAR_12 '\''  /* available for other characters */
+#define CHKUSER_ALLOW_SENDER_CHAR_8 '&'
+#define CHKUSER_ALLOW_SENDER_CHAR_9 '#'
+#define CHKUSER_ALLOW_SENDER_CHAR_10 '='
+#define CHKUSER_ALLOW_SENDER_CHAR_11 '/'
+/* #define CHKUSER_ALLOW_SENDER_CHAR_12 '' */ /* available for other characters */
 
 
 /*
@@ -450,15 +450,15 @@
 #define CHKUSER_ALLOW_RCPT_CHAR_1 '$'
 #define CHKUSER_ALLOW_RCPT_CHAR_2 '%'
 #define CHKUSER_ALLOW_RCPT_CHAR_3 '£'
-#define CHKUSER_ALLOW_RCPT_CHAR_4 '?'
+#define CHKUSER_ALLOW_RCPT_CHAR_4 '\''
 #define CHKUSER_ALLOW_RCPT_CHAR_5 '*'
 #define CHKUSER_ALLOW_RCPT_CHAR_6 '^'
 #define CHKUSER_ALLOW_RCPT_CHAR_7 '~'
-#define CHKUSER_ALLOW_RCPT_CHAR_8 '&'  	/* available for other characters */
-#define CHKUSER_ALLOW_RCPT_CHAR_9 '#' 	/* available for other characters */
-#define CHKUSER_ALLOW_RCPT_CHAR_10 '=' 	/* available for other characters */
-#define CHKUSER_ALLOW_RCPT_CHAR_11 '/'  /* available for other characters */
-#define CHKUSER_ALLOW_RCPT_CHAR_12 '\''  /* available for other characters */
+#define CHKUSER_ALLOW_RCPT_CHAR_8 '&'
+#define CHKUSER_ALLOW_RCPT_CHAR_9 '#'
+#define CHKUSER_ALLOW_RCPT_CHAR_10 '='
+#define CHKUSER_ALLOW_RCPT_CHAR_11 '/'
+/* #define CHKUSER_ALLOW_RCPT_CHAR_12 '' */ /* available for other characters */
 
 
 /*
