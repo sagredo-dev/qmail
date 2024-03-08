@@ -330,6 +330,8 @@ stralloc bhelonr = {0};
 
 int logregex = 0;
 stralloc matchedregex = {0};
+
+int disable_badmailfrom = 0;
 /* qregex: end */
 
 /* validrcptto.cdb: start */
@@ -399,6 +401,9 @@ void setup()
   if (bhelonrok == -1) die_control();
 
   if (env_get("LOGREGEX")) logregex = 1;
+
+  if (env_get("DISABLE_BADMAILFROM")) disable_badmailfrom = 1;
+
 /* qregex: end */
 
 /* validrcptto.cdb: start */
@@ -1371,16 +1376,17 @@ void smtp_rcpt(arg) char *arg; {
     err_bhelo();
     return;
   }
-
-  if (flagbarfbmf) {
-    if (logregex) {
-      strerr_warn5(title.s,"badmailfrom: <",mailfrom.s,"> matches pattern: ",matchedregex.s,0);
-    } else {
-      strerr_warn5(title.s,"badmailfrom: <",mailfrom.s,"> at ",remoteip,0);
-    }
-    qlogenvelope("rejected","qregexbmf",matchedregex.s,"553");
-    err_bmf();
-    return;
+  if (!disable_badmailfrom) {
+   if (flagbarfbmf) {
+     if (logregex) {
+       strerr_warn5(title.s,"badmailfrom: <",mailfrom.s,"> matches pattern: ",matchedregex.s,0);
+     } else {
+       strerr_warn5(title.s,"badmailfrom: <",mailfrom.s,"> at ",remoteip,0);
+     }
+     qlogenvelope("rejected","qregexbmf",matchedregex.s,"553");
+     err_bmf();
+     return;
+   }
   }
 /* qregex: end */
 
