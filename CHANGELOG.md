@@ -1,4 +1,9 @@
-# Changelog
+# ChangeLog
+
+- unreleased
+  - Create a trigger to decide if your qmail-smtpd instance should respect badmailfrom regex or not. This could be very handling if you decide to have very
+    strict rules for your qmail-smtpd that you don´t want to be applied to qmail-submission. Usage: add export DISABLE_BADMAILFROM=1 to run file service
+    [tx brdelphus](https://github.com/sagredo-dev/qmail/pull/4)
 
 - Feb 12, 2024
   - DKIM patch upgraded to v. 1.48
