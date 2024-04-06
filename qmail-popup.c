@@ -16,7 +16,7 @@
 
 void die() { _exit(1); }
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutread(1200,fd,buf,len);
@@ -24,7 +24,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
   return r;
 }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutwrite(1200,fd,buf,len);

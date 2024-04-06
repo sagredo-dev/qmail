@@ -1,3 +1,5 @@
+#include <sys/types.h>
+
 #ifndef SUBSTDIO_H
 #define SUBSTDIO_H
 
@@ -6,7 +8,7 @@ typedef struct substdio {
   int p;
   int n;
   int fd;
-  int (*op)();
+  ssize_t (*op)();
 } substdio;
 
 #define SUBSTDIO_FDBUF(op,fd,buf,len) { (buf), 0, (len), (fd), (op) }

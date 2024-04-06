@@ -39,7 +39,7 @@ void printheader() {
   if (!stralloc_copys(&line,"")) die_nomem();
 }
 
-int mywrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t mywrite(fd,buf,len) int fd; char *buf; int len;
 {
   int i;
   if (flagbody) {

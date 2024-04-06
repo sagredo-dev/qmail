@@ -142,7 +142,7 @@ int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef TLS
@@ -155,7 +155,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
   if (r <= 0) dropped();
   return r;
 }
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef TLS

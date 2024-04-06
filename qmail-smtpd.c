@@ -91,7 +91,7 @@ static const char *protocol = "SMTP";
 char *remoteip4;
 /* end spf ipv6 fix */
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
 #ifdef TLS
@@ -1680,7 +1680,7 @@ void smtp_rcpt(arg) char *arg; {
  */
 }
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   flush();
