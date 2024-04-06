@@ -47,9 +47,6 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
 * Johannes Erdfelt's Big Concurrency patch
   sets the spawn limit above 255
   https://notes.sagredo.eu/files/qmail/patches/big-concurrency.patch
-* Mihai Secasiu's Big Concurrency fix v.1.0 patch
-  fixes a compiler error if you set concurrency higher than 509 in conf-spawn.
-  http://patchlog.com/linux/qmail-big-concurrency/
 * Bill Shupp's netqmail-maildir++.patch
   adds maildirquota support to qmail-pop3d and qmail-local.
   Fixed a bug where the filesize part of the S=<filesize> component of the Maildir++ compatible filename
