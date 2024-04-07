@@ -125,7 +125,7 @@ char **argv;
 #endif
   for (c=0;c<SUPPL_CHANNELS*2;c++)
   {
-      if (pipe(suppl_pi[c]) == -1) die();
+      if (SUPPL_CHANNELS>0 && pipe(suppl_pi[c]) == -1) die();
   }
  
   switch(fork()) {
