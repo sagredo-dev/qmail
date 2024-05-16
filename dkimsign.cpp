@@ -426,10 +426,6 @@ bool CDKIMSign::ParseFromAddress(void)
 	string          sAddress;
 	char           *p, *at;
 
-	/* thanks to fred */
-	if (!sReturnPath.empty())
-		sAddress.assign(sReturnPath);
-	else
 	if (!sSender.empty())
 		sAddress.assign(sSender);
 	else
