@@ -1,6 +1,10 @@
 # ChangeLog
 
-- unreleased
+- May 16, 2024
+  - DKIM: Make the dkimsign binary _not_ derive the "d=" domain value from the Return-Path header ([tx mpdude](https://github.com/sagredo-dev/qmail/pull/5))
+  - Fixed -Wstringop-overflow on qmail-start.c line 128 (gcc-13.2) ([commit](https://github.com/sagredo-dev/qmail/commit/e5af0129bae6d19525ba8a2e750b9264139739c6))
+  - Fixed -Wincompatible-pointer-types compilation warnings onsubstdio.h ([commit](https://github.com/sagredo-dev/qmail/commit/67bdb4bc109ef628733039270ab25daece4afe8c))
+  - Big Concurrency fix patch removed, as it is incompatible with the above change.
   - Create a trigger to decide if your qmail-smtpd instance should respect badmailfrom regex or not. This could be very handling if you decide to have very
     strict rules for your qmail-smtpd that you don´t want to be applied to qmail-submission. Usage: add export DISABLE_BADMAILFROM=1 to run file service
     [tx brdelphus](https://github.com/sagredo-dev/qmail/pull/4)
