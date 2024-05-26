@@ -1,5 +1,9 @@
 # ChangeLog
 
+- Unreleased
+  - conf-channels: default number of channels increased to 4 (was 2). Now qmail offers 2 additional channels
+    with respect to the 2 offered by default (local and remote). More info [here](https://github.com/sagredo-dev/qmail/blob/main/CHANNELS).
+
 - May 16, 2024
   - DKIM: Make the dkimsign binary _not_ derive the "d=" domain value from the Return-Path header ([tx mpdude](https://github.com/sagredo-dev/qmail/pull/5))
   - Fixed -Wstringop-overflow on qmail-start.c line 128 (gcc-13.2) ([commit](https://github.com/sagredo-dev/qmail/commit/e5af0129bae6d19525ba8a2e750b9264139739c6))
