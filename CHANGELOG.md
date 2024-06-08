@@ -4,7 +4,7 @@
   - conf-channels: default number of channels increased to 4 (was 2). Now qmail offers 2 additional channels
     with respect to the 2 offered by default (local and remote). More info [here](https://github.com/sagredo-dev/qmail/blob/main/CHANNELS).
   - maxrcpt: error code changed to 452 due to RFC 4.5.3.1 (was 553). If DISABLE_MAXRCPT is defined it skips the check,
-    otherwise outgoing messages from mailing lists would be rejected.
+    otherwise outgoing messages from mailing lists would be rejected. ([commit](https://github.com/sagredo-dev/qmail/commit/87fac634ddf3f4eb09d5fdc45e1a8bc4c10de2f9))
 
 - May 16, 2024
   - DKIM: Make the dkimsign binary _not_ derive the "d=" domain value from the Return-Path header ([tx mpdude](https://github.com/sagredo-dev/qmail/pull/5))
