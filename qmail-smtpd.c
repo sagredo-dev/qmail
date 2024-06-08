@@ -141,8 +141,8 @@ char *arg;
 /* rbl: end */
 void err_maxrcpt()
 {
-  out("553 max rcpt limit exceeded (#5.7.1)\r\n");
-  qlogenvelope("rejected","max_rcpt_exceeded","","553");
+  out("452 max rcpt limit exceeded (#5.7.1)\r\n");
+  qlogenvelope("rejected","max_rcpt_exceeded","","452");
   flush();
 }
 void straynewline() { qlogenvelope("rejected","bad_newlines","","451"); out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
@@ -1056,6 +1056,7 @@ int addrvalid()
 /* rcptcheck: end */
 
 int checkrcptcount() {
+  if (env_get("DISABLE_MAXRCPT")) return 0;
   if (maxrcpt == -1) {return 0;}
   else if (rcptcount > maxrcpt) {return 1;}
   else {return 0;}

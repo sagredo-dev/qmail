@@ -131,8 +131,10 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   https://nvd.nist.gov/vuln/detail/CVE-2023-51765). Enable bare LF by defining ALLOW_BARELF in tcprules.
 * Michael Samuel's maxrcpt patch
   allows you to set a limit on how many recipients are specified for any one email message by setting
-  control/maxrcpt. RFC 2821 section 4.5.3.1 says that an MTA MUST allow at least 100 recipients for each
-  message, since this is one of the favourite tricks of the spammer.
+  control/maxrcpt. [RFC 2821 section 4.5.3.1](https://datatracker.ietf.org/doc/html/rfc2821#section-4.5.3.1)
+  says that an MTA MUST allow at least 100 recipients for each message, since this is one of the favourite
+  tricks of the spammer. If DISABLE_MAXRCPT is defined it skips the check, as outgoing messages from mailing
+  lists would be rejected otherwise.
   https://notes.sagredo.eu/files/qmail/patches/maxrcpt.patch
 * Inter7's qmail-eMPF patch
   More info: https://notes.sagredo.eu/files/qmail/patches/empf.README
