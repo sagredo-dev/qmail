@@ -2500,12 +2500,15 @@ conf-qmail conf-users conf-groups update_tmprsadh.sh
 	| sed s}UGQMAILD}"`head -9 conf-users|tail -1`:`head -3 conf-groups|tail -1`"}g \
 	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
 	> $@
-	chmod 755 update_tmprsadh 
+	chmod 755 update_tmprsadh
 
 tmprsadh: \
 update_tmprsadh
 	echo "Creating new temporary RSA and DH parameters"
 	./update_tmprsadh
 
-policy.o: policy.c policy.h conf-policy
-	./compile policy.c `head -1 conf-policy`
+policy.o: policy.c policy.h conf-policy conf-qmail
+	@cat conf-policy \
+	| sed s}QMAILDIR}"`head -1 conf-qmail`"}g \
+	> conf-policy.temp
+	./compile policy.c `head -1 conf-policy.temp`
