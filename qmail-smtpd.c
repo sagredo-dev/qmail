@@ -178,6 +178,7 @@ int err_noauth() { out("504 auth type unimplemented (#5.5.1)\r\n"); return -1; }
 int err_authabrt() { out("501 auth exchange canceled (#5.0.0)\r\n"); return -1; }
 int err_input() { out("501 malformed auth input (#5.5.4)\r\n"); return -1; }
 void err_authfail() { qlogenvelope("rejected","authfailed","","535"); out("535 authentication failed (#5.7.1)\r\n"); }
+void err_authinvalid() { qlogenvelope("rejected","authinvalid","","504"); out("504 auth type invalid (#5.5.1)\r\n"); }
 void err_submission() { qlogenvelope("rejected","authrequired","","530"); out("530 Authorization required (#5.7.1) \r\n"); }
 void err_vrt() { qlogenvelope("rejected","validrcptto","","553"); out("553 sorry, this recipient is not in my validrcptto list (#5.7.1)\r\n"); }
 void die_brtlimit() { qlogenvelope("rejected","brtlimit","","421"); out("421 too many invalid addresses, goodbye (#4.3.0)\r\n"); flush(); _exit(1); }
@@ -2111,6 +2112,13 @@ char *arg;
 
   for (i = 0;authcmds[i].text;++i)
     if (case_equals(authcmds[i].text,cmd)) break;
+
+  /* invalid auth command patch */
+  if (!authcmds[i].text) {
+    err_authinvalid();
+    return;
+  }
+  /* end invalid auth command patch */
 
   if (!env_unset("SMTPAUTHMETHOD")) die_read("SMTPAUTHMETHOD not set");
   if (!env_put2("SMTPAUTHMETHOD", authcmds[i].text)) die_nomem();
