@@ -1356,7 +1356,7 @@ fs.a auto_qmail.o auto_uids.o auto_spawn.o envread.o str_diffn.o
 	./load qmail-lspawn spawn.o prot.o slurpclose.o coe.o \
 	sig.a wait.a case.a cdb.a fd.a open.a stralloc.a alloc.a \
 	substdio.a error.a str.a fs.a auto_qmail.o auto_uids.o \
-	auto_spawn.o envread.o str_diffn.o
+	auto_spawn.o envread.o
 
 qmail-lspawn.0: \
 qmail-lspawn.8
@@ -1638,7 +1638,7 @@ auto_qmail.o auto_uids.o auto_spawn.o envread.o str_diffn.o
 	./load qmail-rspawn spawn.o tcpto_clean.o now.o coe.o \
 	sig.a open.a seek.a lock.a wait.a fd.a stralloc.a alloc.a \
 	substdio.a error.a str.a auto_qmail.o auto_uids.o \
-	auto_spawn.o  envread.o str_diffn.o
+	auto_spawn.o  envread.o
 
 qmail-rspawn.0: \
 qmail-rspawn.8
