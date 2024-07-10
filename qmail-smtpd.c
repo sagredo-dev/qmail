@@ -684,7 +684,7 @@ int bmcheck(which) int which;
 
 /* validrcptto.cdb: start */
 void vrtlog(l,a,b)
-int l;
+char *l;
 const char *a;
 const char *b;
 {
@@ -2395,6 +2395,16 @@ struct commands smtpcommands[] = {
 , { "vrfy", err_vrfy, flush }
 , { 0, err_unrecog, flush }
 } ;
+
+void outqlog(char *s, unsigned int n) {
+  while (n > 0) {
+    substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
+    --n;
+    ++s;
+  }
+}
+
+void outsqlog(char *s) { outqlog(s,str_len(s)); }
 
 /* qsmtpdlog: start */
 void qsmtpdlog(const char *head, const char *result, const char *reason, const char *detail, const char *statuscode) {
