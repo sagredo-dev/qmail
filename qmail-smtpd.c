@@ -2396,7 +2396,6 @@ struct commands smtpcommands[] = {
 , { 0, err_unrecog, flush }
 } ;
 
-
 /* qsmtpdlog: start */
 void outqlog(char *s, unsigned int n) {
   while (n > 0) {
