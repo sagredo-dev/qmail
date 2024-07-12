@@ -684,7 +684,7 @@ int bmcheck(which) int which;
 
 /* validrcptto.cdb: start */
 void vrtlog(l,a,b)
-int l;
+char *l;
 const char *a;
 const char *b;
 {
@@ -2397,6 +2397,16 @@ struct commands smtpcommands[] = {
 } ;
 
 /* qsmtpdlog: start */
+void outqlog(char *s, unsigned int n) {
+  while (n > 0) {
+    substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
+    --n;
+    ++s;
+  }
+}
+
+void outsqlog(char *s) { outqlog(s,str_len(s)); }
+
 void qsmtpdlog(const char *head, const char *result, const char *reason, const char *detail, const char *statuscode) {
   char *x;
   char *ch;
@@ -2404,15 +2414,6 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
   stralloc lst = {0};
   int isenvelope = 0;
   
-  void outqlog(char *s, unsigned int n) {
-    while (n > 0) {
-      substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
-      --n;
-      ++s;
-    }
-  }
-  void outsqlog(s) char *s; { outqlog(s,str_len(s)); }
-
   stralloc_copys(&lst,head);
   if (stralloc_starts(&lst,"qlogenvelope")) isenvelope = 1;
   substdio_puts(&sslog, head);
