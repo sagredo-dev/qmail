@@ -421,7 +421,6 @@ check
 qmail-todo.o
 qmail-todo
 update_tmprsadh
-chkuser.o
 qmail-dkim
 qmail-dkim.o
 libdkim.a

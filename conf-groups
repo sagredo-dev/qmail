@@ -1,6 +1,5 @@
 qmail
 nofiles
-vchkpw
 
 These are the qmail groups. The second group should not have access to
 any files, but it must be usable for processes; this requirement
