@@ -114,7 +114,7 @@
  * Defining it as "RELAYCLIENT" will avoid sender checking for authenticated/authorized users.
  *	Senders will be logged anyway if CHKUSER_LOG_VALID_SENDER is defined.
  */
-/* #define CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT" */
+#define CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT"
 
 /*
  * Uncomment to enable usage of "#" and "+" characters within sender address
