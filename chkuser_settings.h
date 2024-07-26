@@ -380,7 +380,7 @@
  *		should be invoked to handle exceptions.
  *
  */
-/* #define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" */
+#define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT"
 
 
 /*
