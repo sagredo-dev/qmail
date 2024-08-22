@@ -1,0 +1,28 @@
+diff -ur ucspi-tcp-0.88.orig/rblsmtpd.c ucspi-tcp-0.88/rblsmtpd.c
+--- ucspi-tcp-0.88.orig/rblsmtpd.c	Thu Jan 16 14:33:56 2003
++++ ucspi-tcp-0.88/rblsmtpd.c	Thu Jan 16 14:38:17 2003
+@@ -155,7 +155,6 @@
+ 
+ main(int argc,char **argv,char **envp)
+ {
+-  int flagwantdefaultrbl = 1;
+   char *x;
+   int opt;
+ 
+@@ -182,7 +181,7 @@
+       case 'c': flagfailclosed = 1; break;
+       case 'C': flagfailclosed = 0; break;
+       case 't': scan_ulong(optarg,&timeout); break;
+-      case 'r': rbl(optarg); flagwantdefaultrbl = 0; break;
++      case 'r': rbl(optarg); break;
+       case 'a': antirbl(optarg); break;
+       default: usage();
+     }
+@@ -190,7 +189,6 @@
+   argv += optind;
+   if (!*argv) usage();
+ 
+-  if (flagwantdefaultrbl) rbl("rbl.maps.vix.com");
+   if (decision >= 2) rblsmtpd();
+ 
+   pathexec_run(*argv,argv,envp);
