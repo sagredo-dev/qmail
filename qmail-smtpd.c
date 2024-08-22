@@ -28,7 +28,7 @@
 unsigned int databytes = 0;
 int timeout = 1200;
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutwrite(timeout,fd,buf,len);
@@ -265,7 +265,7 @@ void smtp_rcpt(arg) char *arg; {
 }
 
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   flush();

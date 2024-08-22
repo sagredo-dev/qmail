@@ -4,10 +4,12 @@
 #include "scan.h"
 #include "fmt.h"
 
+extern unsigned int scan_8long(char *s, unsigned long *u);
+
 char buf1[256];
 substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
 
-void puts(s)
+void puts2(s)
 char *s;
 {
   if (substdio_puts(&ss1,s) == -1) _exit(111);
@@ -30,11 +32,11 @@ char **argv;
   scan_8long(value,&num);
   strnum[fmt_ulong(strnum,num)] = 0;
 
-  puts("int ");
-  puts(name);
-  puts(" = ");
-  puts(strnum);
-  puts(";\n");
+  puts2("int ");
+  puts2(name);
+  puts2(" = ");
+  puts2(strnum);
+  puts2(";\n");
   if (substdio_flush(&ss1) == -1) _exit(111);
   _exit(0);
 }

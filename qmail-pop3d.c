@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "commands.h"
@@ -19,7 +20,7 @@
 
 void die() { _exit(0); }
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutread(1200,fd,buf,len);
@@ -27,7 +28,7 @@ int saferead(fd,buf,len) int fd; char *buf; int len;
   return r;
 }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutwrite(1200,fd,buf,len);
@@ -44,10 +45,6 @@ substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 void put(buf,len) char *buf; int len;
 {
   substdio_put(&ssout,buf,len);
-}
-void puts(s) char *s;
-{
-  substdio_puts(&ssout,s);
 }
 void flush()
 {

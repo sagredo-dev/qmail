@@ -34,14 +34,14 @@ void die_format() { _exit(91); }
 int lasterror = 55;
 int qmqpfd;
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutread(60,qmqpfd,buf,len);
   if (r <= 0) die_conn();
   return r;
 }
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = timeoutwrite(60,qmqpfd,buf,len);
@@ -135,7 +135,7 @@ char *server;
 
 stralloc servers = {0};
 
-main()
+int main()
 {
   int i;
   int j;

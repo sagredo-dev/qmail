@@ -11,11 +11,12 @@
 #include "readwrite.h"
 #include "control.h"
 #include "received.h"
+#include "scan.h"
 
 void badproto() { _exit(100); }
 void resources() { _exit(111); }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = write(fd,buf,len);
@@ -26,7 +27,7 @@ int safewrite(fd,buf,len) int fd; char *buf; int len;
 char ssoutbuf[256];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   substdio_flush(&ssout);
@@ -74,7 +75,7 @@ stralloc failure = {0};
 char *relayclient;
 int relayclientlen;
 
-main()
+int main()
 {
   char ch;
   int i;

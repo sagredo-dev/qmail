@@ -15,7 +15,7 @@
 
 struct qmail qqt;
 
-int mywrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t mywrite(fd,buf,len) int fd; char *buf; int len;
 {
   qmail_put(&qqt,buf,len);
   return len;

@@ -9,7 +9,7 @@ extern substdio *subfdout;
 extern substdio *subfdoutsmall;
 extern substdio *subfderr;
 
-extern int subfd_read();
-extern int subfd_readsmall();
+extern ssize_t subfd_read();
+extern ssize_t subfd_readsmall();
 
 #endif

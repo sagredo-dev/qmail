@@ -1,5 +1,6 @@
 /* XXX: this program knows quite a bit about tcpto's internals */
 
+#include <unistd.h>
 #include "substdio.h"
 #include "subfd.h"
 #include "auto_qmail.h"
@@ -10,7 +11,9 @@
 #include "exit.h"
 #include "datetime.h"
 #include "now.h"
+#include "open.h"
 
+extern void byte_copy(char *to, unsigned int n, char *from);
 void die(n) int n; { substdio_flush(subfdout); _exit(n); }
 
 void warn(s) char *s;
@@ -65,7 +68,7 @@ void main()
   {
    if (record[4] >= 1)
     {
-     byte_copy(&ip,4,record);
+     byte_copy((char *) &ip,4,record);
      when = (unsigned long) (unsigned char) record[11];
      when = (when << 8) + (unsigned long) (unsigned char) record[10];
      when = (when << 8) + (unsigned long) (unsigned char) record[9];

@@ -8,17 +8,19 @@
 #include "now.h"
 #include "fmt.h"
 #include "env.h"
+#include "byte.h"
+#include "str.h"
 
 void resources() { _exit(111); }
 
-int safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = write(fd,buf,len);
   if (r <= 0) _exit(0);
   return r;
 }
-int saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
 {
   int r;
   r = read(fd,buf,len);
@@ -105,7 +107,7 @@ int getbuf()
 
 int flagok = 1;
 
-main()
+int main()
 {
   char *result;
   unsigned long qp;

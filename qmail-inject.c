@@ -55,7 +55,7 @@ struct qmail qqt;
 
 void put(s,len) char *s; int len;
 { if (flagqueue) qmail_put(&qqt,s,len); else substdio_put(subfdout,s,len); }
-void puts(s) char *s; { put(s,str_len(s)); }
+void puts2(s) char *s; { put(s,str_len(s)); }
 
 void perm() { _exit(100); }
 void temp() { _exit(111); }
@@ -549,16 +549,16 @@ void finishmft()
 
   if (i == tocclist.len) return;
 
-  puts("Mail-Followup-To: ");
+  puts2("Mail-Followup-To: ");
   i = tocclist.len;
   while (i--) {
     if (!stralloc_copy(&sa,&tocclist.sa[i])) die_nomem();
     if (!stralloc_0(&sa)) die_nomem();
     if (!quote2(&sa2,sa.s)) die_nomem();
     put(sa2.s,sa2.len);
-    if (i) puts(",\n  ");
+    if (i) puts2(",\n  ");
   }
-  puts("\n");
+  puts2("\n");
 }
 
 void finishheader()
@@ -580,9 +580,9 @@ void finishheader()
    if (!stralloc_0(&sa)) die_nomem();
    if (!quote2(&sa2,sa.s)) die_nomem();
 
-   puts("Return-Path: <");
+   puts2("Return-Path: <");
    put(sa2.s,sa2.len);
-   puts(">\n");
+   puts2(">\n");
   }
 
  /* could check at this point whether there are any recipients */
@@ -594,23 +594,23 @@ void finishheader()
    if (!htypeseen[H_R_DATE])
     {
      if (!newfield_datemake(starttime)) die_nomem();
-     puts("Resent-");
+     puts2("Resent-");
      put(newfield_date.s,newfield_date.len);
     }
    if (!htypeseen[H_R_MESSAGEID])
     {
      if (!newfield_msgidmake(control_idhost.s,control_idhost.len,starttime)) die_nomem();
-     puts("Resent-");
+     puts2("Resent-");
      put(newfield_msgid.s,newfield_msgid.len);
     }
    if (!htypeseen[H_R_FROM])
     {
      defaultfrommake();
-     puts("Resent-");
+     puts2("Resent-");
      put(defaultfrom.s,defaultfrom.len);
     }
    if (!htypeseen[H_R_TO] && !htypeseen[H_R_CC])
-     puts("Resent-Cc: recipient list not shown: ;\n");
+     puts2("Resent-Cc: recipient list not shown: ;\n");
   }
  else
   {
@@ -630,7 +630,7 @@ void finishheader()
      put(defaultfrom.s,defaultfrom.len);
     }
    if (!htypeseen[H_TO] && !htypeseen[H_CC])
-     puts("Cc: recipient list not shown: ;\n");
+     puts2("Cc: recipient list not shown: ;\n");
    finishmft();
   }
 

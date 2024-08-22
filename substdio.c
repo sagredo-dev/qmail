@@ -2,7 +2,7 @@
 
 void substdio_fdbuf(s,op,fd,buf,len)
 register substdio *s;
-register int (*op)();
+register ssize_t (*op)();
 register int fd;
 register char *buf;
 register int len;
