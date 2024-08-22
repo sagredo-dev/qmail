@@ -464,3 +464,7 @@ getDomainToken.o
 parse_env.o
 dns_text.o
 conf-policy.temp
+trysmtputf8
+idn2.lib
+hassmtputf8.h
+utf8read.o

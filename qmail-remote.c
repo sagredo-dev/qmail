@@ -30,6 +30,12 @@
 #include "timeoutwrite.h"
 #include "base64.h"
 #include "hmac_md5.h"
+#include "hassmtputf8.h"
+#ifdef SMTPUTF8
+#include <idn2.h>
+#endif
+#include "utf8read.h"
+#include "env.h"
 
 #define HUGESMTPTEXT 5000
 
@@ -61,6 +67,16 @@ saa reciplist = {0};
 
 struct ip_address partner;
 struct ip_address outip;
+
+/* smtputf8 */
+#ifdef SMTPUTF8
+static stralloc idnhost = { 0 };
+static int smtputf8 = 0; /*- if remote has SMTPUTF8 capability */
+/* set by control file control/smtputf8. zero if SMTPUTF8 not #defined */
+static int enable_smtputf8;
+int flagutf8; /*- if sender, recipient, received headers have utf8 */
+#endif
+/* end smtputf8 */
 
 #ifdef TLS
 # include <sys/stat.h>
@@ -178,36 +194,51 @@ substdio smtpfrom = SUBSTDIO_FDBUF(saferead,-1,smtpfrombuf,sizeof smtpfrombuf);
 
 stralloc smtptext = {0};
 
-void get(ch)
-char *ch;
+static void get(unsigned char *uc)
 {
+  char *ch = (char *)uc;
   substdio_get(&smtpfrom,ch,1);
-  if (*ch != '\r')
-    if (smtptext.len < HUGESMTPTEXT)
-     if (!stralloc_append(&smtptext,ch)) temp_nomem();
+  if (*ch != '\r' && smtptext.len < HUGESMTPTEXT && !stralloc_append(&smtptext,ch)) temp_nomem();
 }
+
+/* smtputf8 */
+static unsigned long get3()
+{
+  char            str[4];
+  int             i;
+  unsigned long   code;
+
+  substdio_get(&smtpfrom,str,3);
+  str[3] = 0;
+  for (i = 0;i < 3;i++) {
+    if (str[i] == '\r') continue;
+    if (smtptext.len < HUGESMTPTEXT &&
+        !stralloc_append(&smtptext,str+i))
+      temp_nomem();
+  }
+  scan_ulong(str,&code);
+  return code;
+}
+/* end smtputf8 */
 
 unsigned long smtpcode()
 {
   unsigned char ch;
   unsigned long code;
+  int err = 0;
 
   if (!stralloc_copys(&smtptext,"")) temp_nomem();
 
-  get(&ch); code = ch - '0';
-  get(&ch); code = code * 10 + (ch - '0');
-  get(&ch); code = code * 10 + (ch - '0');
+  if ((code = get3()) < 200) err = 1;
   for (;;) {
-    get(&ch);
+    get((char *)&ch);
+    if (ch != ' ' && ch != '-') err = 1;
     if (ch != '-') break;
-    while (ch != '\n') get(&ch);
-    get(&ch);
-    get(&ch);
-    get(&ch);
+    while (ch != '\n') get((char *)&ch);
+    if (get3() != code) err = 1;
   }
-  while (ch != '\n') get(&ch);
-
-  return code;
+  while (ch != '\n') get((char *)&ch);
+  return err ? 400 : code;
 }
 
 #ifdef EHLO
@@ -576,7 +607,12 @@ void mailfrom()
 {
   substdio_puts(&smtpto,"MAIL FROM:<");
   substdio_put(&smtpto,sender.s,sender.len);
-  substdio_puts(&smtpto,">\r\n");
+#ifdef SMTPUTF8
+  if (enable_smtputf8 && flagutf8)
+    substdio_puts(&smtpto,"> SMTPUTF8\r\n");
+  else
+#endif
+    substdio_puts(&smtpto,">\r\n");
   substdio_flush(&smtpto);
 }
 
@@ -727,6 +763,33 @@ void smtp_auth()
     }
 }
 
+#ifdef SMTPUTF8
+/*
+ * this function is general purpose
+ * we could use it when we add AUTH,
+ * STARTTLS, SIZE extensions
+ */
+int get_capability(const char *capa)
+{
+  int i = 0, len;
+
+  /* e.g.
+   * 250-PIPELINING
+   * 250-8BITMIME
+   * 250-SIZE 10000000
+   * 250-ETRN
+   * 250-STARTTLS
+   * 250-SMTPUTF8
+   * 250 HELP
+   */
+  len = str_len(capa);
+  for (i = 0; i < smtptext.len-len; ++i)
+    if (case_starts(smtptext.s+i,capa)) return 1;
+
+  return 0;
+}
+#endif
+
 void smtp()
 {
   unsigned long code;
@@ -775,7 +838,15 @@ void smtp()
 
   if (code == 250) {
     /* add EHLO response checks here */
-
+#ifdef SMTPUTF8
+  if (enable_smtputf8) {
+    smtputf8 = get_capability("SMTPUTF8"); /*- did the remote server advertize SMTPUTF8 */
+    if (!flagutf8)
+      flagutf8 = utf8read();
+    if (flagutf8 && !smtputf8)
+      quit("DConnected to "," but server does not support internationalized email addresses");
+  }
+#endif
     /* and if EHLO failed, use HELO */
   } else {
 #endif
@@ -811,12 +882,12 @@ void smtp()
     substdio_flush(&smtpto);
     code = smtpcode();
     if (code >= 500) {
-      /* added by Endersys R&D Team */
+      /* added by Endersys R&D Team (qmail-remote-logging.patch) */
       out("h<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]); out("> ");  outhost(); out(" does not like recipient.\n");
       outsmtptext(); zero();
     }
     else if (code >= 400) {
-      /* added by Endersys R&D Team */
+      /* added by Endersys R&D Team (qmail-remote-logging.patch) */
       out("s<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]);  out("> ");  outhost(); out(" does not like recipient.\n");
       outsmtptext(); zero();
     }
@@ -824,7 +895,7 @@ void smtp()
        /*
        * James Raftery <james@now.ie>
        * Log _real_ envelope recipient, post canonicalisation.
-       * and modified by Endersys R&D Team
+       * and modified by Endersys R&D Team (qmail-remote-logging.patch)
        */
 
       out("r<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]); out("> "); zero();
@@ -837,7 +908,10 @@ void smtp()
   code = smtpcode();
   if (code >= 500) quit("D"," failed on DATA command");
   if (code >= 400) quit("Z"," failed on DATA command");
- 
+
+#ifdef SMTPUTF8
+  if (enable_smtputf8 && header.len) substdio_put(&smtpto, header.s, header.len);
+#endif
   blast();
   code = smtpcode();
   flagcritical = 0;
@@ -856,7 +930,12 @@ int *flagalias;
 int flagcname;
 {
   int j;
- 
+
+#ifdef SMTPUTF8
+  if (enable_smtputf8 && !flagutf8)
+    flagutf8 = containsutf8(s,str_len(s));
+#endif
+
   *flagalias = flagcname;
  
   j = str_rchr(s,'@');
@@ -882,6 +961,9 @@ void getcontrols()
   if (control_readint(&timeout,"control/timeoutremote") == -1) temp_control();
   if (control_readint(&timeoutconnect,"control/timeoutconnect") == -1)
     temp_control();
+#ifdef SMTPUTF8
+  if (control_readint(&enable_smtputf8,"control/smtputf8") == -1) temp_control();
+#endif
   if (control_rldef(&helohost,"control/helohost",1,(char *) 0) != 1)
     temp_control();
   switch(control_readfile(&routes,"control/smtproutes",0)) {
@@ -932,6 +1014,7 @@ char **argv;
   authsender = 0;
   relayhost = 0;
 
+  /*- addrmangle also sets flagutf8 */
   addrmangle(&sender,argv[2],&flagalias,0);
 
   for (i = 0;i <= sender.len;++i)
@@ -992,6 +1075,18 @@ char **argv;
       }
       if (!stralloc_copys(&host,relayhost)) temp_nomem();
     }
+#ifdef SMTPUTF8
+    else if (enable_smtputf8) {
+      char *asciihost = NULL;
+      if (!stralloc_0(&host)) temp_nomem();
+      switch (idn2_lookup_u8(host.s,(uint8_t**)&asciihost,IDN2_NFC_INPUT)) {
+        case IDN2_OK:     break;
+        case IDN2_MALLOC: temp_nomem();
+        default:          perm_dns();
+      }
+      if (!stralloc_copys(&idnhost,asciihost)) temp_nomem();
+    }
+#endif
   }
 
   if (!saa_readyplus(&reciplist,0)) temp_nomem();
@@ -1010,7 +1105,8 @@ char **argv;
 
  
   random = now() + (getpid() << 16);
-  switch (relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,&host,random)) {
+  i = relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,enable_smtputf8 ? &idnhost : &host,random);
+  switch (i) {
     case DNS_MEM: temp_nomem();
     case DNS_SOFT: temp_dns();
     case DNS_HARD: perm_dns();

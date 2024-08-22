@@ -110,6 +110,8 @@ char sserrbuf[512];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 substdio sslog = SUBSTDIO_FDBUF(safewrite,2,sslogbuf,sizeof sslogbuf);
 substdio sserr = SUBSTDIO_FDBUF(safewrite,2,sserrbuf,sizeof sserrbuf);
+int smtputf8; /*- set by mailfrom_parms */
+int enable_smtputf8; /*- set by control/smtputf8 */
 
 int addrinrcpthosts = 0;
 int envelopepos = 0; // 1: ehlo/helo, 2: mailfrom, 3: rcptto: 4: data
@@ -473,6 +475,8 @@ void setup()
   if (control_rldef(&spfexp,"control/spfexp",0,SPF_DEFEXP) == -1)
     die_control();
   if (!stralloc_0(&spfexp)) die_nomem();
+
+  if (control_readint(&enable_smtputf8, "control/smtputf8") == -1) die_control();
 
   /* spf ipv6 fix */
   if (!(remoteip4 = env_get("TCPREMOTEIP")))
@@ -1148,21 +1152,22 @@ void mailfrom_parms(arg) char *arg;
   int i;
   int len;
 
-    len = str_len(arg);
-    if (!stralloc_copys(&mfparms,"")) die_nomem();
-    i = byte_chr(arg,len,'>');
-    if (i > 4 && i < len) {
-      while (len) {
-        arg++; len--;
-        if (*arg == ' ' || *arg == '\0' ) {
-           if (case_starts(mfparms.s,"SIZE=")) if (mailfrom_size(mfparms.s+5)) { flagsize = 1; return; }
-           if (case_starts(mfparms.s,"AUTH=")) mailfrom_auth(mfparms.s+5,mfparms.len-5);
-           if (!stralloc_copys(&mfparms,"")) die_nomem();
-        }
-        else
-           if (!stralloc_catb(&mfparms,arg,1)) die_nomem();
+  len = str_len(arg);
+  if (!stralloc_copys(&mfparms,"")) die_nomem();
+  i = byte_chr(arg,len,'>');
+  if (i > 4 && i < len) {
+    while (len) {
+      arg++; len--;
+      if (*arg == ' ' || *arg == '\0' ) {
+        if (case_starts(mfparms.s,"SIZE=")) if (mailfrom_size(mfparms.s+5)) { flagsize = 1; return; }
+        if (case_starts(mfparms.s,"AUTH=")) mailfrom_auth(mfparms.s+5,mfparms.len-5);
+        if (case_starts(mfparms.s,"SMTPUTF8")) smtputf8 = 1;
+        if (!stralloc_copys(&mfparms,"")) die_nomem();
       }
+      else
+        if (!stralloc_catb(&mfparms,arg,1)) die_nomem();
     }
+  }
 }
 
 void smtp_helo(arg) char *arg;
@@ -1189,7 +1194,9 @@ void smtp_ehlo(arg) char *arg;
   if (!disabletls && !ssl && (stat("control/servercert.pem",&st) == 0))
   out("\r\n250-STARTTLS");
   #endif
-  out("\r\n250-PIPELINING\r\n250-8BITMIME\r\n");
+  out("\r\n250-PIPELINING\r\n");
+  if (enable_smtputf8) out("250-SMTPUTF8\r\n");
+  out("250 8BITMIME\r\n");
 #ifdef TLS
   if (!forcetls || ssl) {
 #endif
@@ -1899,7 +1906,7 @@ void smtp_data(arg) char *arg; {
   strnumqp[fmt_ulong(strnumqp,qp)] = 0; /* qp for qlog */
   out("354 go ahead\r\n");
  
-  received(&qqt,protocol,local,remoteip,remotehost,remoteinfo,fakehelo);
+  received(&qqt,smtputf8 ? "UTF8SMTP" : "SMTP",local,remoteip,remotehost,remoteinfo,fakehelo);
   spfreceived();
   qmail_put(&qqt,sppheaders.s,sppheaders.len); /* set in qmail-spp.c */
   spp_rset();
