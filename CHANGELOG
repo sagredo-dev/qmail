@@ -1,3 +1,11 @@
+Changelog
+
+20240926 Roberto Puzzanghera
+         - code poliched from several errors/warnings against latest GCC 14.2
+         - merged auth-tls-forcetls patch v. 2024.07.10
+
+-------------------------------------------------------------------------------------
+
 20071130 version: netqmail 1.06
 20071130 legal: qmail-1.03 is now in the public domain
 20051103 doc: dot-qmail.9 updated for changed (19980613) conf-patrn default, tnx ADM
