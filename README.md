@@ -22,12 +22,19 @@ This qmail distribution puts together netqmail-1.06 with the following patches (
   You have to declare FORCETLS=0 if you want to allow the auth without TLS
   https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06_force-tls/force-tls_marcel.patch
 
+The sources have been polished from several errors and warnings against latest GCC 14.2.
+
+## Download
+```
+git clone -b auth-tls-forcetls git@github.com:sagredo-dev/qmail.git
+```
+
 ## Install
 ```
-make
 make setup check
 ```
 
+## Configuration
 You have to export SMTPAUTH in your run file if you want to do the auth. For example:
 ```
 export SMTPAUTH="!"
