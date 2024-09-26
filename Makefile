@@ -136,6 +136,18 @@ auto_usera.o: \
 compile auto_usera.c
 	./compile auto_usera.c
 
+base64.o: \
+compile base64.c base64.h stralloc.h substdio.h str.h
+	./compile base64.c
+
+md5c.o : \
+compile md5c.c md5.h
+	./compile md5c.c
+
+hmac_md5.o : \
+compile hmac_md5.c hmac_md5.h global.h
+	./compile hmac_md5.c
+
 binm1: \
 binm1.sh conf-qmail
 	cat binm1.sh \
@@ -808,7 +820,7 @@ dnsptr dnsip dnsmxip dnsfq hostname ipmeprint qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
 maildir2mbox maildirwatch qail elq pinq idedit install-big install \
 instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
-binm3 binm3+df
+binm3 binm3+df update_tmprsadh
 
 load: \
 make-load warn-auto.sh systype
@@ -1441,12 +1453,16 @@ qmail-remote: \
 load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
 timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o ipme.o quote.o \
 ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
-substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+substdio.a error.a str.a fs.a auto_qmail.o \
+base64.o md5c.o hmac_md5.o \
+dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
+	tls.o ssl_timeoutio.o -lssl -lcrypto \
 	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib`
+	base64.o md5c.o hmac_md5.o \
+	str.a fs.a auto_qmail.o `cat dns.lib` `cat socket.lib`
 
 qmail-remote.0: \
 qmail-remote.8
@@ -1536,12 +1552,13 @@ load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
 open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
-fs.a auto_qmail.o socket.lib
+fs.a auto_qmail.o base64.o socket.lib
 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
+	tls.o ssl_timeoutio.o ndelay.a -lssl -lcrypto \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o  `cat \
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o base64.o  `cat \
 	socket.lib`
 
 qmail-smtpd.0: \
@@ -1553,7 +1570,7 @@ compile qmail-smtpd.c sig.h readwrite.h stralloc.h gen_alloc.h \
 substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
-exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h
+exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h base64.h
 	./compile qmail-smtpd.c
 
 qmail-start: \
@@ -2108,6 +2125,19 @@ timeoutwrite.o: \
 compile timeoutwrite.c timeoutwrite.h select.h error.h readwrite.h
 	./compile timeoutwrite.c
 
+qmail-smtpd: tls.o ssl_timeoutio.o ndelay.a
+qmail-remote: tls.o ssl_timeoutio.o
+qmail-smtpd.o: tls.h ssl_timeoutio.h
+qmail-remote.o: tls.h ssl_timeoutio.h
+
+tls.o: \
+compile tls.c exit.h error.h
+	./compile tls.c
+
+ssl_timeoutio.o: \
+compile ssl_timeoutio.c ssl_timeoutio.h select.h error.h ndelay.h
+	./compile ssl_timeoutio.c
+
 token822.o: \
 compile token822.c stralloc.h gen_alloc.h alloc.h str.h token822.h \
 gen_alloc.h gen_allocdefs.h
@@ -2139,3 +2169,26 @@ compile wait_nohang.c haswaitp.h
 wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
+
+cert cert-req: \
+Makefile-cert
+	@$(MAKE) -sf $< $@
+
+Makefile-cert: \
+conf-qmail conf-users conf-groups Makefile-cert.mk
+	@cat Makefile-cert.mk \
+	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	> $@
+
+update_tmprsadh: \
+conf-qmail conf-users conf-groups update_tmprsadh.sh
+	@cat update_tmprsadh.sh\
+	| sed s}UGQMAILD}"`head -2 conf-users|tail -1`:`head -1 conf-groups`"}g \
+	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	> $@
+	chmod 755 update_tmprsadh 
+
+tmprsadh: \
+update_tmprsadh
+	echo "Creating new temporary RSA and DH parameters"
+	./update_tmprsadh

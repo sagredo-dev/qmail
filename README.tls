@@ -1,0 +1,85 @@
+Frederik Vermeulen <qmail-tls akrul inoa.net> 20231230
+http://inoa.net/qmail-tls/
+
+This patch implements RFC 3207 in qmail. 
+This means you can get SSL or TLS encrypted and 
+authenticated SMTP between the MTAs and from MUA to MTA. 
+The code is considered experimental (but has worked for
+many since its first release on 1999-03-21).
+
+Usage: - install OpenSSL-3.0.11 http://www.openssl.org/ or later
+       - apply patch to notqmail-1.08 (https://notqmail.org)
+         The patches to qmail-remote.c and qmail-smtpd.c can be applied 
+         separately.
+       - provide a server certificate in /var/qmail/control/servercert.pem.
+         "make cert" makes a self-signed certificate.
+         "make cert-req" makes a certificate request.
+         Note: you can add the CA certificate and intermediate
+         certs to the end of servercert.pem.
+       - replace qmail-smtpd and/or qmail-remote binary
+       - verify operation (header information should show
+         something like
+         "Received [..] with (DHE-RSA-AES256-SHA encrypted) SMTP;")
+
+Optional: - when DEBUG is defined, some extra TLS info will be logged
+          - qmail-remote will authenticate with the certificate in
+            /var/qmail/control/clientcert.pem. By preference this is
+            the same as servercert.pem, where nsCertType should be 
+            == server,client or be a generic certificate (no usage specified). 
+          - server authentication:
+            qmail-remote requires authentication from servers for which
+            /var/qmail/control/tlshosts/host.dom.ain.pem exists.
+            The .pem file contains the validating CA certificates.
+            One of the dNSName or the CommonName attributes have to match.
+            WARNING: this option may cause mail to be delayed, bounced,
+            doublebounced, and lost.
+            If /var/qmail/control/tlshosts/exhaustivelist is present,
+            the lists of hosts in /var/qmail/control/tlshosts is
+            an exhaustive list of hosts TLS is tried on.
+            If /var/qmail/control/notlshosts/host.dom.ain is present,
+            no TLS is tried on this host.
+          - client authentication:
+            when relay rules would reject an incoming mail, 
+            qmail-smtpd can allow the mail based on a presented cert.
+            Certs are verified against a CA list in 
+            /var/qmail/control/clientca.pem (eg. from
+            http://curl.haxx.se/ca/cacert.pem)
+            and the cert email-address has to match a line in
+            /var/qmail/control/tlsclients. This email-address is logged
+            in the headers. CRLs can be provided through 
+            /var/qmail/control/clientcrl.pem.
+          - cipher selection:
+            qmail-remote: 
+              openssl cipher string (`man ciphers`) read from 
+              /var/qmail/control/tlsclientciphers
+            qmail-smtpd: 
+              openssl cipher string read from TLSCIPHERS environment variable
+              (can vary based on client IP address e.g.)
+              or if that is not available /var/qmail/control/tlsserverciphers
+          - smtps (deprecated SMTP over TLS via port 465):
+            qmail-remote: when connecting to port 465 
+            qmail-smtpd: when SMTPS environment variable is not empty
+
+Caveats: - do a `make clean` after patching
+         - binaries dynamically linked with current openssl versions need
+           recompilation when the shared openssl libs are upgraded.
+         - this patch could conflict with other patches (notably those
+           replacing \n with \r\n, which is a bad idea on encrypted links).
+         - packagers should make sure that installing without a valid 
+           servercert is impossible
+         - when applied in combination with AUTH patch, AUTH patch
+           should be applied first and first part of this patch
+           will fail. This error can be ignored. Packagers should
+           cut the first 12 lines of this patch to make a happy
+           patch
+
+Copyright: GPL
+           Links with OpenSSL
+           Inspiration and code from examples in SSLeay (E. Young
+           <eay@cryptsoft.com> and T. Hudson <tjh@cryptsoft.com>),
+           stunnel (M. Trojnara <mtrojnar@ddc.daewoo.com.pl>),
+           Postfix/TLS (L. Jaenicke <Lutz.Jaenicke@aet.tu-cottbus.de>),
+           modssl (R. Engelschall <rse@engelschall.com>),
+           openssl examples of E. Rescorla <ekr@rtfm.com>.
+
+Bug reports: mailto:<qmail-tls akrul inoa.net>
