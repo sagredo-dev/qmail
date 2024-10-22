@@ -382,11 +382,7 @@ void tls_quit(const char *s1, const char *s2)
      control/notlshosts_auto contains any number greater than 0
      Thanks Alexandre Fonseca
    */
-  // get qmail dir
-  uid_t qmailruid;
-  qmailruid = getuid();
-  struct passwd *info = getpwuid(getuid());
-
+  struct passwd *info = getpwuid(getuid()); // get qmail dir
   unsigned long i = 0;
   if (control_readint(&i,"control/notlshosts_auto") && i) {
     FILE *fp;
