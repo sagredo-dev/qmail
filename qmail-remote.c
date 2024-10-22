@@ -377,8 +377,9 @@ char *partner_fqdn = 0;
 void tls_quit(const char *s1, const char *s2)
 {
   /*
-     skip TLS connection if control/notlshosts/<fqdn> exists and
-     control/notlshosts_auto contains any number greater than 0
+     touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+     number greater than 0 in order to skip the TLS connection for remote
+     servers with an obsolete TLS version.
      Thanks Alexandre Fonseca
    */
   struct passwd *info = getpwuid(getuid()); // get qmail dir
