@@ -2290,7 +2290,7 @@ struct commands smtpcommands[] = {
 } ;
 
 /* qsmtpdlog: start */
-void outqlog(char *s, unsigned int n) {
+void outqlog(const char *s, unsigned int n) {
   while (n > 0) {
     substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
     --n;
@@ -2298,7 +2298,7 @@ void outqlog(char *s, unsigned int n) {
   }
 }
 
-void outsqlog(char *s) { outqlog(s,str_len(s)); }
+void outsqlog(const char *s) { outqlog(s,str_len(s)); }
 
 void qsmtpdlog(const char *head, const char *result, const char *reason, const char *detail, const char *statuscode) {
   char *x;
