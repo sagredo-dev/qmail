@@ -382,9 +382,9 @@ void tls_quit(const char *s1, const char *s2)
      servers with an obsolete TLS version.
      Thanks Alexandre Fonseca
    */
-  struct passwd *info = getpwuid(getuid()); // get qmail dir
   unsigned long i = 0;
   if (control_readint(&i,"control/notlshosts_auto") && i) {
+    struct passwd *info = getpwuid(getuid()); // get qmail dir
     FILE *fp;
     char acfcommand[1200];
     sprintf(acfcommand, "/bin/touch %s/control/notlshosts/'%s'", info->pw_dir, partner_fqdn);
