@@ -15,7 +15,7 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
 * Frederik Vermeulen's qmail-tls patch v. 20231230  
   implements SSL or TLS encrypted and authenticated SMTP.  
   The key is now 4096 bit long and the cert will be owned by vpopmail:vchkpw  
-  Patched to dinamically touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+  Patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
   number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version (tx Alexandre Fonceca).  
   The file update_tmprsadh was modified to chown all .pem files to vpopmail.  
   http://inoa.net/qmail-tls/
