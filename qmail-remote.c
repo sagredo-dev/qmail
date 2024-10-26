@@ -1,3 +1,4 @@
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -375,6 +376,26 @@ char *partner_fqdn = 0;
 # define TLS_QUIT quit(ssl ? "; connected to " : "; connecting to ", "")
 void tls_quit(const char *s1, const char *s2)
 {
+  /*
+     touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+     number greater than 0 in order to skip the TLS connection for remote
+     servers with an obsolete TLS version.
+     Thanks Alexandre Fonceca
+   */
+  unsigned long i = 0;
+  if (control_readint(&i,"control/notlshosts_auto") && i) {
+    struct passwd *info = getpwuid(getuid()); // get qmail dir
+    FILE *fp;
+    char acfcommand[1200];
+    sprintf(acfcommand, "/bin/touch %s/control/notlshosts/'%s'", info->pw_dir, partner_fqdn);
+    fp = popen(acfcommand, "r");
+    if (fp == NULL) {
+      out("Failed to run touch command ");
+      exit(1);
+    }
+    pclose(fp);
+  }
+  /* end skip TLS patch */
   out((char *)s1); if (s2) { out(": "); out((char *)s2); } TLS_QUIT;
 }
 # define tls_quit_error(s) tls_quit(s, ssl_error())
