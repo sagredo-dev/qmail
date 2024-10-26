@@ -1,5 +1,14 @@
 # ChangeLog
 
+- Oct 26, 2024
+  - qmail-remote.c patched to dinamically touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+    number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
+    (tx Alexandre Fonceca)
+  - fixed several compilation breaks/warnings on later gcc compilers (tx Pablo Murillo)
+  - invalid auth fix in qmail-smtpd.c's smtp_auth function (tx Alexandre Fonceca for the advice)
+  - qmail path determined dinamically in conf-policy
+  - added a patch to remove chkuser and the vpopmail dependency (other-patches dir)
+
 - Jun 8, 2024
   - conf-channels: default number of channels increased to 4 (was 2). Now qmail offers 2 additional channels
     with respect to the 2 offered by default (local and remote). More info [here](https://github.com/sagredo-dev/qmail/blob/main/CHANNELS).

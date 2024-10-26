@@ -12,9 +12,11 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   by Krysztof Dabrowski and Bjoern Kalkbrenner.
   It provides cram-md5, login, plain authentication support for qmail-smtpd and qmail-remote.
   http://www.fehcom.de/qmail/smtpauth.html##PATCHES
-* Frederik Vermeulen's qmail-tls patch v. 20231230
-  implements SSL or TLS encrypted and authenticated SMTP.
-  The key is now 4096 bit long and the cert will be owned by vpopmail:vchkpw
+* Frederik Vermeulen's qmail-tls patch v. 20231230  
+  implements SSL or TLS encrypted and authenticated SMTP.  
+  The key is now 4096 bit long and the cert will be owned by vpopmail:vchkpw  
+  Patched to dinamically touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+  number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version. (tx Alexandre Fonceca)  
   http://inoa.net/qmail-tls/
   The file update_tmprsadh was modified to chown all .pem files to vpopmail.
 * Marcel Telka's force-tls patch v. 2016.05.15
