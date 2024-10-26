@@ -380,7 +380,7 @@ void tls_quit(const char *s1, const char *s2)
      touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
      number greater than 0 in order to skip the TLS connection for remote
      servers with an obsolete TLS version.
-     Thanks Alexandre Fonseca
+     Thanks Alexandre Fonceca
    */
   unsigned long i = 0;
   if (control_readint(&i,"control/notlshosts_auto") && i) {
