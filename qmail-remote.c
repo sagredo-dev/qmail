@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <idn2.h>
 #include "sig.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -45,6 +46,7 @@ stralloc helohost = {0};
 stralloc routes = {0};
 struct constmap maproutes;
 stralloc host = {0};
+stralloc asciihost = {0};
 stralloc sender = {0};
 
 stralloc authsenders = {0};
@@ -175,6 +177,7 @@ char smtpfrombuf[128];
 substdio smtpfrom = SUBSTDIO_FDBUF(saferead,-1,smtpfrombuf,sizeof smtpfrombuf);
 
 stralloc smtptext = {0};
+stralloc firstpart = {0};
 
 void get(ch)
 char *ch;
@@ -332,6 +335,8 @@ void blast()
 {
   int r;
   char ch;
+
+  substdio_put(&smtpto,firstpart.s,firstpart.len);
 
   for (;;) {
     r = substdio_get(&ssin,&ch,1);
@@ -579,11 +584,35 @@ int tls_init()
 
 stralloc recip = {0};
 
+int containsutf8(p, l) unsigned char * p; int l;
+{
+  int i = 0;
+  while (i<l)
+    if(p[i++] > 127) return 1;
+  return 0;
+}
+
+int utf8message;
+
+int get_smtputf8_capa(const char *capa)
+{
+  int i = 0, len;
+  len = str_len(capa);
+  for (i = 0; i < smtptext.len-len; ++i) {
+    if (case_starts(smtptext.s+i,capa)) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
 void mailfrom()
 {
   substdio_puts(&smtpto,"MAIL FROM:<");
   substdio_put(&smtpto,sender.s,sender.len);
-  substdio_puts(&smtpto,">\r\n");
+  substdio_puts(&smtpto,">");
+  if (utf8message) substdio_puts(&smtpto," SMTPUTF8");
+  substdio_puts(&smtpto,"\r\n");
   substdio_flush(&smtpto);
 }
 
@@ -794,6 +823,8 @@ void smtp()
   }
 #endif
 
+  if (!get_smtputf8_capa("SMTPUTF8")) quit("DConnected to "," but server does not support unicode in email addresses");
+
   if (user.len && pass.len)
     smtp_auth();
   else
@@ -982,6 +1013,15 @@ char **argv;
         relayhost[i] = 0;
       }
       if (!stralloc_copys(&host,relayhost)) temp_nomem();
+    } else {
+      char * ascii = 0;
+      host.s[host.len] = '\0';
+      switch (idn2_lookup_u8(host.s, (uint8_t**)&ascii, IDN2_NFC_INPUT)) {
+        case IDN2_OK: break;
+        case IDN2_MALLOC: temp_nomem();
+        default: perm_dns();
+      }
+      if (!stralloc_copys(&asciihost, ascii)) temp_nomem();
     }
   }
 
@@ -1001,7 +1041,7 @@ char **argv;
 
  
   random = now() + (getpid() << 16);
-  switch (relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,&host,random)) {
+  switch (relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,&asciihost,random)) {
     case DNS_MEM: temp_nomem();
     case DNS_SOFT: temp_dns();
     case DNS_HARD: perm_dns();
