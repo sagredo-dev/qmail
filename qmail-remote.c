@@ -842,15 +842,23 @@ void smtp()
     substdio_flush(&smtpto);
     code = smtpcode();
     if (code >= 500) {
-      out("h"); outhost(); out(" does not like recipient.\n");
+      /* added by Endersys R&D Team */
+      out("h<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]); out("> ");  outhost(); out(" does not like recipient.\n");
       outsmtptext(); zero();
     }
     else if (code >= 400) {
-      out("s"); outhost(); out(" does not like recipient.\n");
+      /* added by Endersys R&D Team */
+      out("s<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]);  out("> ");  outhost(); out(" does not like recipient.\n");
       outsmtptext(); zero();
     }
     else {
-      out("r"); zero();
+       /*
+       * James Raftery <james@now.ie>
+       * Log _real_ envelope recipient, post canonicalisation.
+       * and modified by Endersys R&D Team
+       */
+
+      out("r<From:"); outsafe(&sender); out(" To:"); outsafe(&reciplist.sa[i]); out("> "); zero();
       flagbother = 1;
     }
   }
