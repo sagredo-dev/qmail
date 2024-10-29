@@ -600,6 +600,7 @@ int get_smtputf8_capa(const char *capa)
   len = str_len(capa);
   for (i = 0; i < smtptext.len-len; ++i) {
     if (case_starts(smtptext.s+i,capa)) {
+      utf8message = 1;
       return 1;
     }
   }
