@@ -983,6 +983,7 @@ stralloc rcptto = {0};
 stralloc fuser = {0};
 stralloc mfparms = {0};
 stralloc log_buf = {0};
+int smtputf8 = 0;
 
 /* realbadrcpt: start */
 int flagvrt; /* defined if valid rcpt */
@@ -1155,6 +1156,7 @@ void mailfrom_parms(arg) char *arg;
       while (len) {
         arg++; len--;
         if (*arg == ' ' || *arg == '\0' ) {
+           if (case_starts(mfparms.s,"SMTPUTF8")) smtputf8 = 1;
            if (case_starts(mfparms.s,"SIZE=")) if (mailfrom_size(mfparms.s+5)) { flagsize = 1; return; }
            if (case_starts(mfparms.s,"AUTH=")) mailfrom_auth(mfparms.s+5,mfparms.len-5);
            if (!stralloc_copys(&mfparms,"")) die_nomem();
@@ -1189,7 +1191,7 @@ void smtp_ehlo(arg) char *arg;
   if (!disabletls && !ssl && (stat("control/servercert.pem",&st) == 0))
   out("\r\n250-STARTTLS");
   #endif
-  out("\r\n250-PIPELINING\r\n250-8BITMIME\r\n");
+  out("\r\n250-PIPELINING\r\n250-SMTPUTF8\r\n250-8BITMIME\r\n");
 #ifdef TLS
   if (!forcetls || ssl) {
 #endif
@@ -1898,7 +1900,16 @@ void smtp_data(arg) char *arg; {
   qp = qmail_qp(&qqt);
   strnumqp[fmt_ulong(strnumqp,qp)] = 0; /* qp for qlog */
   out("354 go ahead\r\n");
- 
+
+  if (smtputf8) {
+    stralloc utf8proto = {0};
+    if ('E' == *protocol) protocol++;
+    if (!stralloc_copys(&utf8proto, "UTF8")) die_nomem();
+    if (!stralloc_cats(&utf8proto, protocol)) die_nomem();
+    utf8proto.s[utf8proto.len] = '\0';
+    protocol = utf8proto.s;
+  }
+
   received(&qqt,protocol,local,remoteip,remotehost,remoteinfo,fakehelo);
   spfreceived();
   qmail_put(&qqt,sppheaders.s,sppheaders.len); /* set in qmail-spp.c */
