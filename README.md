@@ -224,6 +224,11 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.  
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
+* Arnt Gulbrandsen's smtputf8  
+  adds RFC 5336 SMTP Email Address Internationalization support  
+  https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
+  https://github.com/sagredo-dev/qmail/compare/main...smtputf8-arnt
+
 
 Usage
 -----
