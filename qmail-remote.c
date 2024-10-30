@@ -671,7 +671,7 @@ void checkutf8message()
 }
 
 /*
-  returns 1 if the remote server advertizes a specific verb
+  returns 1 if the remote server advertises a specific verb
   tx notqmail/mbhangui-smtputf8
  */
 int get_capa(const char *capa)
