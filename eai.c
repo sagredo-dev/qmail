@@ -28,6 +28,8 @@ void checkutf8message()
   extern stralloc sender;
   extern saa reciplist;
   extern substdio ssin;
+  extern stralloc firstpart;
+  extern int utf8message;
 
   if (containsutf8(sender.s, sender.len)) { utf8message = 1; return; }
   for (i = 0;i < reciplist.len;++i)
