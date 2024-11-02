@@ -14,7 +14,7 @@ If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you ca
 
 ## `qmail` package details
 
-This distribution of qmail puts together netqmail-1.06 with the following patches (more info in the [README](https://github.com/sagredo-dev/qmail/blob/main/README) file):
+This distribution of qmail puts together netqmail-1.06 with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.  
