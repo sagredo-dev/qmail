@@ -1,7 +1,7 @@
 # ChangeLog
 
 - Nov 3, 2024
-  - Added support for EAI (RFC 5336 SMTP Email Address Internationalization) (#13).  
+  - Added support for EAI (RFC 5336 SMTP Email Address Internationalization) (https://github.com/sagredo-dev/qmail/pull/13).  
     Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
 
 - Oct 26, 2024
