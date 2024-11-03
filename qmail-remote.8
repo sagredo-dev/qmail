@@ -47,6 +47,12 @@ arguments to
 The envelope sender address is listed as
 .I sender\fP.
 
+.B qmail-remote
+will respect SMTPUTF8 and EAI addresses. If message is utf8,
+.B qmail-remote
+will use idn2_lookup_u8(3) to perform IDNA2008 lookup string conversion on
+.IR host .
+
 Note that
 .B qmail-remote
 does not take options
@@ -248,6 +254,15 @@ will not try TLS on servers for which this file exists
 is the fully-qualified domain name of the server). 
 .IR (tlshosts/<FQDN>.pem 
 takes precedence over this file however).
+
+.TP 5
+.I notlshosts_auto
+If it contains a number greater than 0
+.B qmail-remote
+will automatically add a file
+.IR notlshosts/<FQDN>
+so that the connection with the remote server will be allowed
+thereafter.
 
 .TP 5
 .I outgoingip

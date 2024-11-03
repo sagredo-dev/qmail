@@ -1,12 +1,22 @@
 # qmail
 
-[qmail](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
-## My patched qmail
+## My patched `qmail`
 
-More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
+This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html). Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
-This distribution of qmail puts together netqmail-1.06 with the following patches (more info in the [README](https://github.com/sagredo-dev/qmail/blob/main/README) file):
+## Before installing
+
+This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite, while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
+
+This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
+
+If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`, or apply [this patch](https://github.com/sagredo-dev/qmail/blob/main/other-patches/qmail-remove_chkuser_vpopmail.patch).
+
+## `qmail` package details
+
+This distribution of `qmail` puts together `netqmail-1.06` with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.
@@ -15,9 +25,10 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
 * Frederik Vermeulen's qmail-tls patch v. 20231230  
   implements SSL or TLS encrypted and authenticated SMTP.  
   The key is now 4096 bit long and the cert will be owned by vpopmail:vchkpw  
-  Patched to dinamically touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
-  number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version. (tx Alexandre Fonceca)  
-  http://inoa.net/qmail-tls/
+  Patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
+  number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version (tx Alexandre Fonceca).  
+  The file update_tmprsadh was modified to chown all .pem files to vpopmail.  
+  http://inoa.net/qmail-tls/  
   The file update_tmprsadh was modified to chown all .pem files to vpopmail.
 * Marcel Telka's force-tls patch v. 2016.05.15
   optionally gets qmail to require TLS before authentication to improve security.
@@ -217,9 +228,16 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
+* Arnt Gulbrandsen's smtputf8  
+  adds RFC 5336 SMTP Email Address Internationalization support  
+  https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
+  Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
 
-Usage
+Install
 -----
+
+As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+
 * Install libsrs2
 ```
 wget https://notes.sagredo.eu/files/qmail/tar/libsrs2-1.0.18.tar.gz
