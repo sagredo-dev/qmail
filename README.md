@@ -16,7 +16,7 @@ If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you ca
 
 ## `qmail` package details
 
-This distribution of qmail puts together netqmail-1.06 with the following patches:
+This distribution of `qmail` puts together `netqmail-1.06` with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.  
@@ -237,8 +237,7 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
 * Arnt Gulbrandsen's smtputf8  
   adds RFC 5336 SMTP Email Address Internationalization support  
   https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
-  https://github.com/sagredo-dev/qmail/compare/main...smtputf8-arnt
-
+  Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
 
 Install
 -----
