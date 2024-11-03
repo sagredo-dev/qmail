@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <idn2.h>
 #include "sig.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -31,6 +32,7 @@
 #include "timeoutwrite.h"
 #include "base64.h"
 #include "hmac_md5.h"
+#include "eai.h"
 
 #define HUGESMTPTEXT 5000
 
@@ -46,6 +48,9 @@ stralloc outgoingip = {0};
 stralloc routes = {0};
 struct constmap maproutes;
 stralloc host = {0};
+stralloc asciihost = {0};
+stralloc firstpart = {0};
+int utf8message = 0;
 stralloc sender = {0};
 
 stralloc authsenders = {0};
@@ -340,6 +345,8 @@ void blast()
   char out[4096*2+1];
   int sol;
 
+  substdio_put(&smtpto,firstpart.s,firstpart.len);
+
   for (sol = 1;;) {
     r = substdio_get(&ssin,in,sizeof in);
     if (r == 0) break;
@@ -597,7 +604,9 @@ void mailfrom()
 {
   substdio_puts(&smtpto,"MAIL FROM:<");
   substdio_put(&smtpto,sender.s,sender.len);
-  substdio_puts(&smtpto,">\r\n");
+  substdio_puts(&smtpto,">");
+  if (utf8message) substdio_puts(&smtpto," SMTPUTF8");
+  substdio_puts(&smtpto,"\r\n");
   substdio_flush(&smtpto);
 }
 
@@ -815,6 +824,9 @@ void smtp()
   }
 #endif
 
+  checkutf8message();
+  if (utf8message && !get_capa("SMTPUTF8")) quit("DConnected to "," but server does not support unicode in email addresses");
+
   if (user.len && pass.len)
     smtp_auth();
   else
@@ -1012,6 +1024,15 @@ char **argv;
         relayhost[i] = 0;
       }
       if (!stralloc_copys(&host,relayhost)) temp_nomem();
+    } else {
+        char * ascii = 0;
+        host.s[host.len] = '\0';
+        switch (idn2_lookup_u8(host.s, (uint8_t**)&ascii, IDN2_NFC_INPUT)) {
+          case IDN2_OK: break;
+          case IDN2_MALLOC: temp_nomem();
+          default: perm_dns();
+        }
+        if (!stralloc_copys(&asciihost, ascii)) temp_nomem();
     }
   }
 
@@ -1031,7 +1052,7 @@ char **argv;
 
  
   random = now() + (getpid() << 16);
-  switch (relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,&host,random)) {
+  switch (relayhost ? dns_ip(&ip,&host) : dns_mxip(&ip,&asciihost,random)) {
     case DNS_MEM: temp_nomem();
     case DNS_SOFT: temp_dns();
     case DNS_HARD: perm_dns();
