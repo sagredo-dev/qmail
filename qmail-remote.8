@@ -256,6 +256,15 @@ is the fully-qualified domain name of the server).
 takes precedence over this file however).
 
 .TP 5
+.I notlshosts_auto
+If it contains a number greater than 0
+.B qmail-remote
+will automatically add a file
+.IR notlshosts/<FQDN>
+so that the connection with the remote server will be allowed
+thereafter.
+
+.TP 5
 .I outgoingip
 IP address to be used on outgoing connections.
 Default: system-defined.

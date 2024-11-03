@@ -1,8 +1,8 @@
 # qmail
 
-[qmail](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
-## My patched qmail
+## My patched `qmail`
 
 This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html). Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
@@ -16,9 +16,7 @@ If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you ca
 
 ## `qmail` package details
 
-More info at https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html
-
-This distribution of qmail puts together netqmail-1.06 with the following patches (more info in the [README](https://github.com/sagredo-dev/qmail/blob/main/README) file):
+This distribution of qmail puts together netqmail-1.06 with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.  
@@ -242,8 +240,11 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   https://github.com/sagredo-dev/qmail/compare/main...smtputf8-arnt
 
 
-Usage
+Install
 -----
+
+As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+
 * Install libsrs2
 ```
 wget https://notes.sagredo.eu/files/qmail/tar/libsrs2-1.0.18.tar.gz

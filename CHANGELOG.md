@@ -1,7 +1,7 @@
 # ChangeLog
 
 - Oct 26, 2024
-  - qmail-remote.c patched to dinamically touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
+  - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
     (tx Alexandre Fonceca)
   - defined CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" in chkuser_settings.h
