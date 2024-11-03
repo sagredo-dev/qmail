@@ -1,9 +1,5 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-VPOPMAIL_LIBS=`head -1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
-
-SMTPD_CHKUSER_OBJ=chkuser.o dns.o
-
 DEFINES=-DEXTERNAL_TODO # use to enable external todo
 
 SHELL=/bin/sh
@@ -126,10 +122,8 @@ auto-uid auto-gid conf-users conf-groups
 	&&./auto-uid auto_uidq `head -6 conf-users | tail -1` \
 	&&./auto-uid auto_uidr `head -7 conf-users | tail -1` \
 	&&./auto-uid auto_uids `head -8 conf-users | tail -1` \
-	&&./auto-uid auto_uidv `head -9 conf-users | tail -1` \
 	&&./auto-gid auto_gidq `head -1 conf-groups` \
 	&&./auto-gid auto_gidn `head -2 conf-groups | tail -1` \
-	&&./auto-gid auto_gidv `head -3 conf-groups | tail -1` \
 	) > auto_uids.c.tmp && mv auto_uids.c.tmp auto_uids.c
 
 auto_uids.o: \
@@ -327,10 +321,6 @@ chkspawn.o: \
 compile chkspawn.c substdio.h subfd.h substdio.h fmt.h select.h \
 exit.h auto_spawn.h
 	./compile chkspawn.c
-
-chkuser.o: \
-compile chkuser.c chkuser.h chkuser_settings.h
-	./compile chkuser.c
 
 clean: \
 TARGETS
@@ -1719,17 +1709,15 @@ timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o constmap.o \
 received.o date822fmt.o now.o qmail.o spf.o dns.o cdb.a fd.a wait.a \
 datetime.a getln.a open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
 error.a str.a fs.a auto_qmail.o base64.o socket.lib dns.lib lock.a policy.o \
-qmail-spp.o \
-$(SMTPD_CHKUSER_OBJ)
-	./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
-	strerr.a wildmat.o qregex.o \
+qmail-spp.o dns.o
+	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+	strerr.a wildmat.o qregex.o dns.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o \
 	tls.o ssl_timeoutio.o ndelay.a -lssl -lcrypto \
 	constmap.o received.o date822fmt.o now.o qmail.o spf.o cdb.a \
 	fd.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a qmail-spp.o \
 	alloc.a substdio.a error.a strerr.a str.a fs.a auto_qmail.o base64.o policy.o \
-	$(VPOPMAIL_LIBS) \
-	`cat socket.lib`
+	`cat dns.lib` `cat socket.lib`
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -1741,7 +1729,7 @@ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h strsalloc.h ip.h gen_alloc.h ip.h qmail.h qmail-spp.h \
 substdio.h strerr.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
 exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h spf.h dns.h base64.h \
-cdb.h chkuser.h
+cdb.h
 	./compile qmail-smtpd.c
 
 qmail-start: \
@@ -2500,7 +2488,7 @@ conf-qmail conf-users conf-groups Makefile-cert.mk
 update_tmprsadh: \
 conf-qmail conf-users conf-groups update_tmprsadh.sh
 	@cat update_tmprsadh.sh\
-	| sed s}UGQMAILD}"`head -9 conf-users|tail -1`:`head -3 conf-groups|tail -1`"}g \
+	| sed s}UGQMAILD}"`head -2 conf-users|tail -1`:`head -1 conf-groups|tail -1`"}g \
 	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
 	> $@
 	chmod 755 update_tmprsadh

@@ -39,7 +39,7 @@ void hier()
   h(auto_qmail,auto_uido,auto_gidq,0755);
 
   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
-  d(auto_qmail,"control/cache",auto_uidv,auto_gidv,0755);
+  d(auto_qmail,"control/cache",auto_uidd,auto_gidq,0755);
   d(auto_qmail,"control/notlshosts",auto_uidr,auto_gidq,0755);
   d(auto_qmail,"users",auto_uido,auto_gidq,0755);
   d(auto_qmail,"bin",auto_uido,auto_gidq,0755);
