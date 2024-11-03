@@ -1,5 +1,9 @@
 # ChangeLog
 
+- Nov 3, 2024
+  - Added support for EAI (RFC 5336 SMTP Email Address Internationalization) (#13).  
+    Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
+
 - Oct 26, 2024
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
