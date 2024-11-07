@@ -24,6 +24,11 @@ normally on port 465). Otherwise,
 offers the STARTTLS extension to ESMTP.
 
 .B qmail-smtpd
+offers RFC 5336 SMTP Email Address Internationalization support and will advertize the
+capability in the EHLO greeting. Since qmail-smtpd is 8 bit clean, setting of SMTPUTF8 has no real
+consequences except for displaying this setting in the received headers as \fBUTF8SMTP\fR.
+
+.B qmail-smtpd
 is responsible for counting hops.
 It rejects any message with 100 or more 
 .B Received
@@ -32,7 +37,8 @@ or
 header fields.
 
 .B qmail-smtpd
-supports ESMTP, including the 8BITMIME, DATA, PIPELINING, SIZE, and AUTH options.
+supports ESMTP, including the 8BITMIME, DATA, PIPELINING, SIZE, SMTPUTF8 and AUTH options.
+
 .B qmail-smtpd
 includes a \'MAIL FROM:\' parameter parser and obeys \'Auth\' and \'Size\' advertisements.
 .B qmail-smtpd
