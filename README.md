@@ -2,9 +2,10 @@
 
 [qmail](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
-## My patched qmail with auth+tls+forcetls
+This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
+Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
-More info at https://notes.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html
+## `qmail` package details
 
 This qmail distribution puts together netqmail-1.06 with the following patches (more info in the README file):
 
@@ -31,6 +32,22 @@ git clone -b auth-tls-forcetls git@github.com:sagredo-dev/qmail.git
 ```
 
 ## Install
+Create users and groups:
+
+```
+groupadd nofiles
+useradd -g nofiles -d /var/qmail/alias alias
+useradd -g nofiles -d /var/qmail qmaild
+useradd -g nofiles -d /var/qmail qmaill
+useradd -g nofiles -d /var/qmail qmailp
+groupadd qmail
+useradd -g qmail -d /var/qmail qmailq
+useradd -g qmail -d /var/qmail qmailr
+useradd -g qmail -d /var/qmail qmails
+```
+
+Compile and install:
+
 ```
 make setup check
 ```
