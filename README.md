@@ -240,6 +240,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
 * Arnt Gulbrandsen's smtputf8  
   adds RFC 5336 SMTP Email Address Internationalization support  
+  You have to undefine CHKUSER_SENDER_FORMAT in chkuser_settings.h to get this feature working.  
   https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
   Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
 
