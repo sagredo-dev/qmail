@@ -309,8 +309,10 @@
  * Uncomment to enable checking of user and domain format for sender address
  *      user    =       [a-z0-9_-]
  *      domain  =       [a-z0-9-.] with not consecutive "-.", not leading or ending "-."
+ *
+ * Uncomment to allow EAI addresses
  */
-#define CHKUSER_SENDER_FORMAT
+/* #define CHKUSER_SENDER_FORMAT */
 
 /*
  * Uncomment to enable checking of domain MX for sender address
