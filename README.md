@@ -8,11 +8,7 @@ This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo
 
 ## Before installing
 
-This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite, while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
-
 This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
-
-If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`, or apply [this patch](https://github.com/sagredo-dev/qmail/blob/main/other-patches/qmail-remove_chkuser_vpopmail.patch).
 
 ## `qmail` package details
 
