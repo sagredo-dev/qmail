@@ -297,7 +297,7 @@
  *      user    =       [a-z0-9_-]
  *      domain  =       [a-z0-9-.] with not consecutive "-.", not leading or ending "-."
  */
-#define CHKUSER_RCPT_FORMAT
+/* #define CHKUSER_RCPT_FORMAT */
 
 /*
  * Uncomment to enable checking of domain MX for rcpt addresses
