@@ -15,8 +15,12 @@ while `vpopmail` itself requires to be installed over the vanilla `qmail`. So th
 
 This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
 
-If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`,
-or apply [this patch](https://github.com/sagredo-dev/qmail/blob/main/patches/qmail-remove_chkuser_vpopmail.patch).
+If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`.  
+Download like this:  
+
+```
+git clone -b no-chkuser-vpopmail https://github.com/sagredo-dev/qmail.git
+```
 
 ## `qmail` package details
 
