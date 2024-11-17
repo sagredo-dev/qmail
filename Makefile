@@ -1,5 +1,9 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
+VPOPMAIL_HOME=/home/vpopmail
+SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
+
 SHELL=/bin/sh
 
 default: it
@@ -299,6 +303,10 @@ chkspawn.o: \
 compile chkspawn.c substdio.h subfd.h substdio.h fmt.h select.h \
 exit.h auto_spawn.h
 	./compile chkspawn.c
+
+chkuser.o: \
+compile chkuser.c chkuser.h chkuser_settings.h
+	./compile chkuser.c
 
 clean: \
 TARGETS
@@ -1536,20 +1544,21 @@ load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
 timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
 date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
 open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
-fs.a auto_qmail.o socket.lib
-	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+fs.a auto_qmail.o socket.lib $(SMTPD_CHKUSER_OBJ)
+	./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
 	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a auto_qmail.o  `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
+	$(VPOPMAIL_LIBS) \
+	`cat socket.lib`
 
 qmail-smtpd.0: \
 qmail-smtpd.8
 	nroff -man qmail-smtpd.8 > qmail-smtpd.0
 
 qmail-smtpd.o: \
-compile qmail-smtpd.c sig.h readwrite.h stralloc.h gen_alloc.h \
+compile qmail-smtpd.c chkuser.h sig.h readwrite.h stralloc.h gen_alloc.h \
 substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
 error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
 substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \

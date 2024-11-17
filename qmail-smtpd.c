@@ -1,3 +1,13 @@
+/*
+ *
+ * includes chkuser v.2.0.8
+ * for qmail/netqmail > 1.0.3 and vpopmail > 5.3.x
+ *
+ * Author: Antonio Nati tonix@interazioni.it
+ * www.interazioni.it/opensource
+ *
+ */
+
 #include "sig.h"
 #include "readwrite.h"
 #include "stralloc.h"
@@ -23,6 +33,10 @@
 #include "timeoutread.h"
 #include "timeoutwrite.h"
 #include "commands.h"
+
+/* start chkuser code */
+#include "chkuser.h"
+/* end chkuser code */
 
 #define MAXHOPS 100
 unsigned int databytes = 0;
@@ -240,6 +254,9 @@ void smtp_rset(arg) char *arg;
 void smtp_mail(arg) char *arg;
 {
   if (!addrparse(arg)) { err_syntax(); return; }
+/* start chkuser code */
+  if (chkuser_sender (&addr) != CHKUSER_OK) { return; }
+/* end chkuser code */
   flagbarf = bmfcheck();
   seenmail = 1;
   if (!stralloc_copys(&rcptto,"")) die_nomem();
@@ -251,6 +268,10 @@ void smtp_rcpt(arg) char *arg; {
   if (!seenmail) { err_wantmail(); return; }
   if (!addrparse(arg)) { err_syntax(); return; }
   if (flagbarf) { err_bmf(); return; }
+
+/*
+ * Original code substituted by chkuser code
+
   if (relayclient) {
     --addr.len;
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
@@ -258,6 +279,26 @@ void smtp_rcpt(arg) char *arg; {
   }
   else
     if (!addrallowed()) { err_nogateway(); return; }
+
+ * end of substituted code
+ */
+
+/* start chkuser code */
+  switch (chkuser_realrcpt (&mailfrom, &addr)) {
+
+        case CHKUSER_KO:
+                return;
+                break;
+
+        case CHKUSER_RELAYING:
+                --addr.len;
+                if (!stralloc_cats(&addr,relayclient)) die_nomem();
+                if (!stralloc_0(&addr)) die_nomem();
+                break;
+
+  }
+/* end chkuser code */
+
   if (!stralloc_cats(&rcptto,"T")) die_nomem();
   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
   if (!stralloc_0(&rcptto)) die_nomem();
