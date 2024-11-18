@@ -255,7 +255,9 @@ static int make_mav(stralloc *user, stralloc *domain) {
   // if the remote server advertises SMTPUTF8 in MAIL FROM, then allow utf8 names not containing invalid characters
   if ( smtputf8
        && is_valid_utf8(user->s) && is_valid_utf8(domain->s)
+#ifdef CHKUSER_INVALID_UTF8_CHARS
        && (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS))
+#endif
      ) return 0;
 
   // else if the remote server does NOT advertise SMTPUTF8 in MAIL FROM, then allow only ASCII characters as usual,
