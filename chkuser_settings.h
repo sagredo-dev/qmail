@@ -310,8 +310,12 @@
 
 /*
  * Uncomment to enable checking of user and domain format for sender address
- *      user    =       any UTF8 character in the world EXCEPT (),%:;<>@[\]
- *      domain  =       any UTF8 character in the world EXCEPT (),%:;<>@[\] with not consecutive "-.", not leading or ending "-."
+ *      user    =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS
+ *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
+ *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
+ *      domain  =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS with not consecutive "-.", not leading or ending "-."
+ *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
+ *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  */
 #define CHKUSER_SENDER_FORMAT
 
