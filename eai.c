@@ -1,4 +1,4 @@
-#include "eai.h"
+#include "utf8.h"
 #include "case.h"
 #include "str.h"
 #include "stralloc.h"
@@ -8,11 +8,19 @@
 extern void temp_read();
 extern void temp_nomem();
 
-int containsutf8(unsigned char *p, int l)
+/*
+  returns 1 if the remote server advertises a specific verb
+  tx notqmail/mbhangui-smtputf8
+ */
+int get_capa(const char *capa)
 {
-  int i = 0;
-  while (i<l)
-    if(p[i++] > 127) return 1;
+  int i = 0, len;
+  len = str_len(capa);
+  extern stralloc smtptext;
+
+  for (i = 0; i < smtptext.len-len; ++i) {
+    if (case_starts(smtptext.s+i,capa)) return 1;
+  }
   return 0;
 }
 
@@ -31,9 +39,10 @@ void checkutf8message()
   extern stralloc firstpart;
   extern int utf8message;
 
-  if (containsutf8(sender.s, sender.len)) { utf8message = 1; return; }
+//  if (containsutf8(sender.s, sender.len)) { utf8message = 1; return; }
+  if (is_valid_utf8(sender.s)) { utf8message = 1; return; }
   for (i = 0;i < reciplist.len;++i)
-    if (containsutf8(reciplist.sa[i].s, reciplist.sa[i].len)) {
+    if (is_valid_utf8(reciplist.sa[i].s)) {
       utf8message = 1;
       return;
     }
@@ -84,20 +93,4 @@ void checkutf8message()
       continue;
     }
   }
-}
-
-/*
-  returns 1 if the remote server advertises a specific verb
-  tx notqmail/mbhangui-smtputf8
- */
-int get_capa(const char *capa)
-{
-  int i = 0, len;
-  len = str_len(capa);
-  extern stralloc smtptext;
-
-  for (i = 0; i < smtptext.len-len; ++i) {
-    if (case_starts(smtptext.s+i,capa)) return 1;
-  }
-  return 0;
 }

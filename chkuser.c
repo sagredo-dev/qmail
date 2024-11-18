@@ -42,6 +42,7 @@
 
 #include "chkuser.h"
 #include "chkuser_settings.h"
+#include "utf8.h"
 
 #if defined _exit
 #undef _exit
@@ -58,6 +59,7 @@ extern char *remoteip;
 extern char *remoteinfo;
 extern char *relayclient;
 extern char *fakehelo;
+extern int  smtputf8;
 
 extern void die_nomem();
 
@@ -242,223 +244,69 @@ static void chkuser_commonlog (char *sender, char *rcpt, char *title, char *desc
 #define chkuser_commonlog(a,b,c,d) /* no log */
 #endif
 
-#if defined CHKUSER_SENDER_FORMAT
+/**************************************************************************
+ *
+ * Performs mail sender/rcpt address verification
+ *
+ **************************************************************************/
+static int make_mav(stralloc *user, stralloc *domain) {
+  int x;
 
-static int check_sender_address_format (stralloc *user, stralloc *domain) {
+  // if the remote server advertises SMTPUTF8 in MAIL FROM, then allow utf8 names not containing invalid characters
+  if ( smtputf8
+       && is_valid_utf8(user->s) && is_valid_utf8(domain->s)
+       && (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS))
+     ) return 0;
 
-        int x;
+  // else if the remote server does NOT advertise SMTPUTF8 in MAIL FROM, then allow only ASCII characters as usual,
+  // but accept the CHKUSER_ALLOWED_CHARS characters in addition to the ASCII set
+  else if (!smtputf8) {
 
-        for (x = 0; x < (user->len -1); ++x) {
-                if ((!isalnum (user->s[x])) 
+    // user name check
+    for (x = 0; x < (user->len -1); ++x) {
+      if ( !isalnum (user->s[x])
+#ifdef CHKUSER_ALLOWED_CHARS
+           && strchr(CHKUSER_ALLOWED_CHARS, user->s[x]) == NULL
+#endif
+          ) return 0;
+    }
 
-#if defined CHKUSER_ALLOW_SENDER_SRS
-		&& (user->s[x] != '#')
-		&& (user->s[x] != '+')
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_1
-		&& (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_1)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_2
-		&& (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_2)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_3
-		&& (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_3)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_4
-		&& (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_4)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_5
-		&& (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_5)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_6
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_6)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_7
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_7)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_8
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_8)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_9
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_9)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_10
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_10)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_11
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_11)
-#endif
-#if defined CHKUSER_ALLOW_SENDER_CHAR_12
-                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_12)
-#endif
-		&& (user->s[x] != '_') && (user->s[x] != '-') && (user->s[x] != '.') && (user->s[x] != '=')) {
-                        return 0;
-                }
-        }
+    // domain name check
+    for (x = 0; x < (domain->len -1); ++x) {
+      if (!isalnum(domain->s[x]) && (domain->s[x] != '-') && (domain->s[x] != '.')) return 0;
+    }
+  }
 
-/*
- * Be careful, this is a base check
- *      Minimum is x.xx + ending \0
- *      Minimum characters needed are 5
- */
+  /*
+   * Be careful, this is a base check
+   * Minimum is x.xx + ending \0
+   * Minimum characters needed are 5
+   */
 #if defined CHKUSER_MIN_DOMAIN_LEN
-        if (domain->len < (CHKUSER_MIN_DOMAIN_LEN +1)) {
-                return 0;
-        }
+   if (domain->len < (CHKUSER_MIN_DOMAIN_LEN +1)) return 0;
 #endif
 
-/*
- *      This is a safety check
- */
+  /*
+   * This is a safety check
+   */
 #if defined CHKUSER_MIN_DOMAIN_LEN
-        if (domain->len < 2) {
-                return 0;
-        }
+   if (domain->len < 2) return 0;
 #endif
 
-        for (x = 0; x < (domain->len -1); ++x) {
-                if ((!isalnum (domain->s[x])) && (domain->s[x] != '-') && (domain->s[x] != '.')) {
-                        return 0;
-                }
-        }
-
-        if ((domain->s[0] == '-') || (domain->s[domain->len -2] == '-') || (domain->s[0] == '.') || (domain->s[domain->len -2] == '.')) {
-                return 0;
-        }
-        if (strstr (domain->s, "..") != NULL) {
-                return 0;
-        }
-	if (strncmp (domain->s, "xn--", 4) == 0) {
-		if (strstr (&domain->s[4], "--") != NULL)
-			return 0;
-/* allowing domains with hyphens like y--s.co.jp
-	} else {
-		if (strstr (domain->s, "--") != NULL)
-			return 0;
-*/
-	}
-        if (strstr (domain->s, ".-") != NULL) {
-                return 0;
-        }
-        if (strstr (domain->s, "-.") != NULL) {
-                return 0;
-        }
-        if (strchr (domain->s, '.') == NULL) {
-                return 0;
-        }
-
-        return 1;
+   if (    domain->s[0] == '-'
+        || domain->s[domain->len -2] == '-'
+        || domain->s[0] == '.'
+        || domain->s[domain->len -2] == '.'
+        || strstr(domain->s, "..") != NULL
+        || strstr(domain->s, ".-") != NULL
+        || strstr(domain->s, "-.") != NULL
+        || strchr(domain->s, '.') == NULL
+        || (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL)
+        // allowing domains with hyphens like y--s.co.jp
+        // else if (strstr(domain->s, "--") != NULL) return 0;
+      ) return 0;
 }
 
-#endif
-
-#if defined CHKUSER_RCPT_FORMAT
-
-static int check_rcpt_address_format (stralloc *user, stralloc *domain) {
-
-        int x;
-
-        for (x = 0; x < (user->len -1); ++x) {
-                if ((!isalnum (user->s[x])) 
-#if defined CHKUSER_ALLOW_RCPT_SRS
-                && (user->s[x] != '#')
-                && (user->s[x] != '+')
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_1
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_1)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_2
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_2)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_3
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_3)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_4
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_4)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_5
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_5)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_6
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_6)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_7
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_7)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_8
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_8)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_9
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_9)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_10
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_10)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_11
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_11)
-#endif
-#if defined CHKUSER_ALLOW_RCPT_CHAR_12
-                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_12)
-#endif
-		&& (user->s[x] != '_') && (user->s[x] != '-') && (user->s[x] != '.') && (user->s[x] != '=')) {
-                        return 0;
-                }
-        }
-
-/*
- * Be careful, this is a base check
- *      Minimum is x.xx + ending \0
- *      Minimum characters needed are 5
- */
-#if defined CHKUSER_MIN_DOMAIN_LEN
-        if (domain->len < (CHKUSER_MIN_DOMAIN_LEN +1)) {
-                return 0;
-        }
-#endif
-
-/*
- *      This is a safety check
- */
-#if defined CHKUSER_MIN_DOMAIN_LEN
-        if (domain->len < 2) {
-                return 0;
-        }
-#endif
-        for (x = 0; x < (domain->len -1); ++x) {
-                if ((!isalnum (domain->s[x])) && (domain->s[x] != '-') && (domain->s[x] != '.')) {
-                        return 0;
-                }
-        }
-
-        if ((domain->s[0] == '-') || (domain->s[domain->len -2] == '-') || (domain->s[0] == '.') || (domain->s[domain->len -2] == '.')) {
-                return 0;
-        }
-        if (strstr (domain->s, "..") != NULL) {
-                return 0;
-        }
-	if (strncmp (domain->s, "xn--", 4) == 0) {
-		if (strstr (&domain->s[4], "--") != NULL)
-			return 0;
-/* allowing domains with hyphens like y--s.co.jp
-	} else {
-		if (strstr (domain->s, "--") != NULL)
-			return 0;
-*/
-	}
-        if (strstr (domain->s, ".-") != NULL) {
-                return 0;
-        }
-        if (strstr (domain->s, "-.") != NULL) {
-                return 0;
-        }
-        if (strchr (domain->s, '.') == NULL) {
-                return 0;
-        }
-
-        return 1;
-}
-
-#endif
 
 #if defined CHKUSER_SENDER_MX || defined CHKUSER_RCPT_MX
 
@@ -744,7 +592,7 @@ static int realrcpt (stralloc *sender, stralloc *rcpt)
 
 #if defined CHKUSER_RCPT_FORMAT
               if (!env_get ("CHKUSER_RCPT_FORMAT_NOCHECK")) {
-                if (check_rcpt_address_format (&user, &domain) == 0) {
+                if (make_mav(&user, &domain) == 0) {
                         retstat = CHKUSER_ERR_RCPT_FORMAT;
                         break;
                 }
@@ -1267,7 +1115,7 @@ int count;
 
 #if defined CHKUSER_SENDER_FORMAT
       if (!env_get ("CHKUSER_SENDER_FORMAT_NOCHECK")) {
-        if (check_sender_address_format (&sender_user, &sender_domain) == 0) {
+        if (make_mav(&sender_user, &sender_domain) == 0) {
                 chkuser_commonlog (sender->s, "", "rejected sender", "invalid sender address format");
 		CHKUSER_SENDER_DELAY_ANY();
 		out(CHKUSER_SENDERFORMAT_STRING);

@@ -117,12 +117,6 @@
 #define CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT"
 
 /*
- * Uncomment to enable usage of "#" and "+" characters within sender address
- * This is used by SRS (Sender Rewriting Scheme) products
- */
-#define CHKUSER_ALLOW_SENDER_SRS
-
-/*
  * The following #define sets the minimum length of a domain:
  * as far as I know, "k.st" is the shortest domain, so 4 characters is the
  * minimum length.
@@ -211,13 +205,6 @@
  */
 #define CHKUSER_ENABLE_ALIAS_DEFAULT
 
-
-/*
- * Uncomment to enable usage of "#" and "+" characters within rcpt address
- * This is used by SRS (Sender Rewriting Scheme) products
- */
-#define CHKUSER_ALLOW_RCPT_SRS
-
 /*
  * This define has been eliminated and its usage will generate an error.
  * Turning it ON or OFF has no effect, as we consider the existence
@@ -294,8 +281,8 @@
 
 /*
  * Uncomment to enable checking of user and domain format for rcpt addresses
- *      user    =       [a-z0-9_-]
- *      domain  =       [a-z0-9-.] with not consecutive "-.", not leading or ending "-."
+ *      user    =       any UTF8 character in the world EXCEPT (),%:;<>@[\]
+ *      domain  =       any UTF8 character in the world EXCEPT (),%:;<>@[\] with not consecutive "-.", not leading or ending "-."
  */
 #define CHKUSER_RCPT_FORMAT
 
@@ -307,8 +294,8 @@
 
 /*
  * Uncomment to enable checking of user and domain format for sender address
- *      user    =       [a-z0-9_-]
- *      domain  =       [a-z0-9-.] with not consecutive "-.", not leading or ending "-."
+ *      user    =       any UTF8 character in the world EXCEPT (),%:;<>@[\]
+ *      domain  =       any UTF8 character in the world EXCEPT (),%:;<>@[\] with not consecutive "-.", not leading or ending "-."
  */
 #define CHKUSER_SENDER_FORMAT
 
@@ -414,53 +401,6 @@
  * 			#define CHKUSER_ENABLE_VAUTH_OPEN -> Substituted by CHKUSER_VAUTH_OPEN_CALL
  */
 
-
-/*
- * If you need more additional characters to be accepted within sender address
- * uncomment one of the following #define and edit the character value.
- * Be careful to use '*' (single hiphen) and NOT "*" (double hiphen) around the
- * wanted char.
- *
- * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_SENDER_SRS
- *
- */
-#define CHKUSER_ALLOW_SENDER_CHAR_1 '$'
-#define CHKUSER_ALLOW_SENDER_CHAR_2 '%'
-#define CHKUSER_ALLOW_SENDER_CHAR_3 '\''
-#define CHKUSER_ALLOW_SENDER_CHAR_4 '?'
-#define CHKUSER_ALLOW_SENDER_CHAR_5 '*'
-#define CHKUSER_ALLOW_SENDER_CHAR_6 '^'
-#define CHKUSER_ALLOW_SENDER_CHAR_7 '~'
-#define CHKUSER_ALLOW_SENDER_CHAR_8 '&'
-#define CHKUSER_ALLOW_SENDER_CHAR_9 '#'
-#define CHKUSER_ALLOW_SENDER_CHAR_10 '='
-#define CHKUSER_ALLOW_SENDER_CHAR_11 '/'
-/* #define CHKUSER_ALLOW_SENDER_CHAR_12 '£' */  /* available for other characters */
-
-
-/*
- * If you need more additional characters to be accepted within rcpt address
- * uncomment one of the following #define and edit the character value.
- * Be careful to use '*' (single hiphen) and NOT "*" (double hiphen) around the
- * wanted char.
- *
- * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_RCPT_SRS
- *
- */
-#define CHKUSER_ALLOW_RCPT_CHAR_1 '$'
-#define CHKUSER_ALLOW_RCPT_CHAR_2 '%'
-#define CHKUSER_ALLOW_RCPT_CHAR_3 '\''
-#define CHKUSER_ALLOW_RCPT_CHAR_4 '?'
-#define CHKUSER_ALLOW_RCPT_CHAR_5 '*'
-#define CHKUSER_ALLOW_RCPT_CHAR_6 '^'
-#define CHKUSER_ALLOW_RCPT_CHAR_7 '~'
-#define CHKUSER_ALLOW_RCPT_CHAR_8 '&'
-#define CHKUSER_ALLOW_RCPT_CHAR_9 '#'
-#define CHKUSER_ALLOW_RCPT_CHAR_10 '='
-#define CHKUSER_ALLOW_RCPT_CHAR_11 '/'
-/* #define CHKUSER_ALLOW_RCPT_CHAR_12 '£' */ /* available for other characters */
-
-
 /*
  * This define tells chkuser which variable must be set to accept a <#@[]> sender
  * This kind of sender is usually generated from qmail when there is a doublebounce
@@ -469,3 +409,38 @@
  * doublebounces are forwarded between systems
  */
 #define CHKUSER_ENABLE_DOUBLEBOUNCE_VARIABLE "CHKUSER_DOUBLEBOUNCE"
+
+
+/************************************************************************************************
+ *
+ * Changes as of November 2024 (Roberto Puzzanghera)
+ *
+ * - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx
+ *   (replaced by CHKUSER_ALLOWED_CHARS)
+ * - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always
+ *   accepting '+' and '#' characters
+ *
+ ***********************************************************************************************/
+
+/*
+ * Denied characters among the UTF8 set of charactes in sender name, rcpt name and domain name
+ * CHKUSER_INVALID_CHARS is checked only if the remote server advertises the SMTPUTF8 verb in the
+ * SMTP conversation.
+ */
+#define CHKUSER_INVALID_UTF8_CHARS "(),:;<>@[]"
+
+/*
+ * CHKUSER_ALLOWED_CHARS is evaluated only when the remote server does NOT advertises the SMTPUTF8 verb in the
+ * SMTP conversation, so only ASCII characters are allowed in sender name, rcpt name and domain name
+ * plus the following set of characters.
+ *
+ * As of November 2024, '#' and '+' are ALWAYS accepted regardless of the definition of CHKUSER_ALLOW_SENDER_SRS,
+ * which is no longer used.
+ * In addition, CHKUSER_ALLOWED_CHARS replaces the CHKUSER_ALLOW_SENDER_CHAR_1----12 variables, which are no
+ * longer userd.
+ *
+ * CHKUSER_ALLOWED_CHARS is used for additional characters both for sender and recipient names
+ *
+ * #+_-.= should be always allowed (# and + are needed for SRS)
+ */
+#define CHKUSER_ALLOWED_CHARS "$%?*^~&/\\£#+_-.="
