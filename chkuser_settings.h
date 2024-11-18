@@ -23,7 +23,7 @@
  *   (replaced by CHKUSER_ALLOWED_CHARS)
  * - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always
  *   accepting '+' and '#' characters
- * - added variables
+ * - added variables CHKUSER_INVALID_UTF8_CHARS and CHKUSER_ALLOWED_CHARS
  *
  ***********************************************************************************************/
 
@@ -293,8 +293,12 @@
 
 /*
  * Uncomment to enable checking of user and domain format for rcpt addresses
- *      user    =       any UTF8 character in the world EXCEPT (),%:;<>@[\]
- *      domain  =       any UTF8 character in the world EXCEPT (),%:;<>@[\] with not consecutive "-.", not leading or ending "-."
+ *      user    =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS
+ *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
+ *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
+ *      domain  =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS with not consecutive "-.", not leading or ending "-."
+ *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
+ *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  */
 #define CHKUSER_RCPT_FORMAT
 
@@ -424,20 +428,20 @@
 
 /*
  * Denied characters among the UTF8 set of charactes in sender name, rcpt name and domain name
- * CHKUSER_INVALID_CHARS is checked only if the remote server advertises the SMTPUTF8 verb in the
- * SMTP conversation.
+ * CHKUSER_INVALID_UTF8_CHARS is evaluated only if the remote server advertises the SMTPUTF8 verb
+ * in the MAIL FROM.
  */
 #define CHKUSER_INVALID_UTF8_CHARS "(),:;<>@[]"
 
 /*
- * CHKUSER_ALLOWED_CHARS is evaluated only when the remote server does NOT advertises the SMTPUTF8 verb in the
- * SMTP conversation, so only ASCII characters are allowed in sender name, rcpt name and domain name
- * plus the following set of characters.
+ * CHKUSER_ALLOWED_CHARS is evaluated only when the remote server does NOT advertise the SMTPUTF8 verb in the
+ * SMTP conversation. In this case only ASCII characters are allowed in sender name, rcpt name and domain name
+ * plus the CHKUSER_ALLOWED_CHARS set of characters.
  *
  * As of November 2024, '#' and '+' are ALWAYS accepted regardless of the definition of CHKUSER_ALLOW_SENDER_SRS,
  * which is no longer used.
- * In addition, CHKUSER_ALLOWED_CHARS replaces the CHKUSER_ALLOW_SENDER_CHAR_1----12 variables, which are no
- * longer userd.
+ * In addition, CHKUSER_ALLOWED_CHARS replaces the CHKUSER_ALLOW_SENDER_CHAR_1----12 variables,
+ * which have been dropped.
  *
  * CHKUSER_ALLOWED_CHARS is used for additional characters both for sender and recipient names
  *

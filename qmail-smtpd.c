@@ -983,7 +983,7 @@ stralloc rcptto = {0};
 stralloc fuser = {0};
 stralloc mfparms = {0};
 stralloc log_buf = {0};
-int smtputf8 = 0; // if MAILFROM has SMTPUTF8 param
+int smtputf8 = 0; // if MAIL FROM has SMTPUTF8 param
 
 /* realbadrcpt: start */
 int flagvrt; /* defined if valid rcpt */

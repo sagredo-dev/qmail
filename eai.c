@@ -39,7 +39,6 @@ void checkutf8message()
   extern stralloc firstpart;
   extern int utf8message;
 
-//  if (containsutf8(sender.s, sender.len)) { utf8message = 1; return; }
   if (is_valid_utf8(sender.s)) { utf8message = 1; return; }
   for (i = 0;i < reciplist.len;++i)
     if (is_valid_utf8(reciplist.sa[i].s)) {

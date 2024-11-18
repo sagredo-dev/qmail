@@ -33,7 +33,6 @@
 #include "base64.h"
 #include "hmac_md5.h"
 #include "eai.h"
-//#include "utf8.h"
 
 #define HUGESMTPTEXT 5000
 
