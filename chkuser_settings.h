@@ -15,6 +15,18 @@
  *
  */
 
+/************************************************************************************************
+ *
+ * Changes as of November 2024 (Roberto Puzzanghera)
+ *
+ * - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx
+ *   (replaced by CHKUSER_ALLOWED_CHARS)
+ * - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always
+ *   accepting '+' and '#' characters
+ * - added variables
+ *
+ ***********************************************************************************************/
+
 /*
  * the following line enables debugging of chkuser
  */
@@ -409,18 +421,6 @@
  * doublebounces are forwarded between systems
  */
 #define CHKUSER_ENABLE_DOUBLEBOUNCE_VARIABLE "CHKUSER_DOUBLEBOUNCE"
-
-
-/************************************************************************************************
- *
- * Changes as of November 2024 (Roberto Puzzanghera)
- *
- * - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx
- *   (replaced by CHKUSER_ALLOWED_CHARS)
- * - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always
- *   accepting '+' and '#' characters
- *
- ***********************************************************************************************/
 
 /*
  * Denied characters among the UTF8 set of charactes in sender name, rcpt name and domain name
