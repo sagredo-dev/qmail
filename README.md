@@ -1,22 +1,30 @@
 # qmail
 
-[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts.
+It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
 ## My patched `qmail`
 
-This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html). Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
+This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
+Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
 ## Before installing
 
-This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite, while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
+This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite,
+while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
 
 This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
 
-If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`, or apply [this patch](https://github.com/sagredo-dev/qmail/blob/main/other-patches/qmail-remove_chkuser_vpopmail.patch).
+If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`.  
+Download like this:  
+
+```
+git clone -b no-chkuser-vpopmail https://github.com/sagredo-dev/qmail.git
+```
 
 ## `qmail` package details
 
-This distribution of qmail puts together netqmail-1.06 with the following patches:
+This distribution of `qmail` puts together `netqmail-1.06` with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
   by Krysztof Dabrowski and Bjoern Kalkbrenner.  
@@ -236,9 +244,9 @@ This distribution of qmail puts together netqmail-1.06 with the following patche
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
 * Arnt Gulbrandsen's smtputf8  
   adds RFC 5336 SMTP Email Address Internationalization support  
+  You have to undefine CHKUSER_SENDER_FORMAT in chkuser_settings.h to get this feature working.  
   https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
-  https://github.com/sagredo-dev/qmail/compare/main...smtputf8-arnt
-
+  Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
 
 Install
 -----
