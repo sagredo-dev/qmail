@@ -983,7 +983,7 @@ stralloc rcptto = {0};
 stralloc fuser = {0};
 stralloc mfparms = {0};
 stralloc log_buf = {0};
-int smtputf8 = 0;
+int smtputf8 = 0; // if MAIL FROM has SMTPUTF8 param
 
 /* realbadrcpt: start */
 int flagvrt; /* defined if valid rcpt */
@@ -1226,32 +1226,6 @@ void smtp_mail(arg) char *arg;
   if (smtpauth)
     if (smtpauth > 10 && !seenauth) { err_submission(); return; }
   if (!addrparse(arg)) { err_syntax(); return; }
-/* start chkuser code */
-  switch (chkuser_sender (&addr)) {
-    case CHKUSER_OK:
-	break;
-    case CHKUSER_ERR_MUSTAUTH:
-	qlogenvelope("rejected","chkusersender","mustauth","530");
-	return;
-	break;
-    case CHKUSER_ERR_SENDER_FORMAT:
-	qlogenvelope("rejected","chkusersender","senderformat","553");
-	return;
-	break;
-    case CHKUSER_ERR_SENDER_MX:
-	qlogenvelope("rejected","chkusersender","sendermxinvalid","550");
-	return;
-	break;
-    case CHKUSER_ERR_SENDER_MX_TMP:
-	qlogenvelope("rejected","chkusersender","sendermxdnstmpfail","451");
-	return;
-	break;
-    default:
-	qlogenvelope("rejected","chkusersender","invalid","550");
-	return;
-	break;
-   }
-/* end chkuser code */
 /* authtlsvariables: start */
     /* if it is authenticated but MAIL FROM and AUTH USER are different */
     if (smtpauth && seenauth && forceauthmailfrom) {
@@ -1273,6 +1247,32 @@ void smtp_mail(arg) char *arg;
 /* qregex: end */
   flagsize = 0;
   mailfrom_parms(arg);
+/* start chkuser code */
+  switch (chkuser_sender (&addr)) {
+    case CHKUSER_OK:
+        break;
+    case CHKUSER_ERR_MUSTAUTH:
+        qlogenvelope("rejected","chkusersender","mustauth","530");
+        return;
+        break;
+    case CHKUSER_ERR_SENDER_FORMAT:
+        qlogenvelope("rejected","chkusersender","senderformat","553");
+        return;
+        break;
+    case CHKUSER_ERR_SENDER_MX:
+        qlogenvelope("rejected","chkusersender","sendermxinvalid","550");
+        return;
+        break;
+    case CHKUSER_ERR_SENDER_MX_TMP:
+        qlogenvelope("rejected","chkusersender","sendermxdnstmpfail","451");
+        return;
+        break;
+    default:
+        qlogenvelope("rejected","chkusersender","invalid","550");
+        return;
+        break;
+   }
+/* end chkuser code */
   if (flagsize) { err_size(); return; }
   if (!(spp_val = spp_mail())) return;
   if (spp_val == 1)
@@ -1406,7 +1406,7 @@ void smtp_rcpt(arg) char *arg; {
     if (dnsblcheck()) die_dnsbl(dnsblhost.s);
 */
 /* dnsbl: end */
-/* start chkuser code */
+/* Original code substituted by chkuser code */
 /*  if (relayclient) {
     --addr.len;
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
@@ -1415,6 +1415,7 @@ void smtp_rcpt(arg) char *arg; {
   else
     if (!addrallowed()) { err_nogateway(); return; }
 */
+ /* end of substituted code */
 
 /* qregex: start */
     if (brtlimit && (brtcount >= brtlimit)) {
@@ -1612,7 +1613,6 @@ void smtp_rcpt(arg) char *arg; {
   } // if rcptcheck[0]
 /* realbadrcpt: end */
 
-/* end chkuser code */
 /* rbl: start */
   if ((rblok) && !(relayclient || seenauth || dnsblskip || flagrbldns)) {
     flagrbldns = 1;

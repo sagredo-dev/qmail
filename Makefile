@@ -2,7 +2,7 @@
 
 VPOPMAIL_LIBS=`head -1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
 
-SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
 DEFINES=-DEXTERNAL_TODO # use to enable external todo
 
@@ -1603,6 +1603,10 @@ alloc.h substdio.h datetime.h now.h datetime.h triggerpull.h extra.h \
 auto_qmail.h auto_uids.h date822fmt.h fmtqfn.h
 	./compile qmail-queue.c
 
+utf8.o: \
+compile utf8.c
+	./compile utf8.c
+
 eai.o: \
 compile eai.c
 	./compile eai.c
@@ -1612,14 +1616,14 @@ load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
 timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o strsalloc.o ipme.o quote.o \
 ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
 substdio.a error.a str.a fs.a auto_qmail.o \
-base64.o md5c.o hmac_md5.o eai.o \
+base64.o md5c.o hmac_md5.o utf8.o eai.o \
 dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	tls.o ssl_timeoutio.o -lssl -lcrypto \
 	ipalloc.o strsalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	base64.o md5c.o hmac_md5.o eai.o \
+	base64.o md5c.o hmac_md5.o utf8.o eai.o \
 	str.a fs.a auto_qmail.o `cat dns.lib` `cat socket.lib` -lidn2
 
 qmail-remote.0: \
@@ -1631,7 +1635,7 @@ compile qmail-remote.c sig.h stralloc.h gen_alloc.h substdio.h \
 subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h strsalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h strsalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
-tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
+tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h eai.h utf8.h
 	./compile qmail-remote.c
 
 qmail-rspawn: \
@@ -1719,8 +1723,7 @@ timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o constmap.o \
 received.o date822fmt.o now.o qmail.o spf.o dns.o cdb.a fd.a wait.a \
 datetime.a getln.a open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
 error.a str.a fs.a auto_qmail.o base64.o socket.lib dns.lib lock.a policy.o \
-qmail-spp.o \
-$(SMTPD_CHKUSER_OBJ)
+qmail-spp.o $(SMTPD_CHKUSER_OBJ)
 	./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
 	strerr.a wildmat.o qregex.o \
 	timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o \
