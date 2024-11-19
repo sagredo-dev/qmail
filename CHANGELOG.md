@@ -1,5 +1,19 @@
 # ChangeLog
 
+- unreleased
+  - chkuser is now smtputf8 compliant. It accepts utf8 characters in sender and recipient addresses provided that the
+    remote server advertises the SMTPUTF8 verb in MAIL FROM, otherwise it allows only ASCII characters plus additional
+    chars from the CHKUSER_ALLOWED_CHARS set.
+  - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx
+    (replaced by CHKUSER_ALLOWED_CHARS)
+  - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always
+    accepting '+' and '#' characters
+  - added variables CHKUSER_INVALID_UTF8_CHARS and CHKUSER_ALLOWED_CHARS
+
+- Nov 3, 2024
+  - Added support for EAI (RFC 5336 SMTP Email Address Internationalization) (https://github.com/sagredo-dev/qmail/pull/13).  
+    Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
+
 - Oct 26, 2024
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
