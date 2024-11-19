@@ -434,6 +434,10 @@
  * Denied characters among the UTF8 set of charactes in sender name, rcpt name and domain name
  * CHKUSER_INVALID_UTF8_CHARS is evaluated only if the remote server advertises the SMTPUTF8 verb
  * in the MAIL FROM.
+ *
+ * N.B. '@' is not allowed because is not part of the user name nor of the domain name.
+ *
+ * More info on valid characters here: https://www.w3.org/International/wiki/EAI_Address_Issues
  */
 #define CHKUSER_INVALID_UTF8_CHARS "(),:;<>@[]"
 
@@ -449,6 +453,6 @@
  *
  * CHKUSER_ALLOWED_CHARS is used for additional characters both for sender and recipient names
  *
- * #+_-.= should be always allowed (# and + are needed for SRS)
+ * #+_-.= should be always allowed ('=', '#' and '+' are needed for SRS)
  */
 #define CHKUSER_ALLOWED_CHARS "$%?*^~&/\\£#+_-.="

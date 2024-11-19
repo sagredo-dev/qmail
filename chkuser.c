@@ -270,7 +270,7 @@ static int make_mav(stralloc *user, stralloc *domain) {
 #ifdef CHKUSER_ALLOWED_CHARS
            && strchr(CHKUSER_ALLOWED_CHARS, user->s[x]) == NULL
 #endif
-          ) return 0;
+         ) return 0;
     }
 
     // domain name check
@@ -285,28 +285,28 @@ static int make_mav(stralloc *user, stralloc *domain) {
    * Minimum characters needed are 5
    */
 #if defined CHKUSER_MIN_DOMAIN_LEN
-   if (domain->len < (CHKUSER_MIN_DOMAIN_LEN +1)) return 0;
+  if (domain->len < (CHKUSER_MIN_DOMAIN_LEN +1)) return 0;
 #endif
 
   /*
    * This is a safety check
    */
 #if defined CHKUSER_MIN_DOMAIN_LEN
-   if (domain->len < 2) return 0;
+  if (domain->len < 2) return 0;
 #endif
 
-   if (    domain->s[0] == '-'
-        || domain->s[domain->len -2] == '-'
-        || domain->s[0] == '.'
-        || domain->s[domain->len -2] == '.'
-        || strstr(domain->s, "..") != NULL
-        || strstr(domain->s, ".-") != NULL
-        || strstr(domain->s, "-.") != NULL
-        || strchr(domain->s, '.') == NULL
-        || (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL)
-        // allowing domains with hyphens like y--s.co.jp
-        // else if (strstr(domain->s, "--") != NULL) return 0;
-      ) return 0;
+  if (   domain->s[0] == '-'
+      || domain->s[domain->len -2] == '-'
+      || domain->s[0] == '.'
+      || domain->s[domain->len -2] == '.'
+      || strstr(domain->s, "..") != NULL
+      || strstr(domain->s, ".-") != NULL
+      || strstr(domain->s, "-.") != NULL
+      || strchr(domain->s, '.') == NULL
+      || (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL)
+      // allowing domains with hyphens like y--s.co.jp
+      // || strstr(domain->s, "--") != NULL
+     ) return 0;
 }
 
 
@@ -350,44 +350,32 @@ static void first_time_init (void) {
 #if defined CHKUSER_STARTING_VARIABLE
         starting_string = env_get (CHKUSER_STARTING_VARIABLE);
         if (starting_string) {
-                if (strcasecmp(starting_string, "ALWAYS") == 0) {
-                        starting_value = 1;
-                } else if (strcasecmp(starting_string, "DOMAIN") == 0) {
-                        starting_value = 0;
+          if (strcasecmp(starting_string, "ALWAYS") == 0) starting_value = 1;
+          else if (strcasecmp(starting_string, "DOMAIN") == 0) starting_value = 0;
 /*
   Edit by Roberto Puzzanghera
   It seems like any other definition of starting_string ends up as "DOMAIN".
   Instead, if starting_string is otherwise defined, we want to turn off chkuser,
   just like if the starting_string is "NONE".
  */
-                } else {
-					starting_value = -1;
-				}
-		} else {
-			starting_string = "";
-			starting_value = -1;
+          else starting_value = -1;
+
+        } else {
+            starting_string = "";
+            starting_value = -1;
         }
 #endif
 
-#if defined CHKUSER_DISABLE_VARIABLE 
+#if defined CHKUSER_DISABLE_VARIABLE
         chkuser_disable_variable = env_get("CHKUSER_DISABLE_VARIABLE");
-        if (chkuser_disable_variable) {
-          if (env_get (chkuser_disable_variable)) {
-            starting_value = -1;
-          }
-        }
-    	else if (env_get (CHKUSER_DISABLE_VARIABLE)) { 
-	      starting_value = -1; 
-	    }
+        if (chkuser_disable_variable && env_get(chkuser_disable_variable)) starting_value = -1;
+    	else if (env_get (CHKUSER_DISABLE_VARIABLE)) starting_value = -1;
 #endif
 
 #if defined CHKUSER_EXTRA_MUSTAUTH_VARIABLE
         if (env_get (CHKUSER_EXTRA_MUSTAUTH_VARIABLE)) {
-		if (relayclient) {
-			mustauth_value = 0;
-		} else {
-			mustauth_value = 1;
-		}
+          if (relayclient) mustauth_value = 0;
+          else mustauth_value = 1;
         }
 #endif
 
