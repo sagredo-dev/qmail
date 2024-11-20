@@ -12,10 +12,6 @@
     - added variables CHKUSER_INVALID_UTF8_CHARS and CHKUSER_ALLOWED_CHARS  
     More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 
-- Nov 3, 2024
-  - Added support for EAI (RFC 5336 SMTP Email Address Internationalization) (https://github.com/sagredo-dev/qmail/pull/13).  
-    Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
-
 - Oct 26, 2024
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
