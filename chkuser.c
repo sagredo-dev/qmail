@@ -252,16 +252,23 @@ static void chkuser_commonlog (char *sender, char *rcpt, char *title, char *desc
 static int make_mav(stralloc *user, stralloc *domain) {
   int x;
 
-  // if the remote server advertises SMTPUTF8 in MAIL FROM, then allow utf8 names not containing invalid characters
-  if ( smtputf8
-       && is_valid_utf8(user->s) && is_valid_utf8(domain->s)
+  /*
+   *  If the remote server advertises SMTPUTF8 in MAIL FROM,
+   *  then allow utf8 names not containing invalid characters.
+   */
+  if ( smtputf8 && ( // if it advertises SMTPUTF8 and
+       (!is_valid_utf8(user->s) || !is_valid_utf8(domain->s)) // if it has invalid UTF8 chars
 #ifdef CHKUSER_INVALID_UTF8_CHARS
-       && (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS))
+       || (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS)) // or it has UTF8 chars that we don't allow
 #endif
-     ) return 0;
+       )
+     ) return 0; // then reject the email address
 
-  // else if the remote server does NOT advertise SMTPUTF8 in MAIL FROM, then allow only ASCII characters as usual,
-  // but accept the CHKUSER_ALLOWED_CHARS characters in addition to the ASCII set
+  /*
+   *  else if the remote server does NOT advertise SMTPUTF8 in MAIL FROM,
+   *  then allow only ASCII characters as usual,  but accept the CHKUSER_ALLOWED_CHARS
+   *  characters in addition to the ASCII set
+   */
   else if (!smtputf8) {
 
     // user name check
