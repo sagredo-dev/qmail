@@ -1,4 +1,3 @@
-#include "utf8.h"
 #include "case.h"
 #include "str.h"
 #include "stralloc.h"
@@ -24,6 +23,14 @@ int get_capa(const char *capa)
   return 0;
 }
 
+int containsutf8(unsigned char *p, int l)
+{
+  int i = 0;
+  while (i<l)
+    if(p[i++] > 127) return 1;
+  return 0;
+}
+
 void checkutf8message()
 {
   GEN_ALLOC_typedef(saa,stralloc,sa,len,a)
@@ -39,9 +46,9 @@ void checkutf8message()
   extern stralloc firstpart;
   extern int utf8message;
 
-  if (is_valid_utf8(sender.s)) { utf8message = 1; return; }
+  if (containsutf8(sender.s, sender.len)) { utf8message = 1; return; }
   for (i = 0;i < reciplist.len;++i)
-    if (is_valid_utf8(reciplist.sa[i].s)) {
+    if (containsutf8(reciplist.sa[i].s, reciplist.sa[i].len)) {
       utf8message = 1;
       return;
     }
