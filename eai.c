@@ -23,6 +23,9 @@ int get_capa(const char *capa)
   return 0;
 }
 
+/*
+ * returns 1 if the string contains UTF8 chars that are not in the ASCII set (> 127)
+ */
 int containsutf8(unsigned char *p, int l)
 {
   int i = 0;
@@ -31,6 +34,10 @@ int containsutf8(unsigned char *p, int l)
   return 0;
 }
 
+/*
+ * sets the external variable utf8message = 1 if the message cannot be considered as a pure
+ * alpha numerical, but shows non ASCII characters in the sender and/or recipient names
+ */
 void checkutf8message()
 {
   GEN_ALLOC_typedef(saa,stralloc,sa,len,a)
