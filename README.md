@@ -13,8 +13,6 @@ Not everything you need to know about `qmail` or its installation is covered her
 This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite,
 while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
 
-This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
-
 If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`.  
 Download like this:  
 
@@ -47,7 +45,9 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   http://opensource.interazioni.it/qmail/chkuser.html  
   Small adjustments and a bug fix by Luca Franceschini here https://notes.sagredo.eu/files/qmail/patches/dmind/20190807/:  
   Now CHKUSER_DISABLE_VARIABLE, CHKUSER_SENDER_NOCHECK_VARIABLE, CHKUSER_SENDER_FORMAT_NOCHECK,
-  CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.
+  CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.  
+  chkuser' MAV program has been modified in order to be compliant with EAI (RFC 5336 SMTP Email Address Internationalization).  
+  More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 * Flavio Curti's qmail-queue-custom-error patch  
   enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.  
   https://notes.sagredo.eu/files/qmail/patches/qmail-queue-custom-error-v2.netqmail-1.05.patch
@@ -251,7 +251,11 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 Install
 -----
 
-As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have
+created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+
+This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name
+library version 2, `libidn2-dev` on `Debian` like OS).
 
 * Install libsrs2
 ```

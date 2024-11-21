@@ -256,17 +256,18 @@ static int make_mav(stralloc *user, stralloc *domain) {
    *  If the remote server advertises SMTPUTF8 in MAIL FROM,
    *  then allow utf8 names not containing invalid characters.
    */
-  if ( smtputf8 && ( // if it advertises SMTPUTF8 and
-       (!is_valid_utf8(user->s) || !is_valid_utf8(domain->s)) // if it has invalid UTF8 chars
+  if ( smtputf8 && ( // if it advertises SMTPUTF8 in the MAIL FROM and
+       (!is_valid_utf8(user->s) || !is_valid_utf8(domain->s)) // if it has chars in user name or domain name that are not UTF8 compliant
 #ifdef CHKUSER_INVALID_UTF8_CHARS
-       || (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS)) // or it has UTF8 chars that we don't allow
+       // or it has valid UTF8 chars that we don't accept
+       || (strpbrk(user->s, CHKUSER_INVALID_UTF8_CHARS) || strpbrk(domain->s, CHKUSER_INVALID_UTF8_CHARS))
 #endif
        )
-     ) return 0; // then reject the email address
+     ) return 0; // then flag the email address as not valid
 
   /*
    *  else if the remote server does NOT advertise SMTPUTF8 in MAIL FROM,
-   *  then allow only ASCII characters as usual,  but accept the CHKUSER_ALLOWED_CHARS
+   *  then allow only ASCII characters as usual, but accept the CHKUSER_ALLOWED_CHARS
    *  characters in addition to the ASCII set
    */
   else if (!smtputf8) {
@@ -285,6 +286,8 @@ static int make_mav(stralloc *user, stralloc *domain) {
       if (!isalnum(domain->s[x]) && (domain->s[x] != '-') && (domain->s[x] != '.')) return 0;
     }
   }
+
+  /* Other checks on domain name validity */
 
   /*
    * Be careful, this is a base check
