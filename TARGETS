@@ -438,7 +438,11 @@ str_cpyb.o
 dkimfuncs.o
 makeargs.o
 report.o
-spawn-filter spawn-filter.o qregex.o wildmat.o wildmat
+spawn-filter
+spawn-filter.o
+qregex.o
+wildmat.o
+wildmat
 spawn-filter.8
 spawn-filter.0
 case_startb.o
