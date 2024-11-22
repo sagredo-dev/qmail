@@ -274,11 +274,14 @@ static int make_mav(stralloc *user, stralloc *domain) {
 
     // user name check
     for (x = 0; x < (user->len -1); ++x) {
+#ifdef CHKUSER_ALLOWED_CHARS
+      char *chkuser_allowed_char = strchr(CHKUSER_ALLOWED_CHARS, user->s[x]);
+#endif
       if ( !isalnum (user->s[x])
 #ifdef CHKUSER_ALLOWED_CHARS
-           && strchr(CHKUSER_ALLOWED_CHARS, user->s[x]) == NULL
+           && (chkuser_allowed_char == NULL)
 #endif
-         ) return 0;
+         ) return 0; // flag the email address as not valid
     }
 
     // domain name check
