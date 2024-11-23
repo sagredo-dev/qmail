@@ -316,8 +316,8 @@ static int make_mav(stralloc *user, stralloc *domain) {
       || strstr(domain->s, ".-") != NULL
       || strstr(domain->s, "-.") != NULL
       || strchr(domain->s, '.') == NULL
-      || (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL)
-      // allowing domains with hyphens like y--s.co.jp
+      || ( !smtputf8 && (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL) ) // do no accept punycode if SMTPUTF8 not avaliable
+      // allowing domains with double hyphens like y--s.co.jp not in 1st char
       // || strstr(domain->s, "--") != NULL
      ) return 0;
 }
