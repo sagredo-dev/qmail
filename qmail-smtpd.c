@@ -2410,8 +2410,8 @@ struct commands smtpcommands[] = {
 /* qsmtpdlog: start */
 void outqlog(const char *s, unsigned int n) {
   while (n > 0) {
-//    substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
-    substdio_put(&sslog,s,1);
+    if (smtputf8) substdio_put(&sslog,s,1);
+    else substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
     --n;
     ++s;
   }
