@@ -242,11 +242,10 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.  
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
-* Arnt Gulbrandsen's smtputf8  
-  adds RFC 5336 SMTP Email Address Internationalization support  
-  You have to undefine CHKUSER_SENDER_FORMAT in chkuser_settings.h to get this feature working.  
-  https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
-  Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
+* [Arnt Gulbrandsen's smtputf8](https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls)  
+  adds [RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization support  
+  - [Pull Request](https://github.com/sagredo-dev/qmail/pull/13)  
+  - More infor [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 
 Install
 -----
@@ -271,7 +270,6 @@ cd ../
 
 * Download and compile
 ```
-make
 make setup check
 ```
 
@@ -282,4 +280,4 @@ make setup check
 
 Info and support
 ----------------
-You can find more info and ask for support here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html.
+You can find more info and ask for support [here](https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html).
