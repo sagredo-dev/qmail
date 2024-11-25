@@ -59,7 +59,6 @@ extern char *remoteip;
 extern char *remoteinfo;
 extern char *relayclient;
 extern char *fakehelo;
-extern int  smtputf8;
 
 extern void die_nomem();
 
@@ -244,6 +243,11 @@ static void chkuser_commonlog (char *sender, char *rcpt, char *title, char *desc
 #define chkuser_commonlog(a,b,c,d) /* no log */
 #endif
 
+
+#if defined CHKUSER_SENDER_FORMAT || defined CHKUSER_RCPT_FORMAT
+
+extern int  smtputf8;
+
 /**************************************************************************
  *
  * Performs mail sender/rcpt address verification
@@ -317,10 +321,13 @@ static int make_mav(stralloc *user, stralloc *domain) {
       || strstr(domain->s, "-.") != NULL
       || strchr(domain->s, '.') == NULL
       || ( !smtputf8 && (strncmp(domain->s, "xn--", 4) == 0) && (strstr(&domain->s[4], "--") != NULL) ) // do no accept punycode if SMTPUTF8 not avaliable
-      // allowing domains with double hyphens like y--s.co.jp not in 1st char
+      // allowing domains with double hyphen like y--s.co.jp not in 1st char
       // || strstr(domain->s, "--") != NULL
      ) return 0;
+
+  return 1;
 }
+#endif
 
 
 #if defined CHKUSER_SENDER_MX || defined CHKUSER_RCPT_MX
