@@ -3,17 +3,14 @@
 [`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts.
 It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
-## My patched `qmail`
-
-This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
+This `qmail` distribution is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
 Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
-
-## Before installing
 
 This `qmail` package contains `chkuser`, which has [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite,
 while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
 
-If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail) where you can find this same `qmail` without `chkuser`.  
+If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail)
+where you can find this same `qmail` without `chkuser`.  
 Download like this:  
 
 ```
@@ -245,7 +242,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * [Arnt Gulbrandsen's smtputf8](https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls)  
   adds [RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization support  
   - [Pull Request](https://github.com/sagredo-dev/qmail/pull/13)  
-  - More infor [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
+  - More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 
 Install
 -----
