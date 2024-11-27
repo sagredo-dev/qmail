@@ -2340,7 +2340,7 @@ void tls_init()
   if (!myssl) { tls_err("unable to initialize ssl"); return; }
 
   /* this will also check whether public and private keys match */
-  if (!SSL_use_RSAPrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM))
+  if (!SSL_use_PrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM))
     { SSL_free(myssl); tls_err("no valid RSA private key"); return; }
 
   ciphers = env_get("TLSCIPHERS");

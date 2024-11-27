@@ -483,7 +483,7 @@ int tls_init()
   /* let the other side complain if it needs a cert and we don't have one */
 # define CLIENTCERT "control/clientcert.pem"
   if (SSL_CTX_use_certificate_chain_file(ctx, CLIENTCERT))
-    SSL_CTX_use_RSAPrivateKey_file(ctx, CLIENTCERT, SSL_FILETYPE_PEM);
+    SSL_CTX_use_PrivateKey_file(ctx, CLIENTCERT, SSL_FILETYPE_PEM);
 # undef CLIENTCERT
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
