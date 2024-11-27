@@ -187,12 +187,6 @@
 #define CHKUSER_SENDER_DELAY_ANYERROR
 
 
-/***************************************************
- *
- *      new/modified defines in/from 2.0.6
- *
- **************************************************/
-
 /*
  * Before version 5.3.25, vpopmail used the function vget_real_domain()
  * to get the real name of a domain (useful if rcpt domain is aliasing
@@ -205,11 +199,6 @@
  */
 /* #define CHKUSER_ENABLE_VGET_REAL_DOMAIN */
 
-/***************************************************
- *
- *      new/modified defines in/from 2.0.7
- *
- **************************************************/
 
 /*
  * Uncomment next define to accept recipients for
@@ -277,19 +266,6 @@
  */
 #define CHKUSER_DB_CLEANUP
 
-/***************************************************
- *
- *      new/modified defines in/from 2.0.8
- *
- **************************************************/
-
-/*
- * The following defines are NO MORE used. NULL SENDER rejecting breaks RFC
- * compatibility, and makes harder to handle e-mail receipts.
- * Please comment or delete them from your chkuser_settings.h.
- */
-/* #define CHKUSER_ACCEPT_NULL_SENDER */
-/* #define CHKUSER_ENABLE_NULL_SENDER_WITH_TCPREMOTEHOST */
 
 /*
  * Uncomment to enable checking of user and domain format for rcpt addresses
@@ -298,7 +274,7 @@
  *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  *      domain  =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS with not consecutive "-.", not leading or ending "-."
  *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
- *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
+ *                      otherwise only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  */
 #define CHKUSER_RCPT_FORMAT
 
@@ -315,7 +291,7 @@
  *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  *      domain  =       any UTF8 character in the world EXCEPT CHKUSER_INVALID_UTF8_CHARS with not consecutive "-.", not leading or ending "-."
  *                      provided that SMTPUTF8 was advertised by the remote client in MAIL FROM
- *                      or only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
+ *                      otherwise only alphanum chars with CHKUSER_ALLOWED_CHARS additions will be allowed
  */
 #define CHKUSER_SENDER_FORMAT
 
@@ -331,11 +307,6 @@
  */
 #define CHKUSER_ERROR_DELAY_INCREASE 300
 
-/***************************************************
- *
- *      new/modified defines in/from 2.0.9
- *
- **************************************************/
 
 /*
  * A new class of defines is introduced
@@ -363,7 +334,6 @@
  * If you are using MySQL with separate servers for read and write use #define CHKUSER_VAUTH_OPEN_CALL vauth_open
  * If you are using other DB, check the most appropriate function for your DB within dedicated vpopmail module
  *
- * This define substitutes CHKUSER_ENABLE_VAUTH_OPEN
  */
 
 /* #define CHKUSER_VAUTH_OPEN_CALL vauth_open   */
@@ -401,9 +371,9 @@
 #define CHKUSER_MAXRCPT_STRING "550 5.5.3 sorry, reached maximum number of recipients allowed in one session (chkuser)\r\n"
 #define CHKUSER_MAXWRONGRCPT_STRING "550 5.5.3 sorry, you are violating our security policies (chkuser)\r\n"
 #define CHKUSER_DOMAINMISSING_STRING "550 5.1.2 sorry, you must specify a domain (chkuser)\r\n"
-#define CHKUSER_RCPTFORMAT_STRING "553 5.1.3 sorry, mailbox syntax not allowed (chkuser)\r\n"
+#define CHKUSER_RCPTFORMAT_STRING "553 5.1.3 sorry, rcpt syntax not allowed (chkuser)\r\n"
 #define CHKUSER_RCPTMX_STRING "550 5.1.2 sorry, can't find a valid MX for rcpt domain (chkuser)\r\n"
-#define CHKUSER_SENDERFORMAT_STRING "553 5.1.7 sorry, mailbox syntax not allowed (chkuser)\r\n"
+#define CHKUSER_SENDERFORMAT_STRING "553 5.1.7 sorry, sender syntax not allowed (chkuser)\r\n"
 #define CHKUSER_SENDERMX_STRING "550 5.1.8 sorry, can't find a valid MX for sender domain (chkuser)\r\n"
 #define CHKUSER_INTRUSIONTHRESHOLD_STRING "550 5.7.1 sorry, you are violating our security policies (chkuser)\r\n"
 #define CHKUSER_NORELAY_STRING "553 5.7.1 sorry, that domain isn't in my list of allowed rcpthosts (chkuser)\r\n"
@@ -412,14 +382,6 @@
 #define CHKUSER_SENDERMX_TMP_STRING "451 4.4.0 DNS temporary failure (chkuser)\r\n"
 
 #define CHKUSER_MUSTAUTH_STRING "530 5.7.0 Authentication required (chkuser)\r\n"
-
-/*
- * No more used defines
- *	Following defines are eliminated since 2.0.9
- *	They will make compilation errors and must be deleted/commented
- *
- * 			#define CHKUSER_ENABLE_VAUTH_OPEN -> Substituted by CHKUSER_VAUTH_OPEN_CALL
- */
 
 /*
  * This define tells chkuser which variable must be set to accept a <#@[]> sender
