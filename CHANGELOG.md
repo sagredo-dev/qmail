@@ -1,16 +1,16 @@
 # ChangeLog
 
-- unreleased
+- Dec 01, 2024
   - Added support for EAI ([RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization)
     (https://github.com/sagredo-dev/qmail/pull/13).  
     Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
   - chkuser is now smtputf8 compliant. It accepts utf8 characters in sender and recipient addresses provided that the
     remote server advertises the SMTPUTF8 verb in MAIL FROM, otherwise it allows only ASCII characters plus additional
-    chars from the CHKUSER_ALLOWED_CHARS set.
+    chars from the CHKUSER_ALLOWED_CHARS set.  More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)  
     - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx (replaced by CHKUSER_ALLOWED_CHARS)
     - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always accepting '+' and '#' characters
     - added variables CHKUSER_INVALID_UTF8_CHARS and CHKUSER_ALLOWED_CHARS  
-    More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
+  - fixed compilation warnings due to deprecated SSL_CTX_use_RSAPrivateKey_file and SSL_use_RSAPrivateKey_file functions
 
 - Oct 26, 2024
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
