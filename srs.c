@@ -1,7 +1,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include </usr/local/include/srs2.h>
+#include <srs2.h>
 #include "auto_qmail.h"
 #include "stralloc.h"
 #include "srs.h"
