@@ -35,7 +35,7 @@ if [ "$GETENT" = "" ]; then
 fi
 
 VPOPMAILDIR=$($GETENT passwd $VUSR | $CUT -d: -f6)
-if [ "$VPOPMAILDIR" != "" ]; then
+if [ -d $VPOPMAILDIR ]; then
   echo $VPOPMAILDIR
 elif [ -d /home/vpopmail ]; then
   echo "/home/vpopmail"
