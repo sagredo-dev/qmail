@@ -1,3 +1,3 @@
-cc -O2 -g -DEXTERNAL_TODO -DTLS=20231230 -I`/bin/sh ./vpopmail-dir.sh`/include -DDEPRECATED_FUNCTIONS_REMOVED
+cc -O2 -g -DEXTERNAL_TODO -DTLS=20231230 -I/usr/local/include -I`/bin/sh ./vpopmail-dir.sh`/include -DDEPRECATED_FUNCTIONS_REMOVED
 
 This will be used to compile .c files.
