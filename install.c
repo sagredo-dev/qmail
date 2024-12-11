@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include "fifo.h"
 #include "substdio.h"
@@ -79,6 +81,10 @@ int mode;
 {
   int fdin;
   int fdout;
+  int i;
+  char *p, *buf;
+  char tok[2][20];
+  int is_subdir = 0;
 
   if (fchdir(fdsourcedir) == -1)
     strerr_die2sys(111,FATAL,"unable to switch back to source directory: ");
@@ -93,9 +99,22 @@ int mode;
   if (chdir(subdir) == -1)
     strerr_die6sys(111,FATAL,"unable to switch to ",home,"/",subdir,": ");
 
-  fdout = open_trunc(file);
-  if (fdout == -1)
-    strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
+  is_subdir = (strstr(file, "/") != NULL);
+
+  if (!is_subdir) fdout = open_trunc(file);
+  else {
+    i = 0;
+    buf = strdup(file);
+    p = strtok(buf, "/");
+    while (p != NULL)
+    {
+      snprintf(tok[i++], sizeof(tok[0]), "%s", p);
+      p = strtok(NULL, "/");
+    }
+    fdout = open_trunc(tok[1]);
+  }
+
+  if (fdout == -1) strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
   substdio_fdbuf(&ssout,write,fdout,outbuf,sizeof outbuf);
 
   switch(substdio_copy(&ssout,&ssin)) {
@@ -106,17 +125,16 @@ int mode;
   }
 
   close(fdin);
-  if (substdio_flush(&ssout) == -1)
-    strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
-  if (fsync(fdout) == -1)
-    strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
+  if (substdio_flush(&ssout) == -1) strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
+  if (fsync(fdout) == -1) strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
   if (close(fdout) == -1) /* NFS silliness */
     strerr_die6sys(111,FATAL,"unable to write .../",subdir,"/",file,": ");
 
-  if (chown(file,uid,gid) == -1)
-    strerr_die6sys(111,FATAL,"unable to chown .../",subdir,"/",file,": ");
-  if (chmod(file,mode) == -1)
-    strerr_die6sys(111,FATAL,"unable to chmod .../",subdir,"/",file,": ");
+  if (!is_subdir && (chown(file,uid,gid) == -1)) strerr_die6sys(111,FATAL,"unable to chown .../",subdir,"/",file,": ");
+  else if (is_subdir && chown(tok[1],uid,gid) == -1) strerr_die6sys(111,FATAL,"unable to chown .../",subdir,"/",tok[1],": ");
+
+  if (!is_subdir && chmod(file,mode) == -1) strerr_die6sys(111,FATAL,"unable to chmod .../",subdir,"/",file,": ");
+  else if (is_subdir && chmod(tok[1],mode) == -1) strerr_die6sys(111,FATAL,"unable to chmod .../",subdir,"/",tok[1],": ");
 }
 
 void z(home,file,len,uid,gid,mode)
