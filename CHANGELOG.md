@@ -1,5 +1,12 @@
 # ChangeLog
 
+- unreleased
+  - Dropped files install-big.c, idedit.c and BIN.* files.
+  - Old documentation moved to the "old" dir. install.c and hier.c modified accordingly
+  - conf-cc and conf-ld now have -L/usr/local/lib and -I/usr/local/include to look for srs2 library
+  - vpopmail-dir.sh: minor correction to vpopmail dir existence check
+  - srs.c: #include <srs2.h> now without path
+
 - Dec 01, 2024
   - Added support for EAI ([RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization)
     (https://github.com/sagredo-dev/qmail/pull/13).  
