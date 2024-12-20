@@ -470,3 +470,6 @@ dns_text.o
 conf-policy.temp
 eai.o
 utf8.o
+chkuser.*
+vpopmail-dir.sh
+doc/CHKUSER.*
