@@ -979,7 +979,7 @@ stralloc rcptto = {0};
 stralloc fuser = {0};
 stralloc mfparms = {0};
 stralloc log_buf = {0};
-int smtputf8 = 0;
+int smtputf8 = 0; // if MAIL FROM has SMTPUTF8 param
 
 /* realbadrcpt: start */
 int flagvrt; /* defined if valid rcpt */
@@ -2233,7 +2233,7 @@ void tls_init()
   if (!myssl) { tls_err("unable to initialize ssl"); return; }
 
   /* this will also check whether public and private keys match */
-  if (!SSL_use_RSAPrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM))
+  if (!SSL_use_PrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM))
     { SSL_free(myssl); tls_err("no valid RSA private key"); return; }
 
   ciphers = env_get("TLSCIPHERS");
@@ -2303,8 +2303,8 @@ struct commands smtpcommands[] = {
 /* qsmtpdlog: start */
 void outqlog(const char *s, unsigned int n) {
   while (n > 0) {
-//    substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
-    substdio_put(&sslog,s,1);
+    if (smtputf8) substdio_put(&sslog,s,1);
+    else substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
     --n;
     ++s;
   }

@@ -775,34 +775,11 @@ hostname.o: \
 compile hostname.c substdio.h subfd.h substdio.h readwrite.h exit.h
 	./compile hostname.c
 
-idedit: \
-load idedit.o strerr.a substdio.a error.a str.a fs.a wait.a open.a \
-seek.a
-	./load idedit strerr.a substdio.a error.a str.a fs.a \
-	wait.a open.a seek.a 
-
-idedit.o: \
-compile idedit.c readwrite.h exit.h scan.h fmt.h strerr.h open.h \
-seek.h fork.h
-	./compile idedit.c
-
 install: \
 load install.o fifo.o hier.o auto_qmail.o auto_split.o auto_uids.o \
 strerr.a substdio.a open.a error.a str.a fs.a
 	./load install fifo.o hier.o auto_qmail.o auto_split.o \
 	auto_uids.o strerr.a substdio.a open.a error.a str.a fs.a 
-
-install-big: \
-load install-big.o fifo.o install.o auto_qmail.o auto_split.o \
-auto_uids.o strerr.a substdio.a open.a error.a str.a fs.a
-	./load install-big fifo.o install.o auto_qmail.o \
-	auto_split.o auto_uids.o strerr.a substdio.a open.a error.a \
-	str.a fs.a 
-
-install-big.o: \
-compile install-big.c auto_qmail.h auto_split.h auto_uids.h fmt.h \
-fifo.h channels.h
-	./compile $(DEFINES) install-big.c
 
 install.o: \
 compile install.c substdio.h strerr.h error.h open.h readwrite.h \
@@ -866,7 +843,7 @@ qmail-pop3d qmail-popup qmail-qmqpc qmail-qmqpd qmail-qmtpd \
 qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast dnscname \
 dnsptr dnsip dnsmxip dnsfq dnstxt hostname ipmeprint ipmetest qreceipt qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
-maildir2mbox maildirwatch qail elq pinq idedit install-big install \
+maildir2mbox maildirwatch qail elq pinq install \
 qmail-dkim dkim spawn-filter surblfilter \
 instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
 binm3 binm3+df srsfilter surblqueue dknewkey qmail-todo spfquery update_tmprsadh
@@ -1593,6 +1570,10 @@ alloc.h substdio.h datetime.h now.h datetime.h triggerpull.h extra.h \
 auto_qmail.h auto_uids.h date822fmt.h fmtqfn.h
 	./compile qmail-queue.c
 
+utf8.o: \
+compile utf8.c
+	./compile utf8.c
+
 eai.o: \
 compile eai.c
 	./compile eai.c
@@ -1602,14 +1583,14 @@ load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
 timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o strsalloc.o ipme.o quote.o \
 ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
 substdio.a error.a str.a fs.a auto_qmail.o \
-base64.o md5c.o hmac_md5.o eai.o \
+base64.o md5c.o hmac_md5.o utf8.o eai.o \
 dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	tls.o ssl_timeoutio.o -lssl -lcrypto \
 	ipalloc.o strsalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
-	base64.o md5c.o hmac_md5.o eai.o \
+	base64.o md5c.o hmac_md5.o utf8.o eai.o \
 	str.a fs.a auto_qmail.o `cat dns.lib` `cat socket.lib` -lidn2
 
 qmail-remote.0: \
@@ -1621,7 +1602,7 @@ compile qmail-remote.c sig.h stralloc.h gen_alloc.h substdio.h \
 subfd.h substdio.h scan.h case.h error.h auto_qmail.h control.h dns.h \
 alloc.h quote.h ip.h ipalloc.h strsalloc.h ip.h gen_alloc.h ipme.h ip.h ipalloc.h strsalloc.h \
 gen_alloc.h gen_allocdefs.h str.h now.h datetime.h exit.h constmap.h \
-tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h
+tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h eai.h utf8.h
 	./compile qmail-remote.c
 
 qmail-rspawn: \

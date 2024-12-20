@@ -1,12 +1,10 @@
 # qmail
 
-[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts. It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
+[`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts.
+It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 
-## My patched `qmail`
-
-This `qmail` package is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html). Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
-
-## Before installing
+This `qmail` distribution is part of a [complete `qmail` guide](https://notes.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
+Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
 This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
 
@@ -32,6 +30,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06_force-tls/force-tls_marcel.patch
 * Flavio Curti's qmail-queue-custom-error patch
   enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.
+* Flavio Curti's qmail-queue-custom-error patch  
+  enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.  
   https://notes.sagredo.eu/files/qmail/patches/qmail-queue-custom-error-v2.netqmail-1.05.patch
 * Christophe Saout's qmail-SPF rc5 patch
   Modified by Manvendra Bhangui to make it IPv4-mapped IPv6 addresses compliant.
@@ -224,15 +224,19 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
-* Arnt Gulbrandsen's smtputf8  
-  adds RFC 5336 SMTP Email Address Internationalization support  
-  https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls  
-  Pull Request details: https://github.com/sagredo-dev/qmail/pull/13
+* [Arnt Gulbrandsen's smtputf8](https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls)  
+  adds [RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization support  
+  - [Pull Request](https://github.com/sagredo-dev/qmail/pull/13)  
+  - More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 
 Install
 -----
 
-As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have
+created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
+
+This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name
+library version 2, `libidn2-dev` on `Debian` like OS).
 
 * Install libsrs2
 ```
@@ -248,7 +252,6 @@ cd ../
 
 * Download and compile
 ```
-make
 make setup check
 ```
 
@@ -259,4 +262,4 @@ make setup check
 
 Info and support
 ----------------
-You can find more info and ask for support here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html.
+You can find more info and ask for support [here](https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html).

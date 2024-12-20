@@ -1,4 +1,3 @@
-#include "eai.h"
 #include "case.h"
 #include "str.h"
 #include "stralloc.h"
@@ -8,6 +7,25 @@
 extern void temp_read();
 extern void temp_nomem();
 
+/*
+  returns 1 if the remote server advertises a specific verb
+  tx notqmail/mbhangui-smtputf8
+ */
+int get_capa(const char *capa)
+{
+  int i = 0, len;
+  len = str_len(capa);
+  extern stralloc smtptext;
+
+  for (i = 0; i < smtptext.len-len; ++i) {
+    if (case_starts(smtptext.s+i,capa)) return 1;
+  }
+  return 0;
+}
+
+/*
+ * returns 1 if the string contains UTF8 chars that are not in the ASCII set (> 127)
+ */
 int containsutf8(unsigned char *p, int l)
 {
   int i = 0;
@@ -16,6 +34,10 @@ int containsutf8(unsigned char *p, int l)
   return 0;
 }
 
+/*
+ * sets the external variable utf8message = 1 if the message cannot be considered as a pure
+ * alpha numerical, but shows non ASCII characters in the sender and/or recipient names
+ */
 void checkutf8message()
 {
   GEN_ALLOC_typedef(saa,stralloc,sa,len,a)
@@ -84,20 +106,4 @@ void checkutf8message()
       continue;
     }
   }
-}
-
-/*
-  returns 1 if the remote server advertises a specific verb
-  tx notqmail/mbhangui-smtputf8
- */
-int get_capa(const char *capa)
-{
-  int i = 0, len;
-  len = str_len(capa);
-  extern stralloc smtptext;
-
-  for (i = 0; i < smtptext.len-len; ++i) {
-    if (case_starts(smtptext.s+i,capa)) return 1;
-  }
-  return 0;
 }

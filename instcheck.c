@@ -1,3 +1,5 @@
+#include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "strerr.h"
@@ -81,11 +83,32 @@ int uid;
 int gid;
 int mode;
 {
+  int i;
+  char *p, *buf;
+  char tok[2][20];
+  int is_subdir = 0;
+
+  is_subdir = (strstr(file, "/") != NULL);
+
+  if (is_subdir) {
+    i = 0;
+    buf = strdup(file);
+    p = strtok(buf, "/");
+    while (p != NULL)
+    {
+      snprintf(tok[i++], sizeof(tok[0]), "%s", p);
+      p = strtok(NULL, "/");
+    }
+  }
+
+
   if (chdir(home) == -1)
     strerr_die4sys(111,FATAL,"unable to switch to ",home,": ");
   if (chdir(subdir) == -1)
     strerr_die6sys(111,FATAL,"unable to switch to ",home,"/",subdir,": ");
-  perm(".../",subdir,"/",file,S_IFREG,uid,gid,mode);
+
+  if (is_subdir) perm(".../",subdir,"/",tok[1],S_IFREG,uid,gid,mode);
+  else perm(".../",subdir,"/",file,S_IFREG,uid,gid,mode);
 }
 
 void z(home,file,len,uid,gid,mode)
