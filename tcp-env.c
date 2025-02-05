@@ -30,11 +30,11 @@ stralloc remotename = {0};
 
 char temp[IPFMT + FMT_ULONG];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char *argv[];
 {
- int dummy;
+ unsigned int dummy;
  char *proto;
  int opt;
  int flagremoteinfo;

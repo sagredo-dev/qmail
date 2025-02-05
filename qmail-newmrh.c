@@ -13,10 +13,6 @@
 
 #define FATAL "qmail-newmrh: fatal: "
 
-extern int cdbmss_start(struct cdbmss *c, int fd);
-extern int cdbmss_add(struct cdbmss *c, unsigned char *key, unsigned int keylen, unsigned char *data, unsigned int datalen);
-extern int cdbmss_finish(struct cdbmss *c);
-
 void die_read()
 {
   strerr_die2sys(111,FATAL,"unable to read control/morercpthosts: ");
@@ -36,7 +32,7 @@ struct cdbmss cdbmss;
 stralloc line = {0};
 int match;
 
-void main()
+int main()
 {
   umask(033);
   if (chdir(auto_qmail) == -1)

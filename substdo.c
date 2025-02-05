@@ -4,7 +4,7 @@
 #include "error.h"
 
 static int allwrite(op,fd,buf,len)
-register int (*op)();
+register ssize_t (*op)();
 register int fd;
 register char *buf;
 register int len;
@@ -17,7 +17,7 @@ register int len;
       if (errno == error_intr) continue;
       return -1; /* note that some data may have been written */
     }
-    if (w == 0) ; /* luser's fault */
+//    if (w == 0) ; /* luser's fault */
     buf += w;
     len -= w;
   }

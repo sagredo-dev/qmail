@@ -13,10 +13,6 @@
 #include "auto_qmail.h"
 #include "byte.h"
 
-extern int cdbmss_start(struct cdbmss *c, int fd);
-extern int cdbmss_add(struct cdbmss *c, unsigned char *key, unsigned int keylen, unsigned char *data, unsigned int datalen);
-extern int cdbmss_finish(struct cdbmss *c);
-
 void die_temp() { _exit(111); }
 
 void die_chdir()
@@ -75,7 +71,7 @@ int match;
 
 stralloc wildchars = {0};
 
-void main()
+int main()
 {
   int i;
   int numcolons;

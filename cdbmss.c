@@ -16,9 +16,9 @@ int fd;
 
 int cdbmss_add(c,key,keylen,data,datalen)
 struct cdbmss *c;
-unsigned char *key;
+char *key;
 unsigned int keylen;
-unsigned char *data;
+char *data;
 unsigned int datalen;
 {
   uint32 h;

@@ -132,7 +132,7 @@ substdio smtpfrom = SUBSTDIO_FDBUF(saferead,-1,smtpfrombuf,sizeof smtpfrombuf);
 stralloc smtptext = {0};
 
 void get(ch)
-char *ch;
+unsigned char *ch;
 {
   substdio_get(&smtpfrom,ch,1);
   if (*ch != '\r')
@@ -350,7 +350,7 @@ char **argv;
   relayhost = 0;
   for (i = 0;i <= host.len;++i)
     if ((i == 0) || (i == host.len) || (host.s[i] == '.'))
-      if (relayhost = constmap(&maproutes,host.s + i,host.len - i))
+      if ((relayhost = constmap(&maproutes,host.s + i,host.len - i)))
         break;
   if (relayhost && !*relayhost) relayhost = 0;
  

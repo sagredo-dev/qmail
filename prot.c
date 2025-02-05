@@ -5,7 +5,7 @@
 
 /* XXX: there are more portability problems here waiting to leap out at me */
 
-int prot_gid(gid) int gid;
+int prot_gid(gid) const gid_t gid;
 {
 #ifdef HASSHORTSETGROUPS
   short x[2];
