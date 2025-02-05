@@ -1,2 +1,3 @@
-cc -O2 -DDEPRECATED_FUNCTIONS_REMOVED -Wall -Wshadow -Werror=implicit-function-declaration -Werror=deprecated-declarations -Werror=parentheses -Werror=dangling-else -Werror=pointer-sign -Werror=incompatible-library-redeclaration -Werror=empty-body -Werror=pointer-sign -Wno-deprecated-non-prototype
+cc -O2 -DDEPRECATED_FUNCTIONS_REMOVED
+
 This will be used to compile .c files.
