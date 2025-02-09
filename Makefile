@@ -1,6 +1,6 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-VPOPMAIL_LIBS=`head -1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
+VPOPMAIL_LIBS=`head -n 1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
 
 SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
@@ -29,8 +29,8 @@ compile alloc_re.c alloc.h byte.h
 auto-ccld.sh: \
 conf-cc conf-ld warn-auto.sh
 	( cat warn-auto.sh; \
-	echo CC=\'`head -1 conf-cc`\'; \
-	echo LD=\'`head -1 conf-ld`\' \
+	echo CC=\'`head -n 1 conf-cc`\'; \
+	echo LD=\'`head -n 1 conf-ld`\' \
 	) > auto-ccld.sh
 
 auto-gid: \
@@ -78,7 +78,7 @@ scan.h fmt.h
 auto_break.c: \
 auto-str conf-break
 	./auto-str auto_break \
-	"`head -1 conf-break`" > auto_break.c
+	"`head -n 1 conf-break`" > auto_break.c
 
 auto_break.o: \
 compile auto_break.c
@@ -86,7 +86,7 @@ compile auto_break.c
 
 auto_patrn.c: \
 auto-int8 conf-patrn
-	./auto-int8 auto_patrn `head -1 conf-patrn` > auto_patrn.c
+	./auto-int8 auto_patrn `head -n 1 conf-patrn` > auto_patrn.c
 
 auto_patrn.o: \
 compile auto_patrn.c
@@ -94,7 +94,7 @@ compile auto_patrn.c
 
 auto_qmail.c: \
 auto-str conf-qmail
-	./auto-str auto_qmail `head -1 conf-qmail` > auto_qmail.c
+	./auto-str auto_qmail `head -n 1 conf-qmail` > auto_qmail.c
 
 auto_qmail.o: \
 compile auto_qmail.c
@@ -102,7 +102,7 @@ compile auto_qmail.c
 
 auto_spawn.c: \
 auto-int conf-spawn
-	./auto-int auto_spawn `head -1 conf-spawn` > auto_spawn.c
+	./auto-int auto_spawn `head -n 1 conf-spawn` > auto_spawn.c
 
 auto_spawn.o: \
 compile auto_spawn.c
@@ -110,7 +110,7 @@ compile auto_spawn.c
 
 auto_split.c: \
 auto-int conf-split
-	./auto-int auto_split `head -1 conf-split` > auto_split.c
+	./auto-int auto_split `head -n 1 conf-split` > auto_split.c
 
 auto_split.o: \
 compile auto_split.c
@@ -118,18 +118,18 @@ compile auto_split.c
 
 auto_uids.c: \
 auto-uid auto-gid conf-users conf-groups
-	( ./auto-uid auto_uida `head -1 conf-users` \
-	&&./auto-uid auto_uidd `head -2 conf-users | tail -1` \
-	&&./auto-uid auto_uidl `head -3 conf-users | tail -1` \
-	&&./auto-uid auto_uido `head -4 conf-users | tail -1` \
-	&&./auto-uid auto_uidp `head -5 conf-users | tail -1` \
-	&&./auto-uid auto_uidq `head -6 conf-users | tail -1` \
-	&&./auto-uid auto_uidr `head -7 conf-users | tail -1` \
-	&&./auto-uid auto_uids `head -8 conf-users | tail -1` \
-	&&./auto-uid auto_uidv `head -9 conf-users | tail -1` \
-	&&./auto-gid auto_gidq `head -1 conf-groups` \
-	&&./auto-gid auto_gidn `head -2 conf-groups | tail -1` \
-	&&./auto-gid auto_gidv `head -3 conf-groups | tail -1` \
+	( ./auto-uid auto_uida `head -n 1 conf-users` \
+	&&./auto-uid auto_uidd `head -n 2 conf-users | tail -1` \
+	&&./auto-uid auto_uidl `head -n 3 conf-users | tail -1` \
+	&&./auto-uid auto_uido `head -n 4 conf-users | tail -1` \
+	&&./auto-uid auto_uidp `head -n 5 conf-users | tail -1` \
+	&&./auto-uid auto_uidq `head -n 6 conf-users | tail -1` \
+	&&./auto-uid auto_uidr `head -n 7 conf-users | tail -1` \
+	&&./auto-uid auto_uids `head -n 8 conf-users | tail -1` \
+	&&./auto-uid auto_uidv `head -n 9 conf-users | tail -1` \
+	&&./auto-gid auto_gidq `head -n 1 conf-groups` \
+	&&./auto-gid auto_gidn `head -n 2 conf-groups | tail -1` \
+	&&./auto-gid auto_gidv `head -n 3 conf-groups | tail -1` \
 	) > auto_uids.c.tmp && mv auto_uids.c.tmp auto_uids.c
 
 auto_uids.o: \
@@ -138,7 +138,7 @@ compile auto_uids.c
 
 auto_usera.c: \
 auto-str conf-users
-	./auto-str auto_usera `head -1 conf-users` > auto_usera.c
+	./auto-str auto_usera `head -n 1 conf-users` > auto_usera.c
 
 auto_usera.o: \
 compile auto_usera.c
@@ -159,42 +159,42 @@ compile hmac_md5.c hmac_md5.h global.h
 binm1: \
 binm1.sh conf-qmail
 	cat binm1.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm1
 	chmod 755 binm1
 
 binm1+df: \
 binm1+df.sh conf-qmail
 	cat binm1+df.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm1+df
 	chmod 755 binm1+df
 
 binm2: \
 binm2.sh conf-qmail
 	cat binm2.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm2
 	chmod 755 binm2
 
 binm2+df: \
 binm2+df.sh conf-qmail
 	cat binm2+df.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm2+df
 	chmod 755 binm2+df
 
 binm3: \
 binm3.sh conf-qmail
 	cat binm3.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm3
 	chmod 755 binm3
 
 binm3+df: \
 binm3+df.sh conf-qmail
 	cat binm3+df.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> binm3+df
 	chmod 755 binm3+df
 
@@ -368,18 +368,18 @@ wait.h seek.h qmail.h substdio.h strerr.h substdio.h fmt.h stralloc.h srs.h
 config: \
 warn-auto.sh config.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh config.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> config
 	chmod 755 config
 
 config-fast: \
 warn-auto.sh config-fast.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh config-fast.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> config-fast
 	chmod 755 config-fast
 
@@ -399,9 +399,9 @@ compile date822fmt.c datetime.h fmt.h date822fmt.h
 datemail: \
 warn-auto.sh datemail.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh datemail.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> datemail
 	chmod 755 datemail
 
@@ -521,17 +521,17 @@ dot-qmail.5
 dot-qmail.5: \
 dot-qmail.9 conf-break conf-spawn
 	cat dot-qmail.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> dot-qmail.5
 
 elq: \
 warn-auto.sh elq.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh elq.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> elq
 	chmod 755 elq
 
@@ -754,21 +754,21 @@ compile hier.c auto_qmail.h auto_split.h auto_uids.h fmt.h fifo.h channels.h
 channels.h: \
 conf-channels channels.g
 	cat channels.g \
-	| sed s}NUMCHANNELS}"`head -1 conf-channels`"}g \
+	| sed s}NUMCHANNELS}"`head -n 1 conf-channels`"}g \
 	> channels.h
 	chmod 644 channels.h
 
 home: \
 home.sh conf-qmail
 	cat home.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> home
 	chmod 755 home
 
 home+df: \
 home+df.sh conf-qmail
 	cat home+df.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> home+df
 	chmod 755 home+df
 
@@ -969,9 +969,9 @@ compile strpidt.c
 mailsubj: \
 warn-auto.sh mailsubj.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh mailsubj.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> mailsubj
 	chmod 755 mailsubj
 
@@ -1072,9 +1072,9 @@ compile open_write.c open.h
 pinq: \
 warn-auto.sh pinq.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh pinq.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> pinq
 	chmod 755 pinq
 
@@ -1112,14 +1112,14 @@ gen_alloc.h
 proc: \
 proc.sh conf-qmail
 	cat proc.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> proc
 	chmod 755 proc
 
 proc+df: \
 proc+df.sh conf-qmail
 	cat proc+df.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> proc+df
 	chmod 755 proc+df
 
@@ -1130,9 +1130,9 @@ compile prot.c hasshsgr.h prot.h
 qail: \
 warn-auto.sh qail.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh qail.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> qail
 	chmod 755 qail
 
@@ -1179,9 +1179,9 @@ qmail-control.5
 qmail-control.5: \
 qmail-control.9 conf-break conf-spawn
 	cat qmail-control.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-control.5
 
 qmail-dkim: \
@@ -1219,29 +1219,29 @@ qmail-getpw.8
 qmail-getpw.8: \
 qmail-getpw.9 conf-break conf-spawn
 	cat qmail-getpw.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-getpw.8
 
 qmail-dkim.0: qmail-dkim.8
 	nroff -man qmail-dkim.8 > qmail-dkim.0
 qmail-dkim.8: qmail-dkim.9
 	cat qmail-dkim.9 \
-	| sed s}@controldir\@}"`head -1 conf-qmail`/control"}g \
+	| sed s}@controldir\@}"`head -n 1 conf-qmail`/control"}g \
 	> qmail-dkim.8
 
 dkim.8: dkim.9
-	cat dkim.9 | sed s}@controldir\@}"`head -1 conf-qmail`/control"}g \
+	cat dkim.9 | sed s}@controldir\@}"`head -n 1 conf-qmail`/control"}g \
 	> dkim.8
 
 dknewkey: dknewkey.sh warn-auto.sh
 	cat warn-auto.sh dknewkey.sh \
-	| sed s}@qsysconfdir\@}"`head -1 conf-qmail`"}g \
+	| sed s}@qsysconfdir\@}"`head -n 1 conf-qmail`"}g \
 	> dknewkey
 	chmod +x dknewkey
 dknewkey.8: dknewkey.9
-	cat dknewkey.9 | sed s}@qsysconfdir\@}"`head -1 conf-qmail`"}g \
+	cat dknewkey.9 | sed s}@qsysconfdir\@}"`head -n 1 conf-qmail`"}g \
 	> dknewkey.8
 
 qmail-getpw.o: \
@@ -1285,9 +1285,9 @@ qmail-limits.7
 qmail-limits.7: \
 qmail-limits.9 conf-break conf-spawn
 	cat qmail-limits.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-limits.7
 
 qmail-local: \
@@ -1368,9 +1368,9 @@ qmail-newmrh.8
 qmail-newmrh.8: \
 qmail-newmrh.9 conf-break conf-spawn
 	cat qmail-newmrh.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-newmrh.8
 
 qmail-newmrh.o: \
@@ -1393,9 +1393,9 @@ qmail-newu.8
 qmail-newu.8: \
 qmail-newu.9 conf-break conf-spawn
 	cat qmail-newu.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-newu.8
 
 qmail-newu.o: \
@@ -1459,9 +1459,9 @@ qmail-pw2u.8
 qmail-pw2u.8: \
 qmail-pw2u.9 conf-break conf-spawn
 	cat qmail-pw2u.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-pw2u.8
 
 qmail-pw2u.o: \
@@ -1548,9 +1548,9 @@ exit.h
 qmail-qstat: \
 warn-auto.sh qmail-qstat.sh conf-qmail
 	cat warn-auto.sh qmail-qstat.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> qmail-qstat
 	chmod 755 qmail-qstat
 
@@ -1649,10 +1649,10 @@ qmail-send.8
 qmail-send.8: \
 qmail-send.9 conf-break conf-spawn conf-channels
 	cat qmail-send.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
-	| sed s}CHANNELS}"`head -1 conf-channels`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
+	| sed s}CHANNELS}"`head -n 1 conf-channels`"}g \
 	> qmail-send.8
 
 qmail-send.o: \
@@ -1731,9 +1731,9 @@ qmail-start.8
 qmail-start.8: \
 qmail-start.9 conf-break conf-spawn
 	cat qmail-start.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-start.8
 
 qmail-start.o: \
@@ -1787,9 +1787,9 @@ scan.h select.h str.h stralloc.h substdio.h trigger.h channels.h
 qmail-upq: \
 warn-auto.sh qmail-upq.sh conf-qmail conf-break conf-split
 	cat warn-auto.sh qmail-upq.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPLIT}"`head -1 conf-split`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
 	> qmail-upq
 	chmod 755 qmail-upq
 
@@ -1800,9 +1800,9 @@ qmail-users.5
 qmail-users.5: \
 qmail-users.9 conf-break conf-spawn
 	cat qmail-users.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
-	| sed s}BREAK}"`head -1 conf-break`"}g \
-	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPAWN}"`head -n 1 conf-spawn`"}g \
 	> qmail-users.5
 
 qmail.0: \
@@ -2334,7 +2334,7 @@ spawn-filter.8
 spawn-filter.8: \
 spawn-filter.9
 	cat spawn-filter.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
 	> spawn-filter.8
 
 str_cspn.o: \
@@ -2349,7 +2349,7 @@ surblfilter.0: surblfilter.8
 
 surblfilter.8: surblfilter.9
 	cat surblfilter.9 \
-	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
 	> surblfilter.8
 
 surblfilter: \
@@ -2389,7 +2389,7 @@ base64.h
 surblqueue: \
 surblqueue.sh conf-qmail
 	cat warn-auto.sh surblqueue.sh \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> surblqueue
 	chmod 755 surblqueue
 
@@ -2454,14 +2454,14 @@ Makefile-cert
 Makefile-cert: \
 conf-qmail conf-users conf-groups Makefile-cert.mk
 	@cat Makefile-cert.mk \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> $@
 
 update_tmprsadh: \
 conf-qmail conf-users conf-groups update_tmprsadh.sh
 	@cat update_tmprsadh.sh\
-	| sed s}UGQMAILD}"`head -9 conf-users|tail -1`:`head -3 conf-groups|tail -1`"}g \
-	| sed s}QMAIL}"`head -1 conf-qmail`"}g \
+	| sed s}UGQMAILD}"`head -n 9 conf-users|tail -1`:`head -n 3 conf-groups|tail -1`"}g \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
 	> $@
 	chmod 755 update_tmprsadh
 
@@ -2472,6 +2472,6 @@ update_tmprsadh
 
 policy.o: policy.c policy.h conf-policy conf-qmail
 	@cat conf-policy \
-	| sed s}QMAILDIR}"`head -1 conf-qmail`"}g \
+	| sed s}QMAILDIR}"`head -n 1 conf-qmail`"}g \
 	> conf-policy.temp
-	./compile policy.c `head -1 conf-policy.temp`
+	./compile policy.c `head -n 1 conf-policy.temp`

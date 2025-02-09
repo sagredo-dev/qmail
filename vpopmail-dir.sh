@@ -4,7 +4,7 @@
 # Roberto Puzzanghera - https://notes.sagredo.eu
 
 # extract the vpopmail user from conf-users
-VUSR=`head -9 conf-users | tail -1`
+VUSR=`head -n 9 conf-users | tail -1`
 
 # cut path
 CUT=""
