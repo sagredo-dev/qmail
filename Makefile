@@ -227,10 +227,6 @@ byte_cspn.o: \
 compile byte_cspn.c byte.h
 	./compile byte_cspn.c
 
-byte_diff.o: \
-compile byte_diff.c byte.h
-	./compile byte_diff.c
-
 byte_rchr.o: \
 compile byte_rchr.c byte.h
 	./compile byte_rchr.c
@@ -2051,36 +2047,20 @@ substdio.h fmt.h stralloc.h srs.h
 
 
 str.a: \
-makelib str_len.o str_diff.o str_diffn.o str_cpy.o str_cpyb.o str_chr.o \
+makelib str_cpyb.o str_chr.o \
 str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_cspn.o byte_rcspn.o \
 byte_diff.o byte_copy.o byte_cr.o byte_zero.o
-	./makelib str.a str_len.o str_diff.o str_diffn.o str_cpy.o str_cpyb.o \
+	./makelib str.a str_cpyb.o \
   	str_chr.o str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_cspn.o \
-	byte_rcspn.o byte_diff.o byte_copy.o byte_cr.o byte_zero.o
+	byte_rcspn.o byte_copy.o byte_cr.o byte_zero.o
 
 str_chr.o: \
 compile str_chr.c str.h
 	./compile str_chr.c
 
-str_cpy.o: \
-compile str_cpy.c str.h
-	./compile str_cpy.c
-
 str_cpyb.o: \
 compile str_cpyb.c str.h
 	./compile str_cpyb.c
-
-str_diff.o: \
-compile str_diff.c str.h
-	./compile str_diff.c
-
-str_diffn.o: \
-compile str_diffn.c str.h
-	./compile str_diffn.c
-
-str_len.o: \
-compile str_len.c str.h
-	./compile str_len.c
 
 str_rchr.o: \
 compile str_rchr.c str.h
