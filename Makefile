@@ -1,6 +1,6 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-VPOPMAIL_LIBS=`head -n 1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
+VPOPMAIL_LIBS=`head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps` `cat dns.lib`
 
 SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
