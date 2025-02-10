@@ -466,3 +466,4 @@ conf-policy.temp
 eai.o
 utf8.o
 unittest_stralloc
+qtmp.h

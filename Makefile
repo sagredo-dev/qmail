@@ -1148,15 +1148,21 @@ qbiff.1
 
 qbiff.o: \
 compile qbiff.c readwrite.h stralloc.h gen_alloc.h substdio.h subfd.h \
-substdio.h open.h byte.h str.h headerbody.h hfield.h env.h exit.h
+substdio.h open.h byte.h str.h headerbody.h hfield.h env.h exit.h qtmp.h
 	./compile qbiff.c
+
+qtmp.h: \
+tryutmpx.c compile load qtmp.h1 qtmp.h2
+	( ( ./compile tryutmpx.c && ./load tryutmpx ) >/dev/null 2>&1 \
+	&& cat qtmp.h2 || cat qtmp.h1 ) > qtmp.h
+	rm -f tryutmpx.o tryutmpx
 
 qmail-clean: \
 load qmail-clean.o fmtqfn.o now.o getln.a sig.a stralloc.a alloc.a \
 substdio.a error.a str.a fs.a auto_qmail.o auto_split.o
 	./load qmail-clean fmtqfn.o now.o getln.a sig.a stralloc.a \
 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
-	auto_split.o 
+	auto_split.o
 
 qmail-clean.0: \
 qmail-clean.8

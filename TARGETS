@@ -465,3 +465,4 @@ dns_text.o
 conf-policy.temp
 eai.o
 utf8.o
+qtmp.h
