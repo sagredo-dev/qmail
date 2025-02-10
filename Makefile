@@ -6,6 +6,9 @@ SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
 DEFINES=-DEXTERNAL_TODO # use to enable external todo
 
+OS := $(shell uname)
+-include conf-$(OS)
+
 SHELL=/bin/sh
 
 default: it
@@ -428,8 +431,8 @@ tryrsolv.c compile load socket.lib dns.o ipalloc.o strsalloc.o ip.o \
 stralloc.a alloc.a error.a fs.a str.a
 	( ( ./compile tryrsolv.c && ./load tryrsolv dns.o \
 	ipalloc.o strsalloc.o ip.o stralloc.a alloc.a error.a fs.a str.a \
-	-lresolv `cat socket.lib` ) >/dev/null 2>&1 \
-	&& echo -lresolv || exit 0 ) > dns.lib
+	$(LIBRESOLV) `cat socket.lib` ) >/dev/null 2>&1 \
+	&& echo $(LIBRESOLV) || exit 0 ) > dns.lib
 	rm -f tryrsolv.o tryrsolv
 
 dns.o: \
@@ -2382,7 +2385,7 @@ case_diffb.o stralloc.a substdio.a
 	ip.o strsalloc.o dns.o ipalloc.o fmt_str.o fmt_ulong.o \
 	socket_v6any.o socket_v4mappedprefix.o \
 	sgetopt.o subgetopt.o base64sub.o \
-	case_diffb.o stralloc.a substdio.a -lresolv
+	case_diffb.o stralloc.a substdio.a $(LIB)
 
 surblfilter.o: \
 compile surblfilter.c alloc.h error.h str.h case.h \
