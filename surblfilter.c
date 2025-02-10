@@ -198,7 +198,7 @@ getshort(unsigned char *cp)
 }
 
 static char *
-strdup(const char *str)
+my_strdup(const char *str)
 {
 	size_t siz;
 	char *copy;
@@ -231,15 +231,15 @@ dns_text(char *dn)
 	for (rc = 0, responselen = PACKETSZ;rc < 2;rc++) {
 		if ((responselen = res_query(dn, C_IN, T_TXT, response, responselen)) < 0) {
 			if (h_errno == TRY_AGAIN)
-				return strdup("e=temp;");
+				return my_strdup("e=temp;");
 			else
-				return strdup("e=perm;");
+				return my_strdup("e=perm;");
 		}
 		if (responselen <= PACKETSZ)
 			break;
 		else
 		if (responselen >= (2 * PACKETSZ))
-			return strdup("e=perm;");
+			return my_strdup("e=perm;");
 	}
 	qdcount = getshort(response + 4);	/* http://crynwr.com/rfc1035/rfc1035.html#4.1.1. */
 	ancount = getshort(response + 6);
@@ -248,15 +248,15 @@ dns_text(char *dn)
 	while (qdcount-- > 0 && cp < eom) {
 		rc = dn_expand(response, eom, cp, (char *) buf, MAXDNAME);
 		if (rc < 0)
-			return strdup("e=perm;");
+			return my_strdup("e=perm;");
 		cp += rc + QFIXEDSZ;
 	}
 	while (ancount-- > 0 && cp < eom) {
 		if ((rc = dn_expand(response, eom, cp, (char *) buf, MAXDNAME)) < 0)
-			return strdup("e=perm;");
+			return my_strdup("e=perm;");
 		cp += rc;
 		if (cp + RRFIXEDSZ >= eom)
-			return strdup("e=perm;");
+			return my_strdup("e=perm;");
 		type = getshort(cp + 0);	/* http://crynwr.com/rfc1035/rfc1035.html#4.1.3. */
 		rdlength = getshort(cp + 8);
 		cp += RRFIXEDSZ;
@@ -270,18 +270,18 @@ dns_text(char *dn)
 
 			cnt = *cp++;		/* http://crynwr.com/rfc1035/rfc1035.html#3.3.14. */
 			if (bufptr - buf + cnt + 1 >= (2 * PACKETSZ))
-				return strdup("e=perm;");
+				return my_strdup("e=perm;");
 			if (cp + cnt > eom)
-				return strdup("e=perm;");
+				return my_strdup("e=perm;");
 			byte_copy((char *) bufptr, cnt, (char *) cp);
 			rdlength -= cnt + 1;
 			bufptr += cnt;
 			cp += cnt;
 			*bufptr = '\0';
 		}
-		return (char *) strdup((char *) buf);
+		return (char *) my_strdup((char *) buf);
 	}
-	return strdup("e=perm;");
+	return my_strdup("e=perm;");
 }
 
 static char    *
