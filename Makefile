@@ -1,6 +1,6 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-VPOPMAIL_LIBS=`head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps` `cat dns.lib`
+VPOPMAIL_LIBS=$$(head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps) `cat dns.lib`
 
 SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
@@ -1197,7 +1197,7 @@ dns_text.o open.a sig.a alloc.a substdio.a error.a \
 wildmat.o str.a case.a fs.a auto_qmail.o auto_split.o \
 parse_env.o auto_uids.o fd.a wait.a getDomainToken.o \
 env.a getln.a control.o stralloc.a dns.lib libdkim.a
-	g++ -o qmail-dkim qmail-dkim.o triggerpull.o fmtqfn.o now.o \
+	c++ -o qmail-dkim qmail-dkim.o triggerpull.o fmtqfn.o now.o \
 	subgetopt.o makeargs.o date822fmt.o datetime.a seek.a ndelay.a \
 	dns_text.o open.a sig.a substdio.a error.a auto_qmail.o \
 	wildmat.o auto_split.o auto_uids.o fd.a wait.a \
@@ -2427,22 +2427,22 @@ time_t_size.h: time_t_size.c compile load
 	rm -f time_t_size.o time_t_size
 
 dkimfuncs.o: dkimfuncs.cpp time_t_size.h
-	g++ -g -DHAVE_EVP_SHA256 -c dkimfuncs.cpp
+	c++ -g -DHAVE_EVP_SHA256 -c dkimfuncs.cpp
 
 dkimverify.o: dkim.h dns_text.h dkimverify.h dkimverify.cpp time_t_size.h
-	g++ -g -DHAVE_EVP_SHA256 -c dkimverify.cpp
+	c++ -g -DHAVE_EVP_SHA256 -c dkimverify.cpp
 
 dkimsign.o: dkim.h dkimsign.h dkimsign.cpp
-	g++ -g -DHAVE_EVP_SHA256 -c dkimsign.cpp
+	c++ -g -DHAVE_EVP_SHA256 -c dkimsign.cpp
 
 dkim: libdkim.a dkim.o dns_text.h dns_text.o \
 error.o alloc.o alloc_re.o str.a stralloc.a dns.lib
-	g++ -o dkim $(LFLAGS) -L. dkim.o dns_text.o str.a \
+	c++ -o dkim $(LFLAGS) -L. dkim.o dns_text.o str.a \
 	error.o alloc.o alloc_re.o stralloc.a libdkim.a \
 	`cat dns.lib` -lcrypto
 
 dkim.o: dkim.c $(DKIMHDRS)
-	gcc -c -g -DHAVE_OPENSSL_EVP_H -DHAVE_EVP_SHA256 -I. -DHAVE_EVP_SHA256 dkim.c
+	./compile -c -g -DHAVE_OPENSSL_EVP_H -DHAVE_EVP_SHA256 -I. -DHAVE_EVP_SHA256 dkim.c
 
 dns_text.o: compile dns_text.c dns.h dns_text.h
 	./compile -I. dns_text.c
@@ -2451,7 +2451,7 @@ libdkim.a: $(DKIMOBJS) dkimverify.o dkimsign.o makelib time_t_size.h
 	rm -f libdkim.a
 	./makelib libdkim.a $(DKIMOBJS) dkimsign.o dkimverify.o
 .cpp.o:
-	g++ -g -I. -DHAVE_EVP_SHA256 $(CFLAGS) $(INCL) -c $<
+	c++ -g -I. -DHAVE_EVP_SHA256 $(CFLAGS) $(INCL) -c $<
 
 cert cert-req: \
 Makefile-cert
