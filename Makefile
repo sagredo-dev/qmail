@@ -1,13 +1,13 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
+# freeBSD users should comment out the followiong line
+LIBRESOLV=-lresolv
+
 VPOPMAIL_LIBS=$$(head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps) `cat dns.lib`
 
 SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
 DEFINES=-DEXTERNAL_TODO # use to enable external todo
-
-OS := $(shell uname)
--include conf-$(OS)
 
 SHELL=/bin/sh
 
@@ -2385,7 +2385,7 @@ case_diffb.o stralloc.a substdio.a
 	ip.o strsalloc.o dns.o ipalloc.o fmt_str.o fmt_ulong.o \
 	socket_v6any.o socket_v4mappedprefix.o \
 	sgetopt.o subgetopt.o base64sub.o \
-	case_diffb.o stralloc.a substdio.a $(LIB)
+	case_diffb.o stralloc.a substdio.a $(LIBRESOLV)
 
 surblfilter.o: \
 compile surblfilter.c alloc.h error.h str.h case.h \
