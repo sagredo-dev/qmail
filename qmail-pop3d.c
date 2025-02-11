@@ -168,7 +168,7 @@ void pop3_rset(arg) char *arg;
   int i;
   for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
   last = 0;
-  okay(0);
+  okay();
 }
 
 void pop3_last(arg) char *arg;
@@ -232,7 +232,7 @@ void pop3_quit(arg) char *arg;
                  if (quotafd >= 0) close(quotafd);
             }
         }
-  okay(0);
+  okay();
   die();
 }
 
@@ -254,7 +254,7 @@ void pop3_dele(arg) char *arg;
   if (i == -1) return;
   m[i].flagdeleted = 1;
   if (i + 1 > last) last = i + 1;
-  okay(0);
+  okay();
 }
 
 void list(i,flaguidl)
@@ -278,7 +278,7 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
     list(i,flaguidl);
   }
   else {
-    okay(0);
+    okay();
     for (i = 0;i < numm;++i)
       if (!m[i].flagdeleted)
 	list(i,flaguidl);
@@ -307,7 +307,7 @@ void pop3_top(arg) char *arg;
  
   fd = open_read(m[i].fn);
   if (fd == -1) { err_nosuch(); return; }
-  okay(0);
+  okay();
   substdio_fdbuf(&ssmsg,read,fd,ssmsgbuf,sizeof(ssmsgbuf));
   blast(&ssmsg,limit);
   close(fd);
@@ -339,7 +339,7 @@ char **argv;
  
   getlist();
 
-  okay(0);
+  okay();
   commands(&ssin,pop3commands);
   die();
 }
