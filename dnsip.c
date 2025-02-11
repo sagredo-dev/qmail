@@ -12,7 +12,7 @@ char temp[IPFMT];
 stralloc sa = {0};
 ipalloc ia = {0};
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

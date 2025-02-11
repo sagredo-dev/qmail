@@ -8,7 +8,7 @@
 
 char temp[IPFMT];
 
-void main()
+int main()
 {
  int j,k;
 

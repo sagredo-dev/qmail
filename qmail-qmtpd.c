@@ -76,7 +76,7 @@ stralloc failure = {0};
 char *relayclient;
 int relayclientlen;
 
-void main()
+int main()
 {
   char ch;
   int i;

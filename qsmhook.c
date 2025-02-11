@@ -35,7 +35,7 @@ char outbuf[SUBSTDIO_OUTSIZE];
 substdio ssin;
 char inbuf[SUBSTDIO_INSIZE];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

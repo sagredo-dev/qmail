@@ -12,7 +12,7 @@
 strsalloc ssa = {0};
 struct ip_address ip;
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

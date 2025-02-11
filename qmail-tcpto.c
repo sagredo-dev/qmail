@@ -35,7 +35,7 @@ char tcpto_buf[1024];
 
 char tmp[FMT_ULONG + IPFMT];
 
-void main()
+int main()
 {
  int fdlock;
  int fd;

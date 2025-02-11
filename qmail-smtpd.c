@@ -2494,7 +2494,7 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
 }
 /* qsmtpdlog: end */
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

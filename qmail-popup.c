@@ -165,7 +165,7 @@ struct commands pop3commands[] = {
 , { 0, err_authoriz, 0 }
 } ;
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

@@ -1877,7 +1877,7 @@ static void channels_init(void)
 
 }
 
-void main()
+int main()
 {
  int fd;
  datetime_sec wakeup;

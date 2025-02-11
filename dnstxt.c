@@ -11,7 +11,7 @@
 strsalloc ssa = {0};
 stralloc sa = {0};
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
