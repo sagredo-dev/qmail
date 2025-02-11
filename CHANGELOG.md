@@ -1,9 +1,16 @@
 # ChangeLog
 
-- unreleased
+- Feb 11, 2025
+  - Several adjustments to get freeBSD and netBSD compatibility. More info in the commit history.
+    Hints/comments are welcome.
+  - freeBSD users have to comment out the "LIBRESOLV" variable from the very beginning of the
+    Makefile, as libresolv.so in not needed on freeBSD.
   - Dropped files install-big.c, idedit.c and BIN.* files.
+  - Dropped files byte_diff.c, str_cpy.c, str_diff.c, str_diffn.c and str_len.c, which break compilation
+    on clang and can be replaced by the functions shipped by the compiler (tx notqmail).
   - Old documentation moved to the "doc" dir. install.c and hier.c modified accordingly
   - conf-cc and conf-ld now have -L/usr/local/lib and -I/usr/local/include to look for srs2 library
+  - conf-cc and conf-ld now have -L/usr/pkg/lib and -I/usr/pkg/include to satisfy netBSD
   - vpopmail-dir.sh: minor correction to vpopmail dir existence check
   - srs.c: #include <srs2.h> now without path
 
