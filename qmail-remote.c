@@ -740,15 +740,15 @@ void smtp_auth()
 
   for (i = 0; i + 8 < smtptext.len; i += str_chr(smtptext.s+i,'\n')+1)
     if (!str_diffn(smtptext.s+i+4,"AUTH",4)) {  
-      if (j = str_chr(smtptext.s+i+8,'C') > 0)
+      if ((j = str_chr(smtptext.s+i+8,'C')) > 0)
         if (case_starts(smtptext.s+i+8+j,"CRAM"))
           if (mailfrom_cram() >= 0) return;
 
-      if (j = str_chr(smtptext.s+i+8,'P') > 0)
+      if ((j = str_chr(smtptext.s+i+8,'P')) > 0)
         if (case_starts(smtptext.s+i+8+j,"PLAIN")) 
           if (mailfrom_plain() >= 0) return;
 
-      if (j = str_chr(smtptext.s+i+8,'L') > 0)
+      if ((j = str_chr(smtptext.s+i+8,'L')) > 0)
         if (case_starts(smtptext.s+i+8+j,"LOGIN")) 
           if (mailfrom_login() >= 0) return;
 
@@ -969,7 +969,7 @@ char **argv;
 
   for (i = 0;i <= sender.len;++i)
     if ((i == 0) || (i == sender.len) || (sender.s[i] == '.') || (sender.s[i] == '@'))
-      if (authsender = constmap(&mapauthsenders,sender.s + i,sender.len - i))
+      if ((authsender = constmap(&mapauthsenders,sender.s + i,sender.len - i)))
         break;
 
   if (authsender && !*authsender) authsender = 0;
@@ -1000,7 +1000,7 @@ char **argv;
   else {					/* default smtproutes -- authenticated */
     for (i = 0;i <= host.len;++i)
       if ((i == 0) || (i == host.len) || (host.s[i] == '.'))
-        if (relayhost = constmap(&maproutes,host.s + i,host.len - i))
+        if ((relayhost = constmap(&maproutes,host.s + i,host.len - i)))
           break;
 
     if (relayhost && !*relayhost) relayhost = 0;

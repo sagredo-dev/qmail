@@ -66,7 +66,7 @@ void hier()
   d(auto_qmail,"plugins",auto_uido,auto_gidq,0755);
   // install control/smtpplugins file if not existent (unable to read control crash otherwise)
   snprintf(tmpbuf, sizeof(tmpbuf), "%s/control/smtpplugins", auto_qmail);
-  if (!access(tmpbuf, F_OK)==0) {
+  if ((!access(tmpbuf, F_OK))==0) {
     c(auto_qmail,"control","smtpplugins",auto_uido,auto_gidq,0644);
   }
 
