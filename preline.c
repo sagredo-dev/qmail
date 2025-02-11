@@ -26,7 +26,7 @@ char inbuf[SUBSTDIO_INSIZE];
 substdio ssout = SUBSTDIO_FDBUF(write,1,outbuf,sizeof outbuf);
 substdio ssin = SUBSTDIO_FDBUF(read,0,inbuf,sizeof inbuf);
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

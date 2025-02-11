@@ -576,7 +576,7 @@ char *arg;
   if (!stralloc_copys(&addr,"")) die_nomem();
   flagesc = 0;
   flagquoted = 0;
-  for (i = 0;ch = arg[i];++i) { /* copy arg to addr, stripping quotes */
+  for (i = 0; (ch = arg[i]); ++i) { /* copy arg to addr, stripping quotes */
     if (flagesc) {
       if (!stralloc_append(&addr,&ch)) die_nomem();
       flagesc = 0;
@@ -1457,7 +1457,6 @@ void smtp_rcpt(arg) char *arg; {
     char smtperrcode[4];
     char *smtperrstrptr;
     long smtperrcodenum = 0;
-    int len = 0;
     int closesession = 0;
 
     if ((rcptcheck_err[0]) && (sizeof(rcptcheck_err) > 3)) {
@@ -1468,8 +1467,9 @@ void smtp_rcpt(arg) char *arg; {
         if (smtperrcodenum == 421) closesession = 1;
       }
       else {
-        len = str_copy(rcptcheck_err,"451 temporary problem (#4.4.2)\r\n");
-        rcptcheck_err[len] = '\0' ;
+        str_copy(rcptcheck_err,"451 temporary problem (#4.4.2)\r\n");
+        // strcpy() copies the string pointed to by src, including the terminating null byte ('\0')
+        //rcptcheck_err[len] = '\0' ;
       }
       qlogenvelope("rejected","rcptcheck","custom",smtperrcode);
     }
@@ -1478,8 +1478,8 @@ void smtp_rcpt(arg) char *arg; {
         case 0:
           strerr_warn5(title.s,"rcptcheck: drop address <",addr.s,"> at ",remoteip,0);
           qlogenvelope("rejected","rcptcheck","nomailbox","550");
-          len = str_copy(rcptcheck_err,"550 sorry, no mailbox here by that name. (#5.1.1)\r\n");
-          rcptcheck_err[len] = '\0';
+          str_copy(rcptcheck_err,"550 sorry, no mailbox here by that name. (#5.1.1)\r\n");
+          //rcptcheck_err[len] = '\0';
           break;
         case 1:
           strerr_warn5(title.s,"rcptcheck: accepted address <",addr.s,"> at ",remoteip,0);
@@ -1491,8 +1491,8 @@ void smtp_rcpt(arg) char *arg; {
         case 3:
           strerr_warn5(title.s,"rcptcheck: overlimit sender <",addr.s,"> at ",remoteip,0);
           qlogenvelope("rejected","rcptcheck","overlimit","421");
-          len = str_copy(rcptcheck_err,"421 you have exceeded your messaging limits (#4.3.0)\r\n");
-          rcptcheck_err[len] = '\0';
+          str_copy(rcptcheck_err,"421 you have exceeded your messaging limits (#4.3.0)\r\n");
+          //rcptcheck_err[len] = '\0';
           closesession = 1;
           break;
       }
@@ -1901,19 +1901,19 @@ int auth_login(arg) char *arg;
   int r;
 
   if (*arg) {
-    if (r = b64decode(arg,str_len(arg),&user) == 1) return err_input();
+    if ((r = b64decode(arg,str_len(arg),&user)) == 1) return err_input();
   }
   else {
     out("334 VXNlcm5hbWU6\r\n"); flush();       /* Username: */
     if (authgetl() < 0) return -1;
-    if (r = b64decode(authin.s,authin.len,&user) == 1) return err_input();
+    if ((r = b64decode(authin.s,authin.len,&user)) == 1) return err_input();
   }
   if (r == -1) die_nomem();
 
   out("334 UGFzc3dvcmQ6\r\n"); flush();         /* Password: */
 
   if (authgetl() < 0) return -1;
-  if (r = b64decode(authin.s,authin.len,&pass) == 1) return err_input();
+  if ((r = b64decode(authin.s,authin.len,&pass)) == 1) return err_input();
   if (r == -1) die_nomem();
 
   if (!user.len || !pass.len) return err_input();
@@ -1925,12 +1925,12 @@ int auth_plain(arg) char *arg;
   int r, id = 0;
 
   if (*arg) {
-    if (r = b64decode(arg,str_len(arg),&resp) == 1) return err_input();
+    if ((r = b64decode(arg,str_len(arg),&resp)) == 1) return err_input();
   }
   else {
     out("334 \r\n"); flush();
     if (authgetl() < 0) return -1;
-    if (r = b64decode(authin.s,authin.len,&resp) == 1) return err_input();
+    if ((r = b64decode(authin.s,authin.len,&resp)) == 1) return err_input();
   }
   if (r == -1 || !stralloc_0(&resp)) die_nomem();
   while (resp.s[id]) id++;                       /* "authorize-id\0userid\0passwd\0" */
@@ -1968,7 +1968,7 @@ int auth_cram()
   flush();
 
   if (authgetl() < 0) return -1;                        /* got response */
-  if (r = b64decode(authin.s,authin.len,&resp) == 1) return err_input();
+  if ((r = b64decode(authin.s,authin.len,&resp)) == 1) return err_input();
   if (r == -1 || !stralloc_0(&resp)) die_nomem();
 
   i = str_rchr(resp.s,' ');
@@ -2387,7 +2387,7 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
 }
 /* qsmtpdlog: end */
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

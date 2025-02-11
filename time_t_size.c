@@ -3,6 +3,6 @@
 int
 main()
 {
-	printf("#define SIZEOF_TIME_T %d\n", sizeof(time_t));
+	printf("#define SIZEOF_TIME_T %lu\n", sizeof(time_t));
 	return (0);
 }

@@ -124,7 +124,7 @@ int mode;
   perm("",home,"/",file,S_IFREG,uid,gid,mode);
 }
 
-void main()
+int main()
 {
   hier();
   _exit(0);

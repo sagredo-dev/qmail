@@ -22,7 +22,7 @@ static char *montab[12] = {
 char num[FMT_ULONG];
 char outbuf[1024];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

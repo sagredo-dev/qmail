@@ -181,7 +181,7 @@ void getcmd()
 
 char inbuf[128];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

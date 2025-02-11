@@ -1,3 +1,4 @@
+#include <string.h>
 #include "tcpto.h"
 #include "open.h"
 #include "lock.h"

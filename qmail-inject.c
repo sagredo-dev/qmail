@@ -124,22 +124,24 @@ void exitnicely()
      if (!stralloc_0(&reciplist.sa[i])) die_nomem();
      qmail_to(&qqt,reciplist.sa[i].s);
     }
-   if (flagrh)
-     if (flagresent)
+   if (flagrh) {
+     if (flagresent) {
        for (i = 0;i < hrrlist.len;++i)
 	{
          if (!stralloc_0(&hrrlist.sa[i])) die_nomem();
 	 qmail_to(&qqt,hrrlist.sa[i].s);
 	}
-     else
+     } else {
        for (i = 0;i < hrlist.len;++i)
-	{
+       {
          if (!stralloc_0(&hrlist.sa[i])) die_nomem();
 	 qmail_to(&qqt,hrlist.sa[i].s);
-	}
+       }
+     }
+   }
 
    qqx = qmail_close(&qqt);
-   if (*qqx)
+   if (*qqx) {
      if (*qqx == 'D') {
        substdio_puts(subfderr,"qmail-inject: fatal: ");
        substdio_puts(subfderr,qqx + 1);
@@ -154,6 +156,7 @@ void exitnicely()
        substdio_flush(subfderr);
        temp();
      }
+   }
   }
 
  _exit(0);
@@ -704,7 +707,7 @@ void getcontrols()
 #define RECIP_HEADER 3
 #define RECIP_AH 4
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

@@ -172,7 +172,7 @@ int mode;
     strerr_die6sys(111,FATAL,"unable to chmod ",home,"/",file,": ");
 }
 
-void main()
+int main()
 {
   fdsourcedir = open_read(".");
   if (fdsourcedir == -1)

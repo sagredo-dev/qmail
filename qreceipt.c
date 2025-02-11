@@ -92,9 +92,10 @@ following address: ");
  qmail_to(&qqt,returnpath);
  qqx = qmail_close(&qqt);
 
- if (*qqx)
+ if (*qqx) {
    if (*qqx == 'D') die_qqperm();
    else die_qqtemp();
+ }
 }
 
 stralloc hfbuf = {0};
@@ -119,7 +120,7 @@ stralloc *h;
 
 void dobody(h) stralloc *h; { ; }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

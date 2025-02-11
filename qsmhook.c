@@ -35,7 +35,7 @@ char outbuf[SUBSTDIO_OUTSIZE];
 substdio ssin;
 char inbuf[SUBSTDIO_INSIZE];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {
@@ -78,7 +78,7 @@ char **argv;
 
  if (!*argv) die_usage();
 
- for (arg = argv;x = *arg;++arg)
+ for (arg = argv; (x = *arg); ++arg)
   {
    if (!stralloc_copys(&newarg,"")) die_temp();
    flagesc = 0;

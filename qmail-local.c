@@ -344,15 +344,12 @@ void checkhome()
 {
  struct stat st;
 
- if (stat(".",&st) == -1)
-   strerr_die3x(111,"Unable to stat home directory: ",error_str(errno),". (#4.3.0)");
- if (st.st_mode & auto_patrn)
-   strerr_die1x(111,"Uh-oh: home directory is writable. (#4.7.0)");
- if (st.st_mode & 01000)
-   if (flagdoit)
-     strerr_die1x(111,"Home directory is sticky: user is editing his .qmail file. (#4.2.1)");
-   else
-     strerr_warn1("Warning: home directory is sticky.",0);
+ if (stat(".",&st) == -1) strerr_die3x(111,"Unable to stat home directory: ",error_str(errno),". (#4.3.0)");
+ if (st.st_mode & auto_patrn) strerr_die1x(111,"Uh-oh: home directory is writable. (#4.7.0)");
+ if (st.st_mode & 01000) {
+   if (flagdoit) strerr_die1x(111,"Home directory is sticky: user is editing his .qmail file. (#4.2.1)");
+   else strerr_warn1("Warning: home directory is sticky.",0);
+ }
 }
 
 int qmeox(dashowner)
@@ -420,7 +417,7 @@ int *cutable;
   if (qmeexists(fd,cutable)) {
     if (safeext.len >= 7) {
       i = safeext.len - 7;
-      if (!byte_diff("default",7,safeext.s + i))
+      if (byte_equal("default",7,safeext.s + i))
 	if (i <= str_len(ext)) /* paranoia */
 	  if (!env_put2("DEFAULT",ext + i)) temp_nomem();
     }
@@ -476,7 +473,7 @@ int len;
  substdio_putsflush(subfdoutsmall,"\n");
 }
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

@@ -230,7 +230,7 @@ int fd;
 substdio ss;
 char ssbuf[SUBSTDIO_INSIZE];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

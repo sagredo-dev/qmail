@@ -46,19 +46,19 @@ int type;
  errno = 0;
  if (!stralloc_copy(&glue,domain)) return DNS_MEM;
  if (!stralloc_0(&glue)) return DNS_MEM;
- if (!responsebuflen)
-  if (response.buf = (unsigned char *)alloc(PACKETSZ+1))
-   responsebuflen = PACKETSZ+1;
-   else return DNS_MEM;
+ if (!responsebuflen) {
+  if ((response.buf = (unsigned char *)alloc(PACKETSZ+1))) responsebuflen = PACKETSZ+1;
+  else return DNS_MEM;
+ }
 
  responselen = lookup(glue.s,C_IN,type,response.buf,responsebuflen);
  if ((responselen >= responsebuflen) ||
      (responselen > 0 && (((HEADER *)response.buf)->tc)))
   {
-   if (responsebuflen < 65536)
-    if (alloc_re(&response.buf, responsebuflen, 65536))
-     responsebuflen = 65536;
+   if (responsebuflen < 65536) {
+    if (alloc_re(&response.buf, responsebuflen, 65536)) responsebuflen = 65536;
     else return DNS_MEM;
+   }
     saveresoptions = _res.options;
     _res.options |= RES_USEVC;
     responselen = lookup(glue.s,C_IN,type,response.buf,responsebuflen);
@@ -142,18 +142,16 @@ int wanttype;
  rrdlen = getshort(responsepos + 8);
  responsepos += 10;
 
- if (rrtype == wanttype)
-  {
-   if (rrdlen < 4)
-     return DNS_SOFT;
+ if (rrtype == wanttype) {
+   if (rrdlen < 4) return DNS_SOFT;
    ip.d[0] = responsepos[0];
    ip.d[1] = responsepos[1];
    ip.d[2] = responsepos[2];
    ip.d[3] = responsepos[3];
    responsepos += rrdlen;
    return 1;
-  }
-   
+ }
+
  responsepos += rrdlen;
  return 0;
 }

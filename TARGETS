@@ -105,10 +105,6 @@ error.o
 error_str.o
 error_temp.o
 error.a
-str_len.o
-str_diff.o
-str_diffn.o
-str_cpy.o
 str_cpyb.o
 str_chr.o
 str_rchr.o
@@ -117,7 +113,6 @@ byte_chr.o
 byte_rchr.o
 byte_cspn.o
 byte_rcspn.o
-byte_diff.o
 byte_copy.o
 byte_cr.o
 byte_zero.o
@@ -469,3 +464,4 @@ dns_text.o
 conf-policy.temp
 eai.o
 utf8.o
+qtmp.h

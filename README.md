@@ -250,7 +250,18 @@ ldconfig
 cd ../
 ```
 
-* Download and compile
+* Compile and install
+
+`freeBSD` doesn't have the libresolv.so library, which is not needed there to compile.  
+Before compiling, `freeBSD` users have to comment out or delete the following line at
+the very beginning of `Makefile`:
+
+```
+#LIBRESOLV=-lresolv
+```
+
+Compile and install:
+
 ```
 make setup check
 ```

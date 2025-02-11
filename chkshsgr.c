@@ -2,7 +2,7 @@
 #include <grp.h>
 #include "exit.h"
 
-void main()
+int main()
 {
  gid_t x[4];
  // was short x[4];

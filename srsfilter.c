@@ -80,7 +80,7 @@ substdio ssout = SUBSTDIO_FDBUF(mywrite,-1,outbuf,sizeof outbuf);
 
 char num[FMT_ULONG];
 
-void main(argc,argv)
+int main(argc,argv)
 int argc;
 char **argv;
 {

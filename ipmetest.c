@@ -8,7 +8,7 @@
 #include "auto_qmail.h"
 #include "env.h"
 
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   struct ip_address ip;
 
