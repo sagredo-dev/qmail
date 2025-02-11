@@ -1334,11 +1334,11 @@ qmail-log.5
 qmail-lspawn: \
 load qmail-lspawn.o spawn.o prot.o slurpclose.o coe.o sig.a wait.a \
 case.a cdb.a fd.a open.a stralloc.a alloc.a substdio.a error.a str.a \
-fs.a auto_qmail.o auto_uids.o auto_spawn.o envread.o str_diffn.o
+fs.a auto_qmail.o auto_uids.o auto_spawn.o envread.o
 	./load qmail-lspawn spawn.o prot.o slurpclose.o coe.o \
 	sig.a wait.a case.a cdb.a fd.a open.a stralloc.a alloc.a \
 	substdio.a error.a str.a fs.a auto_qmail.o auto_uids.o \
-	auto_spawn.o envread.o str_diffn.o
+	auto_spawn.o envread.o
 
 qmail-lspawn.0: \
 qmail-lspawn.8
@@ -1623,11 +1623,11 @@ tcpto.h readwrite.h timeoutconn.h timeoutread.h timeoutwrite.h eai.h utf8.h
 qmail-rspawn: \
 load qmail-rspawn.o spawn.o tcpto_clean.o now.o coe.o sig.a open.a \
 seek.a lock.a wait.a fd.a stralloc.a alloc.a substdio.a error.a str.a \
-auto_qmail.o auto_uids.o auto_spawn.o envread.o str_diffn.o
+auto_qmail.o auto_uids.o auto_spawn.o envread.o
 	./load qmail-rspawn spawn.o tcpto_clean.o now.o coe.o \
 	sig.a open.a seek.a lock.a wait.a fd.a stralloc.a alloc.a \
 	substdio.a error.a str.a auto_qmail.o auto_uids.o \
-	auto_spawn.o  envread.o str_diffn.o
+	auto_spawn.o envread.o
 
 qmail-rspawn.0: \
 qmail-rspawn.8
@@ -2058,7 +2058,7 @@ substdio.h fmt.h stralloc.h srs.h
 str.a: \
 makelib str_cpyb.o str_chr.o \
 str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_cspn.o byte_rcspn.o \
-byte_diff.o byte_copy.o byte_cr.o byte_zero.o
+byte_copy.o byte_cr.o byte_zero.o
 	./makelib str.a str_cpyb.o \
   	str_chr.o str_rchr.o str_start.o byte_chr.o byte_rchr.o byte_cspn.o \
 	byte_rcspn.o byte_copy.o byte_cr.o byte_zero.o
@@ -2365,10 +2365,10 @@ surblfilter: \
 load surblfilter.o envread.o strerr_die.o strerr_sys.o \
 control.o alloc.o alloc_re.o error.o \
 error_str.o auto_qmail.o \
-case_startb.o byte_diff.o str_cspn.o \
+case_startb.o str_cspn.o \
 byte_copy.o byte_chr.o byte_rchr.o byte_cr.o \
-getln.o getln2.o open_read.o str_len.o str_diffn.o \
-str_cpy.o str_chr.o scan_xlong.o \
+getln.o getln2.o open_read.o \
+str_chr.o scan_xlong.o \
 now.o scan_ulong.o mess822_ok.o constmap.o \
 ip.o strsalloc.o dns.o ipalloc.o fmt_str.o fmt_ulong.o \
 socket_v6any.o socket_v4mappedprefix.o \
@@ -2377,10 +2377,10 @@ case_diffb.o stralloc.a substdio.a
 	./load surblfilter envread.o strerr_die.o strerr_sys.o \
 	control.o alloc.o alloc_re.o error.o \
 	error_str.o auto_qmail.o \
-	case_startb.o byte_diff.o str_cspn.o \
+	case_startb.o str_cspn.o \
 	byte_copy.o byte_chr.o byte_rchr.o byte_cr.o \
-	getln.o getln2.o open_read.o str_len.o str_diffn.o \
-	str_cpy.o str_chr.o scan_xlong.o \
+	getln.o getln2.o open_read.o \
+	str_chr.o scan_xlong.o \
 	now.o scan_ulong.o mess822_ok.o constmap.o \
 	ip.o strsalloc.o dns.o ipalloc.o fmt_str.o fmt_ulong.o \
 	socket_v6any.o socket_v4mappedprefix.o \
