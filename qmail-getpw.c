@@ -36,8 +36,8 @@ int userext()
 	errno = 0;
 	pw = getpwnam(username);
 	if (errno == error_txtbsy) _exit(QLX_SYS);
-	if (pw)
-	  if (pw->pw_uid)
+	if (pw) {
+	  if (pw->pw_uid) {
 	    if (stat(pw->pw_dir,&st) == 0) {
 	      if (st.st_uid == pw->pw_uid) {
 		dash = "";
@@ -45,8 +45,9 @@ int userext()
 		return 1;
 	      }
 	    }
-	    else
-	      if (error_temp(errno)) _exit(QLX_NFS);
+	    else if (error_temp(errno)) _exit(QLX_NFS);
+          }
+        }
       }
     if (extension == local) return 0;
     --extension;
