@@ -1,6 +1,7 @@
 #ifndef QTMP_H
 #define QTMP_H
 
+#include "substdio.h"
 #include <utmp.h>
 #ifndef UTMP_FILE
 #ifdef _PATH_UTMP
@@ -13,11 +14,11 @@
     struct utmp utm; \
     struct utmp *ut = &utm;
     substdio ssutmp; \
-    char bufutmp[sizeof(struct utmp) * 16]
+    char bufutmp[sizeof(struct utmp) * 16];
 #define UTMP_USER ut_name
 #define UTMP_OPEN \
     if (open_read(UTMP_FILE) == -1) _exit(0); \
-    substdio_fdbuf(&ssutmp,read,fdutmp,bufutmp,sizeof(bufutmp))
+    substdio_fdbuf(&ssutmp,read,ssutmp,bufutmp,sizeof(bufutmp))
 #define UTMP_READ_MORE (substdio_get(&ssutmp,ut,sizeof(utm)) == sizeof(utm))
 #define UTMP_TYPE_MATCHES 1
 
