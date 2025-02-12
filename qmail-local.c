@@ -1,3 +1,4 @@
+#include <sys/user.h>
 #include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
