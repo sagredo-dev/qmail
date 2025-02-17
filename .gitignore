@@ -467,3 +467,8 @@ eai.o
 utf8.o
 unittest_stralloc
 qtmp.h
+byte_diff.o
+str_cpy.o
+str_diff.o
+str_diffn.o
+str_len.o
