@@ -100,7 +100,6 @@ elq
 pinq
 idedit
 install-big
-hier.o
 install
 instcheck
 home
@@ -176,7 +175,6 @@ mbox.0
 addresses.0
 envelopes.0
 forgeries.0
-policy.o
 man
 setup
 check
@@ -184,7 +182,6 @@ qmail-todo
 update_tmprsadh
 qmail-dkim
 libdkim.a
-dkim.o
 dkim
 dkim.8
 qmail-dkim.8
