@@ -46,15 +46,15 @@ Configure your SRS domain:
 
 ## Configuration Parameters
 
-    Parameter      Description                                                             Example
+    Parameter         Example          Description
 
-    srs_domain     A domain to use in rewritten addresses. If not set, SRS is disabled.    srs.foo-bar.com  
-    srs_secrets    A random string to generate and check SRS addresses. You can specify a list of secrets (one per line). The first secret in the list is used for generating new SRS addresses. All secrets on the list may be used to verify SRS addresses. 	foobar123  
-    srs_maxage     The maximum permitted age of a rewritten address. SRS rewritten addresses expire after a specified number of days. libsrs2 default is 21, but I believe that a week is enougth to get all bounces, so I recommend you to use 7. 	7  
-    srs_hashlength The hash length to generate in a rewritten address. The hash length is a measure of security in the SRS system; longer is more secure. 	4  
-    srs_hashmin    The hash length to require when checking an address. If the hash length is increased, there may be SRS addresses from your MTA in the wild which use a shorter hash length. This parameter may be set to     permit checking of hashes shorter than srs_hashlength. This parameter must be at most srs_hashlength. 	4  
-    srs_separator  The separator to appear immediately after SRS[01] in rewritten addresses. This must be -, + or =. Default value is =. 	=  
-    srs_alwaysrewrite    Skip rcpthosts check and perform SRS rewriting for all forwarding, even when not required. This must be 0 (disabled) or 1 (enabled). Default value is 0 (disabled). 	0  
+    srs_domain        srs.foo-bar.com  A domain to use in rewritten addresses. If not set, SRS is disabled.
+    srs_secrets       foobar123        A random string to generate and check SRS addresses. You can specify a list of secrets (one per line). The first secret in the list is used for generating new SRS addresses. All secrets on the list may be used to verify SRS addresses.  
+    srs_maxage        7                The maximum permitted age of a rewritten address. SRS rewritten addresses expire after a specified number of days. libsrs2 default is 21, but I believe that a week is enougth to get all bounces, so I recommend you to use 7.
+    srs_hashlength    4                The hash length to generate in a rewritten address. The hash length is a measure of security in the SRS system; longer is more secure.
+    srs_hashmin       4                The hash length to require when checking an address. If the hash length is increased, there may be SRS addresses from your MTA in the wild which use a shorter hash length. This parameter may be set to permit checking of hashes shorter than srs_hashlength. This parameter must be at most srs_hashlength.
+    srs_separator     =                The separator to appear immediately after SRS[01] in rewritten addresses. This must be -, + or =. Default value is =.
+    srs_alwaysrewrite 0                Skip rcpthosts check and perform SRS rewriting for all forwarding, even when not required. This must be 0 (disabled) or 1 (enabled). Default value is 0 (disabled). 	0  
     
 ## Environment Variables (qmail-inject only)
 
