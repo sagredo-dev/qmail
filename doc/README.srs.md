@@ -12,8 +12,6 @@ Download qmail-srs-0.8.patch.
 
 Apply this patch:
 
-    tar -xzf /path/to/qmail-1.03.tar.gz
-    cd qmail-1.03
     patch -p1 < qmail-srs-0.8.patch
 
 And follow your qmail instalation (config, make, make setup check, ...)
