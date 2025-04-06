@@ -1,34 +1,10 @@
-qmail SRS patch
+# qmail SRS patch
 
 This is a SRS (Sender Rewriting Scheme) implementation for qmail using libsrs2.
 
 Current version: qmail-srs-0.8.patch
-Changes
 
-    2011-03-30 (0.8):
-        Fixed bug reading configuration files. 
-    2007-06-05 (0.7):
-        New QMAILINJECT_FORCE_SRS and QMAILINJECT_SKIP_SRS environment variables can force or skip envelope rewriting in qmail-inject. 
-    2007-05-31 (0.6):
-        qmail-inject only will rewrite envelope if EXT and HOST variables are set.
-        Fixed bug in qmail-send handling chdir() calls (Special Thanks to Werner Fleck).
-    2007-01-11 (0.5):
-        Added parameters srs_separator and srs_alwaysrewrite from libsrs2.
-    2007-01-10 (0.4):
-        If srs_domain is empty or not set, SRS is disabled.
-    2006-12-18 (0.3):
-        forward and condredirect: modified to work with SRS.
-    2006-12-17 (0.2):
-        srsfilter: now rewrites To header with the SRS decoded address.
-        srsfilter: only accepts messages from null-sender, Return-Path: <>.
-        srsfilter: modified to reject messages without body.
-        qmail-inject: error message detailed.
-        If optional parameters are not set, will use libsrs2 defaults.
-        Install instructions revised.
-    2006-12-15 (0.1):
-        First release.
-
-Install instructions
+## Install instructions
 
     Download and install libsrs2 from http://www.libsrs2.org/download.html.
     Download qmail-srs-0.8.patch.
@@ -85,9 +61,32 @@ You can change this behavior using the following environment variables:
     QMAILINJECT_FORCE_SRS: qmail-inject will call srsforward() even if EXT and HOST are not set.
     QMAILINJECT_SKIP_SRS: qmail-inject will not call srsforward() even if EXT and HOST are set.
 
-More about SRS
+# More about SRS
+- http://www.openspf.org/SRS
+- http://www.libsrs2.org/
+- http://wooledge.org/~greg/qmail-srs.html
 
-    http://www.openspf.org/SRS
-    http://www.libsrs2.org/
-    http://wooledge.org/~greg/qmail-srs.html
+## Changes
 
+    2011-03-30 (0.8):
+        Fixed bug reading configuration files. 
+    2007-06-05 (0.7):
+        New QMAILINJECT_FORCE_SRS and QMAILINJECT_SKIP_SRS environment variables can force or skip envelope rewriting in qmail-inject.
+    2007-05-31 (0.6):
+        qmail-inject only will rewrite envelope if EXT and HOST variables are set.
+        Fixed bug in qmail-send handling chdir() calls (Special Thanks to Werner Fleck).
+    2007-01-11 (0.5):
+        Added parameters srs_separator and srs_alwaysrewrite from libsrs2.
+    2007-01-10 (0.4):
+        If srs_domain is empty or not set, SRS is disabled.
+    2006-12-18 (0.3):
+        forward and condredirect: modified to work with SRS.
+    2006-12-17 (0.2):
+        srsfilter: now rewrites To header with the SRS decoded address.
+        srsfilter: only accepts messages from null-sender, Return-Path: <>.
+        srsfilter: modified to reject messages without body.
+        qmail-inject: error message detailed.
+        If optional parameters are not set, will use libsrs2 defaults.
+        Install instructions revised.
+    2006-12-15 (0.1):
+        First release.
