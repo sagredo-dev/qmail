@@ -37,7 +37,8 @@ Optional parameters:
     echo 4 > /var/qmail/control/srs_hashmin
     echo = > /var/qmail/control/srs_separator
     echo 0 > /var/qmail/control/srs_alwaysrewrite
-    Configure your SRS domain.
+    
+Configure your SRS domain:
 
     echo srs.YOURDOMAIN >> /var/qmail/control/rcpthosts
     echo srs.YOURDOMAIN:srs >> /var/qmail/control/virtualdomains
