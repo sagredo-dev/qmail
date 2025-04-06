@@ -129,7 +129,7 @@ void hier()
   c(auto_qmail,"doc","doc/README.moreipme",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.qregex",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.rfc2821",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"doc","doc/README.srs",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","doc/README.srs.md",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.surbl",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.tap",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.tls",auto_uido,auto_gidq,0644);
