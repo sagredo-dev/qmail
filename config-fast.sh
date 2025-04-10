@@ -28,3 +28,22 @@ echo "$fqdn" >> QMAIL/control/rcpthosts
 chmod 644 QMAIL/control/rcpthosts
 echo "Now qmail will refuse to accept SMTP messages except to $fqdn."
 echo 'Make sure to change rcpthosts if you add hosts to locals or virtualdomains!'
+
+########### smtpplugins
+# install control/smtpplugins file if not existent (unable to read control crash otherwise)
+echo "Adding control/smtpplugins sample file..."
+cat > QMAIL/control/smtpplugins << EOF
+# smtpplugins sample file
+[connection]
+
+[auth]
+
+[helo]
+
+[mail]
+
+[rcpt]
+
+[data]
+EOF
+chown root:qmail QMAIL/control/smtpplugins
