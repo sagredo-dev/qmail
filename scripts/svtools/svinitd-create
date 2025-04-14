@@ -1,0 +1,92 @@
+#!/bin/sh
+#
+# svinitd-create
+# Create an init.d-script for a supervised process
+# Klaus Reimer <k@ailis.de>
+
+TITLE=svinitd-create
+VERSION=0.6
+AUTHOR="Klaus Reimer"
+EMAIL=k@ailis.de
+COPYRIGHT="Copyright (C) 2000-2011 by $AUTHOR"
+
+showHelp() {
+  echo "Usage: $TITLE [OPTION]... SERVICE [SERVICE...]"
+  echo "Create an init.d-script for a supervised process"
+  echo ""
+  echo "  -h, --help     Display help and exit"
+  echo "  -V, --version  Display version and exit"
+  echo ""
+  echo "This utility prints an init.d-wrapper script for a supervised"
+  echo "process. You can specify more than one service name to control more"
+  echo "supervised processes with one init.d script."
+  echo ""
+  echo "Report bugs to $AUTHOR <$EMAIL>"
+}
+
+showVersion() {
+  echo "$TITLE $VERSION"
+  echo ""
+  echo "$COPYRIGHT"
+  echo "This is free software; you can redistribute it and/or modify it under"
+  echo "the terms of the GNU General Public License as published by the Free"
+  echo "Software Foundation; either version 2 of the License, or (at your"
+  echo "option) any later version."
+}
+
+while getopts "hV-:" NAME
+do
+  case "$NAME" in
+    h)
+      showHelp
+      exit 0
+      ;;
+    V)
+      showVersion
+      exit 0
+      ;;
+    -)
+      case "$OPTARG" in
+        help)
+          showHelp
+          exit 0
+          ;;
+        version)
+          showVersion
+          exit 0
+          ;;
+        *)
+          echo "Unknown option: $OPTARG"
+          showHelp
+          exit 1
+      esac  
+      ;;
+    *)
+      echo "Unknown option: $OPTARG"
+      showHelp
+      exit 1
+  esac
+done
+
+shift `expr $OPTIND - 1`
+if [ $# -eq 0 ]
+then
+  showHelp
+  exit 1
+fi
+
+cat<<EOF
+#!/bin/sh -e
+#
+# init.d wrapper script for supervised service: $SERVICE
+# Automatically created by svinitd-create
+# Klaus Reimer <k@ailis.de>
+
+EOF
+
+for SERVICE in $*
+do
+  echo "svinitd $SERVICE \$1"
+done
+
+exit 0

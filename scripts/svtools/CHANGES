@@ -1,0 +1,16 @@
+Version 0.6:
+  - Fixed typo in help text
+
+Version 0.5:
+  - Using --follow=name instead of -fname
+
+Version 0.4:
+  - Splitted echo -e commands to multiple echos to be compatible to dash
+  
+Version 0.3:
+  - Default service directory is now /etc/sv/<service>
+  - Default log directory is now /var/log/sv/<service>
+  - Service user is now only deleted if -d option is specified
+  - Log user is now only deleted if -D option is specified
+  - Default run file uses setuidgid now instead of envuidgid
+  - Service directory is now owned by root, not by the service user.

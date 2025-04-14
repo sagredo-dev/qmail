@@ -1,0 +1,200 @@
+#!/bin/sh
+#
+# svsetup
+# Service setup tool for daemontools
+# Klaus Reimer <k@ailis.de>
+
+TITLE=svsetup
+VERSION=0.6
+AUTHOR="Klaus Reimer"
+EMAIL=k@ailis.de
+COPYRIGHT="Copyright (C) 2000-2011 by $AUTHOR"
+SVCUSER=root
+DELSVCUSER=0
+LOGUSER=root
+DELLOGUSER=0
+DONTLOG=0
+
+showHelp() {
+  echo "Usage: $TITLE [OPTION]... CMD SERVICE"
+  echo "Service setup tool for daemontools"
+  echo ""
+  echo "  -u USER        Specify service user name (Default: $SVCUSER)"
+  echo "  -l USER        Specify log user name (Default: $LOGUSER)"
+  echo "  -n             Do not setup logging with multilog"
+  echo "  -e ETCDIR      Specify cfg directory (Default: /etc/sv/SERVICE)"
+  echo "  -L LOGDIR      Specify log directory (Default: /var/log/sv/SERVICE)"
+  echo "  -s SERVICEDIR  Specify service directory (Default: automatically"
+  echo "                   detected)"
+  echo "  -d             Delete service user on removal"
+  echo "  -D             Delete log user on removal"
+  echo "  -h, --help     Display help and exit"
+  echo "  -V, --version  Display version and exit"
+  echo ""
+  echo "  CMD      Specifies action to perform:"
+  echo "             CREATE   Create new service"
+  echo "             REMOVE   Delete existing service"
+  echo "             ENABLE   Enable service"
+  echo "             DISABLE  Disable service"
+  echo ""
+  echo "  SERVICE  Specifies the service name"
+  echo ""
+  echo "NOTE: If you REMOVE a service and specify a service user (with -u)"
+  echo "and/or a log user (with -l) these users (except root) are removed, too,"
+  echo "if you also specify the option -d and/or -D! This happens without any"
+  echo "confirmation requests and the users are deleted even if they were not"
+  echo "created by svsetup!"
+  echo ""
+  echo "If you create a new service a default run script is created. If"
+  echo "there is already a run script in ETCDIR this existing runscript is used"
+  echo "instead."
+  echo ""
+  echo "Report bugs to $AUTHOR <$EMAIL>"
+}
+
+showVersion() {
+  echo "$TITLE $VERSION"
+  echo ""
+  echo "$COPYRIGHT"
+  echo "This is free software; you can redistribute it and/or modify it under"
+  echo "the terms of the GNU General Public License as published by the Free"
+  echo "Software Foundation; either version 2 of the License, or (at your"
+  echo "option) any later version."
+}
+
+while getopts ":hVu:l:e:L:s:n-:dD" NAME
+do
+  case "$NAME" in
+    d)
+      DELSVCUSER=1
+      ;;
+    D)
+      DELLOGUSER=1      
+      ;;
+    u)
+      SVCUSER=$OPTARG
+      ;;
+    l)
+      LOGUSER=$OPTARG
+      ;;
+    n)
+      DONTLOG=1
+      ;;
+    e)
+      ETCDIR=$OPTARG
+      ;;
+    L)
+      LOGDIR=$OPTARG
+      ;;
+    h)
+      showHelp
+      exit 0
+      ;;
+    V)
+      showVersion
+      exit 0
+      ;;
+    -)
+      case "$OPTARG" in
+        help)
+          showHelp
+          exit 0
+          ;;
+        version)
+          showVersion
+          exit 0
+          ;;
+        *)
+          echo "Unknown option: $OPTARG"
+          showHelp
+          exit 1
+      esac  
+      ;;
+    *)
+      echo "Unknown option: $OPTARG"
+      showHelp
+      exit 1
+  esac
+done
+
+shift `expr $OPTIND - 1`
+if [ $# -ne 2 ]
+then
+  showHelp
+  exit 1
+fi
+
+ACTION=$1
+SERVICE=$2
+if [ "$ETCDIR" = "" ]; then ETCDIR="/etc/sv/$SERVICE"; fi
+if [ "$LOGDIR" = "" ]; then LOGDIR="/var/log/sv/$SERVICE"; fi
+if [ "$SVDIR" = "" ]
+then
+  if ! SVDIR=`svdir 2>&1`
+  then
+    echo "$TITLE: $SVDIR" >&2
+    exit 1
+  fi
+fi
+
+case "$ACTION" in
+  CREATE|create)
+    if ! grep -q "^$SVCUSER:" /etc/passwd
+    then
+      adduser --quiet --system --no-create-home --disabled-password --home $ETCDIR --gecos "Daemontools service" $SVCUSER
+    fi
+    if [ $DONTLOG -eq 0 ] && ! grep -q "^$LOGUSER:" /etc/passwd
+    then
+      adduser --quiet --system --no-create-home --disabled-password --home $LOGDIR --gecos "Daemontools service logging" $LOGUSER
+    fi
+    if [ ! -d $ETCDIR ]
+    then 
+      install -d -o root -g root -m 0755 $ETCDIR
+    fi
+    if [ ! -f $ETCDIR/run ]
+    then
+      echo "#!/bin/sh" > $ETCDIR/run
+      echo "exec 2>&1" >> $ETCDIR/run
+      echo "exec setuidgid $SVCUSER $SERVICE" >> $ETCDIR/run
+    fi
+    chmod +x $ETCDIR/run
+    if [ $DONTLOG -eq 0 ]
+    then
+      install -d -o $LOGUSER -g root -m 0750 $LOGDIR
+      install -d -o root -g root -m 0755 $ETCDIR/log
+      if [ ! -e $ETCDIR/log/main ]
+      then
+        ln -sf $LOGDIR $ETCDIR/log/main
+      fi
+      echo "#!/bin/sh" > $ETCDIR/log/run
+      echo "exec setuidgid $LOGUSER multilog t ./main" >> $ETCDIR/log/run
+      chmod +x $ETCDIR/log/run
+      chmod +t $ETCDIR
+    fi
+    ;;
+  REMOVE|remove)
+    rm -f $SVDIR/$SERVICE
+    svc -dx $ETCDIR/log 2>/dev/null
+    svc -dx $ETCDIR 2>/dev/null
+    rm -rf $ETCDIR/log $ETCDIR/supervise $LOGDIR
+    if [ $DELSVCUSER -eq 1 ] && [ "$SVCUSER" != "root" ]; then userdel $SVCUSER 2>/dev/null; fi
+    if [ $DELLOGUSER -eq 1 ] && [ "$LOGUSER" != "root" ]; then userdel $LOGUSER 2>/dev/null; fi
+    ;;
+  ENABLE|enable)
+    if [ ! -e $SVDIR/$SERVICE ]
+    then
+      ln -sf $ETCDIR $SVDIR/$SERVICE
+    fi
+    ;;
+  DISABLE|disable)
+    rm -f $SVDIR/$SERVICE
+    svc -dx $ETCDIR/log 2>/dev/null
+    svc -dx $ETCDIR
+    ;;
+  *)
+    echo "Unknown command: $ACTION"
+    showHelp
+    exit 1
+esac
+
+exit 0

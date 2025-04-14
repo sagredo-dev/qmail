@@ -1,0 +1,182 @@
+#!/bin/sh
+#
+# svinfo
+# Get infos about a supervised process
+# Klaus Reimer <k@ailis.de>
+
+TITLE=svinfo
+VERSION=0.6
+AUTHOR="Klaus Reimer"
+EMAIL=k@ailis.de
+COPYRIGHT="Copyright (C) 2000-2011 by $AUTHOR"
+
+showHelp() {
+  echo "Usage: $TITLE [OPTION]... SERVICE"
+  echo "Get infos about a supervised process"
+  echo ""
+  echo "  -l, --log      Get infos about the attached log process instead of"
+  echo "                 the process itself"
+  echo "  -w, --when     Output the time when the service was started"
+  echo "  -p, --pid      Output the process id of the service (0 if not running)"
+  echo "  -s, --state    Return the process state"
+  echo "                   0=down and stopped,"
+  echo "                   1=up and stopped,"
+  echo "                   2=down and started,"
+  echo "                   3=up and started"
+  echo "  -h, --help     Display help and exit"
+  echo "  -V, --version  Display version and exit"
+  echo ""
+  echo "With this utility you can gather some information about a"
+  echo "supervised process. If no parameters are specified this utility"
+  echo "prints the status output from svstat."
+  echo ""
+  echo "Report bugs to $AUTHOR <$EMAIL>"
+}
+
+showVersion() {
+  echo "$TITLE $VERSION"
+  echo ""
+  echo "$COPYRIGHT"
+  echo "This is free software; you can redistribute it and/or modify it under"
+  echo "the terms of the GNU General Public License as published by the Free"
+  echo "Software Foundation; either version 2 of the License, or (at your"
+  echo "option) any later version."
+}
+
+while getopts "lpwshV-:" NAME
+do
+  case "$NAME" in
+    l)
+      LOG="1"
+      ;;
+    p)
+      MODE="PID"
+      ;;
+    w)
+      MODE="WHEN"
+      ;;
+    s)
+      MODE="STATE"
+      ;;
+    h)
+      showHelp
+      exit 0
+      ;;
+    V)
+      showVersion
+      exit 0
+      ;;
+    -)
+      case "$OPTARG" in
+        log)
+          LOG="1"
+          ;;
+        pid)
+          MODE="PID"
+          ;;
+        when)
+          MODE="WHEN"
+          ;;
+        state)
+          MODE="STATE"
+          ;;
+        help)
+          showHelp
+          exit 0
+          ;;
+        version)
+          showVersion
+          exit 0
+          ;;
+        *)
+          echo "Unknown option: $OPTARG"
+          showHelp
+          exit 1
+      esac  
+      ;;
+    *)
+      echo "Unknown option: $OPTARG"
+      showHelp
+      exit 1
+  esac
+done
+
+shift `expr $OPTIND - 1`
+if [ $# -ne 1 ]
+then
+  showHelp
+  exit 1
+fi
+
+if ! SVDIR=`svdir 2>&1`
+then
+  echo "$TITLE: $SVDIR" >&2
+  exit 1
+fi
+
+SERVICE=$1
+
+svok $SVDIR/$SERVICE || exit 1
+if [ "$LOG" = "1" ]
+then
+  svok $SVDIR/$SERVICE/log || exit 1
+fi
+
+case "$MODE" in
+  PID)
+    if [ "$LOG" = "1" ]
+    then
+      hexdump -e '"%d\n"' -s 12 -n 4 /$SVDIR/$SERVICE/log/supervise/status
+    else
+      hexdump -e '"%d\n"' -s 12 -n 4 /$SVDIR/$SERVICE/supervise/status
+    fi
+    ;;
+  WHEN)
+    if [ "$LOG" = "1" ]
+    then
+      hexdump -e '"@" 12 1 "%02x" "\n"' -s 0 -n 12 /$SVDIR/$SERVICE/log/supervise/status | tai64nlocal
+    else
+      hexdump -e '"@" 12 1 "%02x" "\n"' -s 0 -n 12 /$SVDIR/$SERVICE/supervise/status | tai64nlocal
+    fi
+    ;;
+  STATE)
+    if [ "$LOG" = "1" ]
+    then
+      PID=`hexdump -e '"%d\n"' -s 12 -n 4 /$SVDIR/$SERVICE/log/supervise/status`
+      FILE="$SVDIR/$SERVICE/log/down"
+    else
+      PID=`hexdump -e '"%d\n"' -s 12 -n 4 /$SVDIR/$SERVICE/supervise/status`
+      FILE="$SVDIR/$SERVICE/down"
+    fi
+    if [ -f $FILE ]
+    then
+      if [ $PID -ne 0 ]
+      then
+        echo "Service is force-started"
+        exit 2
+      else
+        echo "Service is disabled"
+        exit 0
+      fi
+    else
+      if [ $PID -ne 0 ]
+      then
+        echo "Service is started"
+        exit 3
+      else
+        echo "Service is stopped"
+        exit 1
+      fi
+    fi
+    ;;
+  *)
+    if [ "$LOG" = "1" ]
+    then
+      svstat $SVDIR/$SERVICE/log
+    else
+      svstat $SVDIR/$SERVICE
+    fi
+    ;;
+esac
+
+exit 0
