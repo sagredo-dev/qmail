@@ -1,0 +1,258 @@
+#!/usr/bin/perl -w
+#
+# convert-multilog
+# John Simpson <jms1@jms1.net> 2003-05-07
+#
+# finds and coverts multilog-format log files to /var/log/___
+#
+# 2005-04-11 jms1 - (no code changed.) changed the copyright notice to
+#   specify that the license is the GPL VERSION 2 ONLY. i'm not comfortable
+#   with the "or future versions" clause until i know what these "future
+#   versions" will look like.
+#
+# 2006-11-28 jms1 - (no code changed.) added comments to the $opt_*
+#   variables which tell what each command line switch does.
+#
+# 2007-08-14 jms1 - received a bug report- if the first line of an input
+#   file is all whitespace, an empty date is generated and no output 
+#   file is opened (because the empty date matches the empty string with
+#   which $fdate is initialized.) changing $fdate to initialize with a 
+#   string which, as far as i know, could never be printed by multilog.
+#   thanks to John Coryat for letting me know.
+#
+# 2007-09-04 jms1 - adding @exclude to allow certain services to not be
+#   touched at all.
+#
+# 2009-06-26 jms1 - fixed a bug where the "guaranteed invalid" string used
+#   to not write empty date files is now detected. no more "Closing  (0 lines
+#   added" messages at the beginning of each run. also removed dependency
+#   on Logit.pm.
+#
+# 2009-10-20 jms1 - some of tai64nlocal's output lines don't always start
+#   with YYYY-MM-DD. my guess is that the original log lines which cause
+#   this have embedded CR or LF characters. either way, i'm going to assume
+#   that any such lines are continuations of whatever line preceded them, and
+#   i'm going to write them to whatever file is currently open. if the first
+#   line of a file is like this, it will be dropped. thanks to jon lewis for
+#   pointing out the problem, even if i didn't use his solution.
+#
+# 2012-08-24 jms1 - found a typo which prevented the program from actually
+#   working. I'm really surprised that nobody reported this... either that,
+#   or I guess nobody really uses this script.
+#
+# 2014-08-24 roberto puzzanghera - $logdir modified to /var/log/qmail/backup
+#
+# 2023-06-23 Roberto Puzzanghera
+#   compatibility with logs in human readable format such as
+#   2023-06-28 16:17:26.501278543 tcpserver: status: 0/200/0
+#
+#@@ -168,12 +170,12 @@
+#                sleep 2 ;
+#        }
+# 
+#-       for my $f ( glob "$d/log/main/\@*.[su]" )
+#+       for my $f ( glob "$d/log/main/*.[su]" )
+#        {
+#                debug "Reading $f\n" ;
+# 
+#-               open ( I , "tai64nlocal < $f |" )
+#-                       or die "Can\'t run tai64nlocal < $f: $!\n" ;
+#+               open ( I , "$f" )
+#+                       or die "Can\'t open $f: $!\n" ;
+#
+###############################################################################
+#
+# Copyright (C) 2003,2005,2006,2007,2009,2012 John Simpson.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License, version 2, as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+# or visit http://www.gnu.org/licenses/gpl.txt
+#
+###############################################################################
+
+require 5.003 ;
+use strict ;
+
+use Sys::Syslog ;
+Sys::Syslog::setlogsock ( "unix" ) ;
+openlog ( "convert-multilog" , "pid" , "user" ) ;
+END { closelog() ; }
+
+###############################################################################
+#
+# configuration and globals
+
+my $sdir	= "/service" ;
+my $logdir	= "/var/log/qmail/backup" ;
+my @exclude	= () ;
+
+my $opt_a = 0 ; # send ALRM to each multilog first, to "cut off" log files
+my $opt_v = 0 ; # debug() messages go to stdout along with syslog
+my $opt_r = 0 ; # rename log files to "__.done" instead of removing them
+my %ex = () ;
+
+my $notyet = "\x00\xFF\x00" ;	# internal marker to recognize when a file
+				# hasn't started processing yet
+
+$ENV{"PATH"} = "/usr/local/bin:/usr/bin:/bin" ;
+
+###############################################################################
+#
+# debugging stuff
+
+my $show_debug = 0 ;
+
+sub debug($)
+{
+	syslog ( "info" , "%s" , $_[0] ) ;
+
+	if ( $opt_v )
+	{
+		print $_[0] ;
+	}
+}
+
+###############################################################################
+###############################################################################
+###############################################################################
+#
+# let's do it
+
+map { $ex{$_} = 1 } @exclude ;
+
+while ( my $z = shift )
+{
+	die "Illegal option string [$z]\n"
+		unless ( $z =~ s/^\-// ) ;
+
+	if ( $z =~ s/a// )
+	{
+		$opt_a ++ ;
+	}
+
+	if ( $z =~ s/r// )
+	{
+		$opt_r ++ ;
+	}
+
+	if ( $z =~ s/v// )
+	{
+		$opt_v ++ ;
+	}
+
+	die "Illegal option [$z]\n"
+		if ( $z ) ;
+}
+
+debug "Starting\n" ;
+
+for my $d ( glob "$sdir/*" )
+{
+	unless ( -d "$d/log/main" )
+	{
+		debug "No log/main directory under $d\n" ;
+		next ;
+	}
+
+	my $tname = $d ;
+	$tname =~ s|^$sdir/|| ;
+
+	if ( exists $ex{$tname} )
+	{
+		debug "Skipping $d\n" ;
+		next ;
+	}
+
+	my $ifdate = $notyet ;
+	my $fdate = $ifdate ;
+	my $icount = 0 ;
+	my $ocount = 0 ;
+	my $of = "" ;
+
+	if ( $opt_a && ( -s "$d/log/main/current" ) > 0 )
+	{
+		debug "svc -a $d/log\n" ;
+		system "svc -a $d/log" ;
+		sleep 2 ;
+	}
+
+	for my $f ( glob "$d/log/main/*.[su]" )
+	{
+		debug "Reading $f\n" ;
+
+		open ( I , "$f" )
+			or die "Can\'t open $f: $!\n" ;
+
+		while ( my $line = <I> )
+		{
+			$icount ++ ;
+
+			my $date = $fdate ;
+			if ( $line =~ /^(\d\d\d\d\-\d\d\-\d\d)\s/ )
+			{
+				$date = $1 ;
+			}
+			elsif ( $fdate eq $notyet )
+			{
+				debug "Ignoring line $line" ;
+				next ;
+			}
+
+			if ( $date ne $fdate )
+			{
+				if ( $fdate && ( $fdate ne $ifdate ) )
+				{
+					debug "Closing $of ($ocount lines added)\n" ;
+					close O ;
+					$fdate = "" ;
+					$ocount = 0 ;
+				}
+
+				$of = "$logdir/$tname.$date" ;
+				debug "Adding to $of\n" ;
+				open ( O , ">>$of" )
+					or die "Can\'t open $of: $!\n" ;
+
+				$fdate = $date ;
+			}
+
+			print O $line ;
+			$ocount ++ ;
+		}
+
+		debug "Done reading $f ($icount lines read) " ;
+		close I ;
+		$icount = 0 ;
+
+		if ( $opt_r )
+		{
+			rename ( $f , "$f.done" ) ;
+			debug "(renamed)\n" ;
+		}
+		else
+		{
+			unlink ( $f ) ;
+			debug "(removed)\n" ;
+		}
+	}
+
+	if ( $fdate )
+	{
+		debug "Closing $of ($ocount lines added)\n" ;
+		close O ;
+		$fdate = "" ;
+		$ocount = 0 ;
+	}
+}
+
+debug "Done\n" ;

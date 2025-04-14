@@ -1,3 +1,9 @@
+if [ -z "$1" ]; then
+  echo "You must provide your FQDN."
+  echo "Usage: $0 mx.mydomain.tld"
+  exit 1
+fi
+
 fqdn="$1"
 echo Your fully qualified host name is "$fqdn".
 
@@ -47,3 +53,7 @@ cat > QMAIL/control/smtpplugins << EOF
 [data]
 EOF
 chown root:qmail QMAIL/control/smtpplugins
+
+########### supervise
+echo "Copying the supervise scripts in QMAIL/doc/example-supervise"
+cp -rp $SRCDIR/scripts/example-supervise QMAIL/doc/

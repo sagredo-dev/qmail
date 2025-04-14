@@ -75,6 +75,7 @@ tcp-env
 qmail-newmrh
 config
 config-fast
+config-all
 dnscname
 dnsptr
 dnsip
@@ -202,3 +203,4 @@ channels.h
 conf-policy.temp
 unittest_stralloc
 qtmp.h
+helodnscheck

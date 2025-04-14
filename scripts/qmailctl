@@ -1,0 +1,234 @@
+#!/bin/bash
+#
+# tx Sam Tang
+#
+# Apr 2025
+# QMAILDIR defined via getent
+#
+# May 25, 2022
+# a few modifications by Roberto Puzzanghera to avoid error strings in the service uptime when service is stopped
+#
+# Aug 07, 2022
+# now the script exits if services are not started with svscanboot or the supervise script is missing
+#
+
+# Put here the services you want to manage
+svclist="qmail-smtpd qmail-smtpsd qmail-submission qmail-send vpopmaild vusaged"
+# Put here the services you want monitoring
+servicelist="dovecot clamd freshclam spamd httpd solr mariadb fail2ban"
+# mailman uwsgi memcached
+
+QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
+QMAILDUID=`id -u qmaild`
+NOFILESGID=`id -g qmaild`
+TCPRULES_DIR=$QMAILDIR/control
+
+PATH=$QMAILDIR/bin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
+export PATH
+
+function show_uptime() {
+  re='^[0-9]+$'
+  org="$(svstat /service/$1 | awk '{print $2,$3,$4;}' | sed 's/up/[ up ]/g' | sed 's/down/[ down ]/g' | sed ''/up/s//`printf "\033[1\;32mup\033[0m"`/'' | sed ''/down/s//`printf "\033[1\;31mdown\033[0m"`/'')"
+  sec="$(svstat /service/$1 | awk '{print $5;}')"
+  if ! [[ $sec =~ $re ]]; then
+    sec="$(svstat /service/$1 | awk '{print $3;}')"
+  fi
+  d=$(( $sec / 86400))
+  h=$(( $(($sec - $d * 86400)) / 3600 ))
+  m=$(( $(($sec -d * 86400 - $h * 3600)) / 60 ))
+  s=$(($sec -d * 86400 - $h * 3600 - $m * 60))
+
+  if [ $sec -le 60 ]; then
+    if [[ "$(svstat /service/qmail-smtpd | awk '{print $2}')" = 'down' ]]; then
+      printf "%-22s %s %s %s %s %s\n" "$1:" $org
+    else
+      printf "%-22s %s %s %s %s %s %s seconds\n" "$1:" $org $s
+    fi
+  else
+    printf "%-22s %s %s %s %s %s %3s day(s), %02d:%02d:%02d\n" "$1:" $org $d $h $m $s
+  fi
+}
+
+# check if qmail has been sttarted at boot time
+function svscan_check() {
+  if ! pgrep -x "svscanboot" > /dev/null; then
+    echo "/command/svscanboot not running. Please start qmail running:"
+    echo "qmailctl boot"
+    echo "or"
+    echo "/command/svscanboot"
+    exit 1
+  fi
+}
+
+case "$1" in
+  start)
+    svscan_check
+    echo "Starting qmail"
+
+    for svc in $svclist ; do
+      if svok /service/$svc ; then
+        svc -u /service/$svc
+      else
+        echo $svc service not running
+      fi
+    done
+
+    if [ -d /var/lock/subsys ]; then
+      touch /var/lock/subsys/qmail
+    fi
+    ;;
+  stop)
+    svscan_check
+    echo "Stopping qmail..."
+    for svc in $svclist ; do
+      echo " $svc"
+      svc -d /service/$svc
+    done
+    if [ -f /var/lock/subsys/qmail ]; then
+    rm /var/lock/subsys/qmail
+    fi
+    ;;
+  stat)
+    svscan_check
+    for svc in $svclist ; do
+      if [ ! -x /service/$svc ]; then
+        echo $svc service script not found
+      else
+        show_uptime $svc
+        show_uptime "$svc/log"
+      fi
+    done
+    echo ""
+    for service in $servicelist ; do
+      printf "%-22s " "$service status:"
+      if (( $(ps -ef | grep -v grep | grep $service | wc -l) > 0 ))
+      then
+        echo -e "[ \033[1;32mup\033[m ]"
+      else
+        echo -e "[ \033[1;31mdown\033[m ]"
+      fi
+    done
+    if [ -f $QMAILDIR/control/simversions.cdb ]; then
+      printf "\nClamAV database updated at: "
+      stat --printf=%y $QMAILDIR/control/simversions.cdb | cut -d. -f1
+    fi
+    if [ -f $QMAILDIR/users/assign ]; then
+      printf "Total Domains: "
+      wc -l < $QMAILDIR/users/assign
+    fi
+    echo ""
+    qmail-qstat
+    ;;
+  doqueue|alrm|flush)
+    svscan_check
+    echo "Sending ALRM signal to qmail-send."
+    svc -a /service/qmail-send
+    ;;
+  queue)
+    svscan_check
+    qmail-qstat
+    qmail-qread
+    ;;
+  reload|hup)
+    svscan_check
+    echo "Sending HUP signal to qmail-send."
+    svc -h /service/qmail-send
+    ;;
+  pause)
+    svscan_check
+    for svc in $svclist ; do
+      echo "Pausing $svc"
+      svc -p /service/$svc
+    done
+    ;;
+  cont)
+    svscan_check
+    for svc in $svclist ; do
+      echo "Continuing $svc"
+      svc -c /service/$svc
+    done
+    ;;
+  restart)
+    svscan_check
+    echo "Restarting qmail:"
+    for svc in $svclist ; do
+      if [ "$svc" != "qmail-send" ] ; then
+        echo "* Stopping $svc."
+        svc -d /service/$svc
+      fi
+    done
+    echo "* Sending qmail-send SIGTERM and restarting."
+    svc -t /service/qmail-send
+    for svc in $svclist ; do
+      if [ "$svc" != "qmail-send" ] ; then
+        echo "* Restarting $svc."
+        svc -u /service/$svc
+      fi
+    done
+    ;;
+  cdb)
+    if ! grep '\#define POP_AUTH_OPEN_RELAY 1' ~vpopmail/include/config.h >/dev/null; then
+      (cd $TCPRULES_DIR ; cat tcp.smtp | tcprules tcp.smtp.cdb tcp.smtp.tmp)
+      echo "Updated tcp.smtp.cdb."
+      (cd $TCPRULES_DIR ; cat tcp.submission | tcprules tcp.submission.cdb tcp.submission.tmp)
+      echo "Updated tcp.submission.cdb."
+    else
+      ~vpopmail/bin/clearopensmtp
+      echo "Ran clearopensmtp."
+    fi
+    ;;
+  clear)
+    svscan_check
+    echo "Clearing readproctitle service errors with ................."
+    svc -o /service/clear
+    ;;
+  kill)
+    svscan_check
+    echo "First stopping services ... "
+    for svc in $svclist ; do
+      if svok /service/$svc ; then
+         svc -d /service/$svc
+         svc -d /service/$svc/log
+      fi
+    done
+    echo "Now sending processes the kill signal ... "
+    killall -g svscanboot
+    echo "done"
+    ;;
+  boot)
+    echo "Starting qmail"
+    /command/svscanboot &
+    ;;
+  reboot)
+    $0 kill
+    sleep 5
+    $0 boot
+    ;;
+  help)
+    cat <<HELP
+    stop -- stops mail service (smtp connections refused, nothing goes out)
+   start -- starts mail service (smtp connection accepted, mail can go out)
+   pause -- temporarily stops mail service (connections accepted, nothing leaves)
+    cont -- continues paused mail service
+    stat -- displays status of mail service
+     cdb -- rebuild the tcpserver cdb file for smtp
+ restart -- stops and restarts smtp, sends qmail-send a TERM & restarts it
+ doqueue -- sends qmail-send ALRM, scheduling queued messages for delivery
+  reload -- sends qmail-send HUP, rereading locals and virtualdomains
+   queue -- shows status of queue
+    alrm -- same as doqueue
+   flush -- same as doqueue
+     hup -- same as reload
+   clear -- clears the readproctitle service errors with .....................
+    kill -- svc -d processes in svclist, then do 'killall -g svscanboot'
+    boot -- Boots qmail and all services in /service running /command/svscanboot
+  reboot -- kill & boot commands in sequence
+HELP
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|doqueue|flush|reload|stat|pause|cont|cdb|queue|clear|kill|boot|reboot|help}"
+    exit 1
+    ;;
+esac
+
+exit 0

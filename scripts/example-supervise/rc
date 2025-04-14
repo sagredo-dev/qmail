@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# qmail dir retrieved from qmaild user in /etc/passwd
+QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
+
+# Comment out to disable dkim sign at qmail-remote level
+#DKIM_ON=1
+
+if [ -r $QMAILDIR/control/filterargs ] && [ -n "$DKIM_ON" ]; then
+ # DKIM sign. You have to define your variables in control/filterargs (man spawn-filterargs)
+ # NB: DKIMSIGNOPTIONS=-z 2 for 2048 bit long rsa key
+ #     DKIMSIGNOPTIONS not defined for 1024 bit long rsa key
+ exec env - PATH="$QMAILDIR/bin:$PATH" \
+ QMAILREMOTE=$QMAILDIR/bin/spawn-filter  \
+ qmail-start ./Maildir
+
+else
+ exec env - PATH="$QMAILDIR/bin:$PATH" \
+ qmail-start ./Maildir
+fi

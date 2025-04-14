@@ -1,0 +1,46 @@
+#!/bin/sh
+
+QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
+QMAILDUID=`id -u vpopmail`
+NOFILESGID=`id -g vpopmail`
+MAXSMTPD=`cat $QMAILDIR/control/concurrencyincoming`
+SOFTLIMIT=`cat $QMAILDIR/control/softlimit`
+LOCAL=`head -1 $QMAILDIR/control/me`
+TCPRULES_DIR=$QMAILDIR/control
+
+# qmail-spp plugins
+export ENABLE_SPP=1
+export GREYLISTING=""
+
+# You MUST export this, otherwise you'd get a 30 sec timeout
+# "!" if you want the submission feature (auth required)
+export SMTPAUTH="!"
+
+# enable greetdelay for qmail-smtpd.
+export SMTPD_GREETDELAY=3
+export DROP_PRE_GREET=1
+
+# enable chkuser
+export CHKUSER_START=ALWAYS
+
+# make qmail to allow connections without TLS (default 1)
+#export FORCETLS=0
+
+# turn off TLS on port 587 (default 0)
+#export DISABLETLS=1
+
+# require that authenticated user and 'mail from' are identical (default 0)
+#export FORCEAUTHMAILFROM=1
+
+# rcptcheck-overlimit. Limits the number of emails sent by relayclients
+if [ -x $QMAILDIR/bin/rcptcheck-overlimit ]; then
+  export RCPTCHECK=$QMAILDIR/bin/rcptcheck-overlimit
+  export RCPTCHECKRELAYCLIENT="1"
+fi
+
+exec /usr/local/bin/softlimit -m "$SOFTLIMIT" \
+    /usr/local/bin/tcpserver -v -R -l "$LOCAL" \
+    -x ${TCPRULES_DIR}/tcp.submission.cdb -c "$MAXSMTPD" \
+    -u "$QMAILDUID" -g "$NOFILESGID" 0 587 \
+    $QMAILDIR/bin/qmail-smtpd \
+    ~vpopmail/bin/vchkpw /bin/true 2>&1

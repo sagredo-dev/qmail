@@ -1,0 +1,8 @@
+To-Do List for queue_repair.py
+==============================
+
+Please report bugs to the author at <pqt @ discworld.dyndns.org>
+
+
+  -add documentation in addition to the built-in usage information
+  -check consistency of individual messages and their associated files
