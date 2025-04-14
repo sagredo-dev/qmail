@@ -97,6 +97,7 @@ void hier()
   c(auto_qmail,"boot","binm3",auto_uido,auto_gidq,0755);
   c(auto_qmail,"boot","binm3+df",auto_uido,auto_gidq,0755);
 
+  c(auto_qmail,"doc","VERSION",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/FAQ",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/UPGRADE",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/SENDMAIL",auto_uido,auto_gidq,0644);
