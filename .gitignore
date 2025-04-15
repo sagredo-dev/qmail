@@ -70,6 +70,8 @@ qmail-qmqpc
 qmail-qmqpd
 qmail-qmtpd
 qmail-smtpd
+# scripts/supervise/qmail-smtpd dir must be included
+!qmail-smtpd/
 sendmail
 tcp-env
 qmail-newmrh
