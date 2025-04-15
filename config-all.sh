@@ -78,41 +78,41 @@ echo "Creating the srs alias .qmail-srs-default..."
 echo "| QMAIL/bin/srsfilter" > QMAIL/alias/.qmail-srs-default
 chmod 644 QMAIL/alias/.qmail-srs-default
 
-echo "Putting '3' in control/spfbehavior"
+echo "Putting '3' in control/spfbehavior..."
 echo 3 > QMAIL/control/spfbehavior
 
-echo "Putting \"| ~vpopmail/bin/vdelivermail '' delete\" in control/defaultdelivery"
+echo "Putting \"| ~vpopmail/bin/vdelivermail '' delete\" in control/defaultdelivery..."
 echo "| ~vpopmail/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
 
-echo "Putting '200' in control/concurrencyincoming"
+echo "Putting '200' in control/concurrencyincoming..."
 echo 200 > QMAIL/control/concurrencyincoming
 
-echo "Putting 'noreply' in control/bouncefrom"
+echo "Putting 'noreply' in control/bouncefrom..."
 echo noreply > QMAIL/control/bouncefrom
 
-echo "Putting '$DEFAULTDOMAIN' in control/bouncehost"
+echo "Putting '$DEFAULTDOMAIN' in control/bouncehost..."
 echo $DEFAULTDOMAIN > QMAIL/control/bouncehost
 
-echo "Putting '20000000' in control/databytes"
+echo "Putting '20000000' in control/databytes..."
 echo 20000000 > QMAIL/control/databytes
 
-echo "Putting '272800' in control/queuelifetime"
+echo "Putting '272800' in control/queuelifetime..."
 echo 272800 > QMAIL/control/queuelifetime
 
-echo "Putting '30000000' in control/softlimit"
+echo "Putting '30000000' in control/softlimit..."
 echo 30000000 > QMAIL/control/softlimit
 
-echo "Putting '100' in control/maxrcpt"
+echo "Putting '100' in control/maxrcpt..."
 echo 100 > QMAIL/control/maxrcpt
 
-echo "Putting '2' in control/brtlimit"
+echo "Putting '2' in control/brtlimit..."
 echo 2 > QMAIL/control/brtlimit
 
-echo "Putting 'HIGH:MEDIUM:!MD5:!RC4:!3DES:!LOW:!SSLv2:!SSLv3' in control/tlsserverciphers"
+echo "Putting 'HIGH:MEDIUM:!MD5:!RC4:!3DES:!LOW:!SSLv2:!SSLv3' in control/tlsserverciphers..."
 echo 'HIGH:MEDIUM:!MD5:!RC4:!3DES:!LOW:!SSLv2:!SSLv3' > QMAIL/control/tlsserverciphers
 
 ########### aliases
-echo "Putting 'postmaster@${DEFAULTDOMAIN}' in '.qmail-postmaster' '.qmail-mailer-daemon' and '.qmail-root' aliases"
+echo "Putting 'postmaster@${DEFAULTDOMAIN}' in '.qmail-postmaster' '.qmail-mailer-daemon' and '.qmail-root' aliases..."
 echo "postmaster@${DEFAULTDOMAIN}" > QMAIL/alias/.qmail-postmaster
 ln -s QMAIL/alias/.qmail-postmaster QMAIL/alias/.qmail-mailer-daemon
 ln -s QMAIL/alias/.qmail-postmaster QMAIL/alias/.qmail-root
@@ -134,15 +134,15 @@ ln -s QMAIL/supervise/clear            /service
 ########### supervise
 if [ ! -x QMAIL/rc ] && [ ! -d QMAIL/supervise ]; then
   # if it's a fresh installation copy everything in QMAIL/
-  echo "Copying the supervise scripts in QMAIL"
+  echo "Copying the supervise scripts in QMAIL..."
   cp -rp $SRCDIR/scripts/example-supervise/rc $SRCDIR/scripts/example-supervise/supervise QMAIL/
 fi
 # Copy the supervise scripts in QMAIL/doc/example-supervise
-echo "Copying the supervise scripts in QMAIL/doc/example-supervise"
+echo "Copying the supervise scripts in QMAIL/doc/example-supervise..."
 cp -rp $SRCDIR/scripts/example-supervise QMAIL/doc/
 
 ########### logs
-echo "Configuring the $LOGDIR/qmail dir"
+echo "Configuring the $LOGDIR/qmail dir..."
 mkdir -p $LOGDIR/qmail
 chown -R qmaill:nofiles $LOGDIR/qmail
 chgrp root $LOGDIR/qmail
@@ -150,7 +150,7 @@ chmod -R og-wrx $LOGDIR/qmail
 chmod g+rx $LOGDIR/qmail
 mkdir -p $LOGDIR/qmail/backup
 
-echo "Configuring the 'convert-multilog' feature"
+echo "Configuring the 'convert-multilog' feature..."
 cp $SRCDIR/scripts/convert-multilog $BINDIR
 ln -s $LOGDIR/qmail/send       /service/qmail-send/log/main
 ln -s $LOGDIR/qmail/smtpd      /service/qmail-smtpd/log/main
@@ -158,11 +158,11 @@ ln -s $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
 ln -s $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### qmailctl
-echo "Installing the qmailctl script in $BINDIR/qmailctl"
-cp $SRCDIR/scripts/qmailctl $BINDIR/qmailctl
+echo "Installing the qmailctl script in $BINDIR/qmailctl..."
+cp $SRCDIR/scripts/qmailctl $BINDIR
 
 ########### cronjobs
-echo "Installing cronjobs in /etc/cron.d/qmail"
+echo "Installing cronjobs in /etc/cron.d/qmail..."
 # slackware OS does not allow the user declared in /etc/cron.d cronjobs
 if [ -r /etc/slackware-version ]; then
   CRONUSER=""
@@ -208,8 +208,8 @@ EOF
 chown root:qmail QMAIL/control/smtpplugins
 
 ########### dkim
-echo "Configuring control/filterargs for RSA 2048 bit long keys"
-echo "*:remote:QMAIL/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=-z 2" > QMAIL/control/filterargs
+echo "Configuring control/filterargs for RSA 2048 bit long keys..."
+echo "*:remote:QMAIL/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
 
 ########## SURBL
 echo "Configuring SURBL filter. Downloading tlds domains in QMAIL/control..."
@@ -242,7 +242,7 @@ fi
 qmailctl cdb
 
 ########## overlimit
-echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature"
+echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature..."
 cp scripts/rcptcheck-overlimit $BINDIR
 if [ ! -f QMAIL/control/relaylimits ];then
 cat > QMAIL/control/relaylimits << EOF
