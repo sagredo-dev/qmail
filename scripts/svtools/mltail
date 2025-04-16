@@ -1,0 +1,103 @@
+#!/bin/sh
+#
+# mltail
+# tail frontend for multilog files
+# Klaus Reimer <k@ailis.de>
+
+TITLE=mltail
+VERSION=0.6
+AUTHOR="Klaus Reimer"
+EMAIL=k@ailis.de
+COPYRIGHT="Copyright (C) 2000-2011 by $AUTHOR"
+
+showHelp() {
+  echo "Usage: $TITLE [OPTION]... SERVICE [TAIL-OPTION]..."
+  echo "tail frontend for multilog files"
+  echo ""
+  echo "  -f, --follow   Output appended data as the file grows"
+  echo "  -h, --help     Display help and exit"
+  echo "  -V, --version  Display version and exit"
+  echo ""
+  echo "This utility is a frontend for tail to easily tail logfiles"
+  echo "from services running under daemontools. Simply specify the service"
+  echo "name (wich is the name of the service directory without leading path)."
+  echo "You can specify any tail options after the service name. See the man"
+  echo "page for tail for more infos."
+  echo ""
+  echo "Report bugs to $AUTHOR <$EMAIL>"
+}
+
+showVersion() {
+  echo "$TITLE $VERSION"
+  echo ""
+  echo "$COPYRIGHT"
+  echo "This is free software; you can redistribute it and/or modify it under"
+  echo "the terms of the GNU General Public License as published by the Free"
+  echo "Software Foundation; either version 2 of the License, or (at your"
+  echo "option) any later version."
+}
+
+while getopts "fhV-:" NAME
+do
+  case "$NAME" in
+    f)
+      PARAMS="$PARAMS --follow=name"
+      ;;
+    h)
+      showHelp
+      exit 0
+      ;;
+    V)
+      showVersion
+      exit 0
+      ;;
+    -)
+      case "$OPTARG" in
+        follow)
+          PARAMS="$PARAMS --follow=name"
+          ;;
+        help)
+          showHelp
+          exit 0
+          ;;
+        version)
+          showVersion
+          exit 0
+          ;;
+        *)
+          echo "Unknown option: $OPTARG"
+          showHelp
+          exit 1
+      esac  
+      ;;
+    *)
+      echo "Unknown option: $OPTARG"
+      showHelp
+      exit 1
+  esac
+done
+
+shift `expr $OPTIND - 1`
+
+if [ $# -eq 0 ]
+then
+  showHelp
+  exit 1
+fi
+
+if ! SVDIR=`svdir 2>&1`
+then
+  echo "$TITLE: $SVDIR" >&2
+  exit 1
+fi
+
+SERVICE=$1
+
+svok $SVDIR/$SERVICE || exit 1
+svok $SVDIR/$SERVICE/log || exit 1
+
+shift 1
+
+tail $PARAMS $SVDIR/$SERVICE/log/main/current $* | tai64nlocal
+
+exit 0

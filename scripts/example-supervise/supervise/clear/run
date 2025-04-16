@@ -1,0 +1,2 @@
+#!/bin/sh
+yes '' | head -4000 | tr '\n' .

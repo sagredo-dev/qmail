@@ -1,0 +1,856 @@
+#!/usr/bin/perl
+#
+# qmHandle
+#
+# Copyright(c) 1998 -> 2003 Michele Beltrame <mb@italpro.net>
+#
+# This program is distributed under the GNU GPL.
+# For more information have a look at http://www.gnu.org
+
+use strict;
+use warnings;
+use diagnostics;
+
+my $version = '1.3.3';
+
+#################### USER CONFIGURATION BEGIN ####################
+
+#####
+# Set this to your qmail queue directory (be sure to include the final slash!)
+my ($queue) = '/var/qmail/queue/';
+my ($bigtodo) = (-d "${queue}todo/0") ? 0 : 1; # 1 means no big-todo
+
+#####
+# If your system has got automated command to start/stop qmail, then
+# enter them here.
+# ### Be sure to uncomment only ONE of each variable declarations ###
+
+# For instance, this is if you have DJB's daemontools
+# my ($stopqmail) = '/usr/local/bin/svc -d /service/qmail-deliver';
+# my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-deliver';
+my ($stopqmail)  = '/usr/local/bin/qmailctl stop';
+my ($startqmail) = '/usr/local/bin/qmailctl start';
+
+# While this is if you have a Debian GNU/Linux with its qmail package
+#my ($stopqmail) = '/etc/init.d/qmail stop';
+#my ($startqmail) = '/etc/init.d/qmail start';
+
+# If you don't have scripts, leave $stopqmail blank (the process will
+# be hunted and killed by qmHandle):
+#my ($stopqmail) = '';
+
+# However, you still need to launch qmail in a way or the other. So,
+# if you have a standard qmail 1.03 use this:
+#my ($startqmail) = "csh -cf '/var/qmail/rc &'";
+
+# While, if you have a standard qmail < 1.03 you should use this:
+#my ($startqmail) = '/var/qmail/bin/qmail-start ./Mailbox splogger qmail &';
+
+#####
+# Enter here the system command which returns qmail PID. The following
+# should work on most Unixes:
+my ($pidcmd) = 'pidof qmail-send';
+
+####################  USER CONFIGURATION END  ####################
+
+# Print usage if no arguments
+if ($#ARGV == -1) {
+    &Usage();
+}
+
+# Get command line options
+
+my ($cmsg, $cstat, $cend) = ('', '', '');
+my $summary = 0;
+my @actions = ();
+my $dactions = 0;
+
+foreach my $arg (@ARGV) {
+  SWITCH: {
+      $arg eq '-a' and do { push @actions, [\&SendMsgs]; last SWITCH; };
+      $arg eq '-l' and do { push @actions, [\&ListMsg, 'A']; last SWITCH; };
+      $arg eq '-L' and do { push @actions, [\&ListMsg, 'L']; last SWITCH; };
+      $arg eq '-R' and do { push @actions, [\&ListMsg, 'R']; last SWITCH; };
+      $arg eq '-N' and do { $summary = 1; last SWITCH; };
+      $arg eq '-c' and do { ($cmsg, $cstat, $cend) = ("\e[01;34m", "\e[01;31m", "\e[00m"); last SWITCH; };
+      $arg eq '-s' and do { push @actions, [\&Stats]; last SWITCH; };
+      $arg =~ /^-m(.+)/ and do { push @actions, [\&ViewMsg, $1]; last SWITCH; };
+      $arg =~ /^-f(.+)/ and do { push @actions, [\&DelMsgFromSender, $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-F(.+)/ and do { push @actions, [\&DelMsgFromSenderR, $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-d(.+)/ and do { push @actions, [\&DelMsg, $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-S(.+)/ and do { push @actions, [\&DelMsgSubj, $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-h(.+)/ and do { push @actions, [\&DelMsgHeaderR, 'I', $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-b(.+)/ and do { push @actions, [\&DelMsgBodyR, 'I', $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-H(.+)/ and do { push @actions, [\&DelMsgHeaderR, 'C', $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-B(.+)/ and do { push @actions, [\&DelMsgBodyR, 'C', $1]; $dactions++; last SWITCH; };
+      $arg =~ /^-t(.+)/ and do { push @actions, [\&FlagRemote, $1]; last SWITCH; };
+      $arg eq '-D' and do { push @actions, [\&DelAll]; $dactions++; last SWITCH; };
+      $arg eq '-V' and do { push @actions, [\&Version]; last SWITCH; };
+      Usage();
+  }
+}
+
+# Set "global" variables
+my ($norestart) = 0;
+my (@todel) = ();
+my (@toflag) = ();
+my ($dmes) = 0;
+
+# Create a hash of messages in queue and the type of recipients they have and whether they are bouncing.
+my (%msglist) = ();
+my (%todohash) = ();
+my (%bouncehash) = ();
+my ($dirno, $msgno);
+    opendir(DIR,"${queue}mess");
+    my (@dirlist) = grep !/\./, readdir DIR;
+    closedir DIR;
+    opendir(DIR,"${queue}todo");
+    my (@todolist) = grep !/\./, readdir DIR;
+    closedir DIR;
+    if ($bigtodo == 0) {
+	foreach my $tododir (@todolist) {
+	   opendir (SUBDIR,"${queue}todo/$tododir");
+	   my (@todofiles) = grep !/\./, map "$tododir/$_", readdir SUBDIR;
+	   foreach my $todofile (@todofiles) {
+	      $msglist{ $todofile }{ 'todo' } = $todofile;
+	   }
+	}
+    } else {
+	foreach my $todofile (@todolist) {
+	   $todohash{$todofile} = $todofile;
+	}
+    }
+    opendir(DIR,"${queue}bounce");
+    my (@bouncelist) = grep !/\./, readdir DIR;
+    closedir DIR;	
+    foreach my $bouncefile (@bouncelist) {
+	$bouncehash{$bouncefile} = 'B';
+    }
+    foreach my $dir (@dirlist) {
+	opendir (SUBDIR,"${queue}mess/$dir");
+	my (@files) = grep !/\./, map "$dir/$_", readdir SUBDIR;
+	opendir (INFOSUBDIR,"${queue}info/$dir");
+	my (@infofiles) = grep !/\./, map "$dir/$_", readdir INFOSUBDIR;
+	opendir (LOCALSUBDIR,"${queue}local/$dir");
+	my (@localfiles) = grep !/\./, map "$dir/$_", readdir LOCALSUBDIR;
+	opendir (REMOTESUBDIR,"${queue}remote/$dir");
+	my (@remotefiles) = grep !/\./, map "$dir/$_", readdir REMOTESUBDIR;
+	foreach my $infofile (@infofiles) {
+	   $msglist{$infofile}{'sender'} = 'S';
+	}
+	foreach my $localfile (@localfiles) {
+	   $msglist{$localfile}{'local'} = 'L';
+	}
+	foreach my $remotefile (@remotefiles) {
+	   $msglist{$remotefile}{'remote'} = 'R';
+	}
+	foreach my $file (@files) {
+		    ($dirno, $msgno) = split(/\//, $file);
+		    if ($bouncehash{$msgno}) {
+			$msglist{ $file }{ 'bounce' } = 'B';
+		    }
+		    if ($bigtodo == 1) {
+			if ($todohash{$msgno}) {
+			    $msglist{ $file }{ 'todo' } = "$msgno";
+			}
+		    }
+	}
+	closedir SUBDIR;
+	closedir INFOSUBDIR;
+	closedir LOCALSUBDIR;
+	closedir REMOTESUBDIR;
+    }
+
+
+# In case of deletion actions, stop qmail
+if ($dactions) {
+    stopQmail() or die "Could not stop qmail: $!\n";
+}
+
+# Execute actions    
+foreach my $action (@actions) {
+   my $sub = shift @$action; # First element is the sub
+   $sub->(@$action);         # Others the arguments, if any
+}
+
+# In case of deletion actions, restart qmail
+if ($dactions) {
+    startQmail() or die "Could not stop qmail: $!\n";
+}
+
+# ##### SERVICE FUNCTIONS #####
+
+# Stop qmail
+sub stopQmail {
+    my ($qmpid) = qmailPid();
+
+    # If qmail is running, we stop it
+    if ($qmpid != 0) {
+
+	# If there is a system script available, we use it
+	if ($stopqmail ne '') {
+
+	    print "Calling system script to terminate qmail...\n";
+	    if (system($stopqmail) > 0) {
+		return 0;
+	    }
+#	    sleep 1;
+	    while (qmailPid()){
+		sleep 1;
+	    }
+
+	# Otherwise, we're killers!
+	} else {
+	    print "Terminating qmail (pid $qmpid)... this might take a while if qmail is working.\n";
+	    kill 'TERM', $qmpid;
+	    
+	    while (qmailPid()){
+		sleep 1;
+	    }
+	}
+
+    # If it isn't, we don't. We also set a flag which assures we don't
+    # restart it later either (the user might not want this)
+    } else {
+	print "Qmail isn't running... no need to stop it.\n";
+	$norestart = 1;
+    }
+
+    return 1;
+}
+
+# Start qmail
+sub startQmail {
+    my ($qmpid) = qmailPid();
+
+    # If qmail is running, why restart it?
+    if ($qmpid != 0) {
+	print "Qmail is already running again, so it won't be restarted.\n";
+
+    # If it wasn't running before qmHandle was launched, it's better leave is this way
+    } elsif ($norestart == 1) {
+	print "Qmail wasn't running when qmHandle was started, so it won't be restarted.\n";
+
+    # In any other case, we restart it
+    } else {
+	print "Restarting qmail... ";
+	system($startqmail);
+	print "done (hopefully).\n";
+    }
+
+    return 1;
+}
+
+# Returns the subject of a message
+sub getSubject {
+    my $msg = shift;
+    my $msgsub;
+    open (MSG, "${queue}mess/$msg") or die("cannot open message $msg! Is qmail-send running?\n");
+    while (<MSG>) {
+	if ( $_ =~ /^Subject: /) {
+	    $msgsub = $';
+	    chop ($msgsub);
+	} elsif ( $_ eq "\n") {
+	    last;
+	}
+    }
+    close (MSG);
+    return $msgsub;
+}
+
+sub getSender {
+   my $msg = shift;
+   my $sender;
+   open (MSG, "${queue}/info/$msg") or die("cannot open info file ${queue}/info/$msg! Is qmail-send running?\n");
+   $sender = <MSG>;
+   substr($sender, 0, 1) = '';
+   chop ($sender);
+   close (MSG);
+   return $sender;
+}
+
+
+# ##### MAIN FUNCTIONS #####
+
+# Tries to send all queued messages now 
+# This is achieved by sending an ALRM signal to qmail-send
+sub SendMsgs {
+    my ($qmpid) = qmailPid();
+
+    # If qmail is running, we force sending of messages
+    if ($qmpid != 0) {
+
+	kill 'ALRM', $qmpid;
+
+    } else {
+
+	print "Qmail isn't running, can't send messages!\n";
+
+    }
+}
+
+sub showMessageInfo {
+    my (%ret, %date, %from, %subj, %to, %cc, %fsize);
+my $msg = shift;
+#	     Read return path
+	    open (MSG, "${queue}info/$msg");
+	    $ret{$msg} = <MSG>;
+	    substr($ret{$msg}, 0, 1) = '';
+	    chop ($ret{$msg});
+	    close (MSG);
+	    my ($dirno, $rmsg) = split(/\//, $msg);
+	    print "$rmsg ($dirno, $msg)\n";
+ 
+	    # Get message (file) size
+	    $fsize{$msg} = (stat("${queue}mess/$msg"))[7];
+	    
+	    # Read something from message header (sender, receiver, subject, date)
+	    open (MSG, "${queue}mess/$msg");
+	    while (<MSG>) {
+		if ($_ =~ /^Date: /) {
+		    $date{$msg} = $';
+		    chop ($date{$msg});
+		} elsif ( $_ =~ /^From: /) {
+		    $from{$msg} = $';
+		    chop ($from{$msg});
+		} elsif ( $_ =~ /^Subject: /) {
+		    $subj{$msg} = $';
+		    chop ($subj{$msg});
+		} elsif ( $_ =~ /^To: /) {
+		    $to{$msg} = $';
+		    chop ($to{$msg});
+		} elsif ( $_ =~ /^Cc: /) {
+		    $cc{$msg} = $';
+		    chop ($cc{$msg});
+		} elsif ( $_ eq "\n") {
+		    last;
+		}
+	    }
+	    close(MSG);
+
+            defined($ret{$msg})   and print "  ${cmsg}Return-path${cend}: $ret{$msg}\n";
+            defined($from{$msg})  and print "  ${cmsg}From${cend}: $from{$msg}\n";
+            defined($to{$msg})    and print "  ${cmsg}To${cend}: $to{$msg}\n";
+            defined($cc{$msg})    and print "  ${cmsg}Cc${cend}: $cc{$msg}\n";
+            defined($subj{$msg})  and print "  ${cmsg}Subject${cend}: $subj{$msg}\n";
+            defined($date{$msg})  and print "  ${cmsg}Date${cend}: $date{$msg}\n";
+            defined($fsize{$msg}) and print "  ${cmsg}Size${cend}: $fsize{$msg} bytes\n\n";
+
+}
+
+# Display message list
+# pass parameter of queue NOT to list! i.e. if you want remote only, pass L
+# if you want local, pass R  if you want all pass anything else eg A
+sub ListMsg {
+    my ($q) = shift;
+    
+#    if ($summary == 0) {
+
+#	for my $msg(keys %msglist) {
+
+#	}
+
+#    }
+    
+
+   for my $msg (keys %msglist) {
+      if ($summary == 0) {
+	if ($q eq 'L') {
+	   if ($msglist{$msg}{'local'}) {
+		showMessageInfo($msg);
+	   }
+	}
+	if ($q eq 'R') {
+	   if ($msglist{$msg}{'remote'}) {
+		showMessageInfo($msg);
+	   }
+	}
+	if ($q eq 'A') {
+	   if ($msglist{$msg}{'local'}) {
+		showMessageInfo($msg);
+	   }
+	   if ($msglist{$msg}{'remote'}) {
+		showMessageInfo($msg);
+	   }
+	}
+      } ## end if ($summary == 0)
+   } ## end foreach my $msg (@msglist)
+
+    Stats();
+}
+
+# View a message in the queue
+sub ViewMsg {
+    my ($rmsg) = shift;
+    
+    unless ($rmsg =~ /^\d+$/) {
+	
+	print "$rmsg is not a valid message number!\n";
+	
+    } else {
+
+	# Search message
+	my ($ok) = 0;
+	for my $msg(keys %msglist) {
+	    if ($msg =~ /\/$rmsg$/) {
+		$ok = 1;
+		print "\n --------------\nMESSAGE NUMBER $rmsg \n --------------\n"; 
+		open (MSG, "${queue}mess/$msg");
+		while (<MSG>) {
+		    print $_;
+		}
+		close (MSG);
+		last;
+	    }
+	}
+	
+	# If the message isn't found, print a notice
+	if ($ok == 0) {
+	    print "Message $rmsg not found in the queue!\n";
+	    
+	}
+    }
+    
+}
+
+sub TrashMsgs {
+my @todelete = ();
+my $dirno;
+my $msgno;
+my $grouped = 0;
+my $deleted = 0;
+    foreach my $msg (@todel) {
+	$grouped++;
+	$deleted++;
+	($dirno, $msgno) = split(/\//, $msg);
+	if ($msglist{$msg}{'bounce'}) {
+	    push @todelete, "${queue}bounce/$msgno";
+	}
+	push @todelete, "${queue}mess/$msg";
+        push @todelete, "${queue}info/$msg";
+        if ($msglist{$msg}{'remote'}) {
+            push @todelete, "${queue}remote/$msg";
+        }
+        if ($msglist{$msg}{'local'}) {
+            push @todelete, "${queue}local/$msg";
+        }
+        if ($msglist{$msg}{'todo'}) {
+            push @todelete, "${queue}todo/$msglist{$msg}{'todo'}";
+            push @todelete, "${queue}intd/$msglist{$msg}{'todo'}";
+        }
+	if ($grouped == 11) {
+	    unlink @todelete;
+	    @todelete = ();
+	    $grouped = 0;
+	}
+    }
+    if ($grouped != 0) {
+	unlink @todelete;
+    }
+    print "Deleted $deleted messages from queue\n";
+}
+
+sub FlagMsgs {
+    my $now = time;
+    my @flagqueue = ();
+    my $flagged = 0;
+    foreach my $msg (@toflag) {
+	push @flagqueue, "${queue}info/$msg";
+	$flagged++;
+	if ($flagged == 30) {
+	   utime $now, $now, @flagqueue;
+	   $flagged = 0;
+	   @flagqueue = ();
+	}
+    }
+    if ($flagged != 0) {
+	utime $now, $now, @flagqueue;
+    }
+}
+
+# Delete a message in the queue
+sub DelMsg {
+    my ($rmsg) = shift;
+    
+    unless ($rmsg =~ /^\d+$/) {
+	
+	print "$rmsg is not a valid message number!\n";
+	
+    } else {
+	
+	# Search message
+	my ($ok) = 0;
+	for my $msg(keys %msglist) {
+	    if ($msg =~ /\/$rmsg$/) {
+		$ok = 1;
+		$dmes = 1;
+		push @todel, $msg;
+		print "Deleting message $rmsg...\n";
+		last;
+	    }
+	}
+	
+	# If the message isn't found, print a notice
+	if ($ok == 0) {
+	    print "Message $rmsg not found in the queue!\n";
+	}
+	if ($dmes == 1) {
+            if ($dactions == 1) {
+                TrashMsgs();
+            }
+            else {
+                $dactions--;
+            }
+        }
+
+
+    }
+}
+
+sub DelMsgFromSender {
+    my $badsender = shift;
+    my $dirno;
+    my $msgno;
+    my $sender;
+
+    print "Looking for messages from $badsender\n";
+
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+	if ($msglist{$msg}{'sender'}) {
+	   $sender = getSender($msg);
+	   if ($sender eq $badsender) {
+	       $ok = 1;
+	       $dmes = 1;
+  	       ($dirno, $msgno) = split(/\//, $msg);
+	       print "Message $msgno slotted for deletion\n";
+	       push @todel, $msg;
+	   }
+	}
+    }
+# If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages from $badsender found in the queue!\n";
+    } 
+    if ($dmes == 1) {
+	if ($dactions == 1) {
+	    TrashMsgs();
+	}
+	else {
+	    $dactions--;
+	}
+    }
+}
+
+sub DelMsgFromSenderR {
+    my $badsender = shift;
+    my $dirno;
+    my $msgno;
+    my $sender;
+
+    print "Looking for messages from senders matching $badsender\n";
+
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+	if ($msglist{$msg}{'sender'}) {
+	   $sender = getSender($msg);
+	   if ($sender =~ /$badsender/) {
+	       $ok = 1;
+	       $dmes = 1;
+  	       ($dirno, $msgno) = split(/\//, $msg);
+	       print "Message $msgno slotted for deletion\n";
+	       push @todel, $msg;
+	   }
+	}
+    }
+# If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages from senders matching $badsender found in the queue!\n";
+    } 
+    if ($dmes == 1) {
+	 if ($dactions == 1) {
+	    TrashMsgs();
+	}
+        else {
+            $dactions--;
+        }
+    }
+}
+
+sub DelMsgHeaderR {
+    my $case = shift;
+    my $re = shift;
+    my $dirno;
+    my $msgno;
+
+    print "Looking for messages with headers matching $re\n";
+
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+    open (MSG, "${queue}mess/$msg") or die("cannot open message $msg! Is qmail-send running?\n");
+    while (<MSG>) {
+	if ($case eq 'C') {
+            if ($_ =~ /$re/) {
+	       $ok = 1;
+	       $dmes = 1;
+  	       ($dirno, $msgno) = split(/\//, $msg);
+	       print "Message $msgno slotted for deletion.\n";
+	       push @todel, $msg;
+               last;
+            } elsif ( $_ eq "\n") {
+               last;
+            }
+	} else {
+	       if ($_ =~ /$re/i) {
+	       $ok = 1;
+	       $dmes = 1;
+  	       ($dirno, $msgno) = split(/\//, $msg);
+	       print "Message $msgno slotted for deletion.\n";
+	       push @todel, $msg;
+               last;
+            } elsif ( $_ eq "\n") {
+               last;
+            }
+	}
+    }
+    close (MSG);
+
+    }
+# If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages with headers matching $re found in the queue!\n";
+    } 
+    if ($dmes == 1) {
+	if ($dactions == 1) {
+	    TrashMsgs();
+	}
+        else {
+            $dactions--;
+        }
+    }
+}
+
+sub DelMsgBodyR {
+    my $case = shift;
+    my $re = shift;
+    my $dirno;
+    my $msgno;
+    my $nomoreheaders = 0;
+
+    print "Looking for messages with body matching $re\n";
+
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+    open (MSG, "${queue}mess/$msg") or die("cannot open message $msg! Is qmail-send running?\n");
+    while (<MSG>) {
+	if ($nomoreheaders == 1) {
+	    if ($case eq 'C') {
+                if ($_ =~ /$re/) {
+	            $ok = 1;
+	            $dmes = 1;
+  	            ($dirno, $msgno) = split(/\//, $msg);
+	            print "Message $msgno slotted for deletion.\n";
+	            push @todel, $msg;
+                    last;
+	        }
+	    } else {
+                if ($_ =~ /$re/i) {
+	            $ok = 1;
+	            $dmes = 1;
+  	            ($dirno, $msgno) = split(/\//, $msg);
+	            print "Message $msgno slotted for deletion.\n";
+	            push @todel, $msg;
+                    last;
+	        }
+	    }
+	}
+        else {
+	    if ($_ eq "\n") {
+	        $nomoreheaders = 1;
+	    }
+	}
+    }
+    close (MSG);
+    $nomoreheaders = 0;
+
+    }
+# If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages with body matching $re found in the queue!\n";
+    } 
+    if ($dmes == 1) {
+	if ($dactions == 1) {
+	    TrashMsgs();
+	}
+        else {
+            $dactions--;
+        }
+    }
+}
+
+sub DelMsgSubj {
+    my $subject = shift;
+    my $msgsub;
+    my $dirno;
+    my $msgno;
+
+    print "Looking for messages with Subject: $subject\n";
+
+    # Search messages
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+	($dirno, $msgno) = split(/\//, $msg);
+	$msgsub = getSubject($msg);
+
+	if ($msgsub and $msgsub =~ /$subject/) {
+	    $ok = 1;
+	    $dmes = 1;
+	    print "Deleting message: $msgno\n";
+	    push @todel, $msg;
+	}
+
+    }
+
+    # If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages matching Subject \"$subject\" found in the queue!\n";
+    }
+    if ($dmes == 1) {
+	if ($dactions == 1) {
+	    TrashMsgs();
+	}
+        else {
+            $dactions--;
+        }
+    }
+
+}
+
+
+# Delete all messages in the queue (thanks Kasper Holtze)
+sub DelAll {
+
+    # Search messages
+    my ($ok) = 0;
+    my ($dirno, $msgno);
+    for my $msg (keys %msglist) {
+	$ok = 1;
+	$dmes = 1;
+	($dirno, $msgno) = split(/\//, $msg);
+	print "Message $msgno slotted for deletion!\n";
+	push @todel, $msg;
+    }
+
+    # If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages found in the queue!\n";
+    } 
+    if ($dmes == 1) {
+	if ($dactions == 1) {
+	    TrashMsgs();
+	}
+        else {
+            $dactions--;
+        }
+    }
+}
+
+sub FlagRemote {
+    my $re = shift;
+    my $dirno;
+    my $msgno;
+    my $recipients;
+
+    print "Looking for messages with recipients in $re\n";
+
+    my ($ok) = 0;
+    for my $msg (keys %msglist) {
+	if ($msglist{$msg}{'remote'}) {
+    	    open (MSG, "${queue}remote/$msg") or die("cannot open remote file for message $msg! Is qmail-send running?\n");
+    	    $recipients = <MSG>;
+	    chop($recipients);
+    	    close (MSG);
+	    if ($recipients =~ $re) {
+		$ok = 1;
+		push @toflag, $msg;
+		print "Message $msg being tagged for earlier retry (and lengthened stay in queue)!\n"
+	    }
+	}
+    }
+# If no messages are found, print a notice
+    if ($ok == 0) {
+	print "No messages with recipients in $re found in the queue!\n";
+    } else {
+	FlagMsgs();
+    }
+}
+
+# Make statistics
+sub Stats {
+    my ($total) = 0;
+    my ($l) = 0;
+    my ($r) = 0;
+    my ($b) = 0;
+    my ($t) = 0;
+
+    foreach my $msg(keys %msglist) {
+	$total++;
+	if ($msglist{$msg}{'local'}  ) { $l++; }
+	if ($msglist{$msg}{'remote'} ) { $r++; }
+	if ($msglist{$msg}{'bounce'} ) { $b++; }
+	if ($msglist{$msg}{'todo'} ) { $t++; }
+    }
+
+   print "${cstat}Total messages${cend}: $total\n";
+   print "${cstat}Messages with local recipients${cend}: $l\n";
+   print "${cstat}Messages with remote recipients${cend}: $r\n";
+   print "${cstat}Messages with bounces${cend}: $b\n";
+   print "${cstat}Messages in preprocess${cend}: $t\n";
+}
+
+# Retrieve pid of qmail-send
+sub qmailPid {
+    my $qmpid = `$pidcmd`;
+    chomp ($qmpid);
+    $qmpid =~ s/\s*//g;
+    if ($qmpid =~ /^\d+$/) { return $qmpid; }
+    return 0;
+}
+
+# Print help
+sub Usage {
+    print "qmHandle v$version\n";
+    print "Copyright 1998-2003 Michele Beltrame\n\n";
+    print "Available parameters:\n";
+    print "  -a       : try to send queued messages now (qmail must be running)\n";
+    print "  -l       : list message queues\n";
+    print "  -L       : list local message queue\n";
+    print "  -R       : list remote message queue\n";
+    print "  -s       : show some statistics\n";
+    print "  -mN      : display message number N\n";
+    print "  -dN      : delete message number N\n";
+    print "  -fsender : delete message from sender\n";
+    print "  -F're'   : delete message from senders matching regular expression re\n";
+    print "  -Stext   : delete all messages that have/contain text as Subject\n";
+    print "  -h're'   : delete all messages with headers matching regular expression re (case insensitive)\n";
+    print "  -b're'   : delete all messages with body matching regular expression re (case insensitive)\n";
+    print "  -H're'   : delete all messages with headers matching regular expression re (case sensitive)\n";
+    print "  -B're'   : delete all messages with body matching regular expression re (case sensitive)\n";
+    print "  -t're'   : flag messages with recipients in regular expression 're' for earlier retry (note: this lengthens the time message can stay in queue)\n";
+    print "  -D       : delete all messages in the queue (local and remote)\n";
+    print "  -V       : print program version\n";
+    print "\n";
+    print "Additional (optional) parameters:\n";
+    print "  -c       : display colored output\n";
+    print "  -N       : list message numbers only\n";
+    print "           (to be used either with -l, -L or -R)\n";
+    print "\n";
+    print "You can view/delete multiple message i.e. -d123 -v456 -d567\n\n";
+    exit;
+}
+
+# Print help
+sub Version {
+    print "qmHandle v$version\n";
+}
+

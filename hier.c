@@ -40,7 +40,10 @@ void hier()
 
   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
   d(auto_qmail,"control/cache",auto_uidd,auto_gidq,0755);
+  d(auto_qmail,"control/domainkeys",auto_uidr,auto_gidq,0700);
   d(auto_qmail,"control/notlshosts",auto_uidr,auto_gidq,0755);
+  d(auto_qmail,"overlimit",auto_uidv,auto_gidv,0755);
+  d(auto_qmail,"plugins",auto_uido,auto_gidq,0755);
   d(auto_qmail,"users",auto_uido,auto_gidq,0755);
   d(auto_qmail,"bin",auto_uido,auto_gidq,0755);
   d(auto_qmail,"boot",auto_uido,auto_gidq,0755);
@@ -62,13 +65,6 @@ void hier()
   d(auto_qmail,"queue/intd",auto_uidq,auto_gidq,0700);
   d(auto_qmail,"queue/todo",auto_uidq,auto_gidq,0750);
   d(auto_qmail,"queue/bounce",auto_uids,auto_gidq,0700);
-
-  d(auto_qmail,"plugins",auto_uido,auto_gidq,0755);
-  // install control/smtpplugins file if not existent (unable to read control crash otherwise)
-  snprintf(tmpbuf, sizeof(tmpbuf), "%s/control/smtpplugins", auto_qmail);
-  if ((!access(tmpbuf, F_OK))==0) {
-    c(auto_qmail,"control","smtpplugins",auto_uido,auto_gidq,0644);
-  }
 
   dsplit("queue/mess",auto_uidq,0750);
   dsplit("queue/todo",auto_uidq,0750);
@@ -101,6 +97,7 @@ void hier()
   c(auto_qmail,"boot","binm3",auto_uido,auto_gidq,0755);
   c(auto_qmail,"boot","binm3+df",auto_uido,auto_gidq,0755);
 
+  c(auto_qmail,"doc","VERSION",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/FAQ",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/UPGRADE",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/SENDMAIL",auto_uido,auto_gidq,0644);
@@ -129,7 +126,7 @@ void hier()
   c(auto_qmail,"doc","doc/README.moreipme",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.qregex",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.rfc2821",auto_uido,auto_gidq,0644);
-  c(auto_qmail,"doc","doc/README.srs",auto_uido,auto_gidq,0644);
+  c(auto_qmail,"doc","doc/README.srs.md",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.surbl",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.tap",auto_uido,auto_gidq,0644);
   c(auto_qmail,"doc","doc/README.tls",auto_uido,auto_gidq,0644);
@@ -202,6 +199,8 @@ void hier()
 #ifdef TLS
   c(auto_qmail,"bin","update_tmprsadh",auto_uido,auto_gidq,0755);
 #endif
+
+  c(auto_qmail,"plugins","helodnscheck",auto_uido,auto_gidq,0755);
 
   c(auto_qmail,"man/man5","addresses.5",auto_uido,auto_gidq,0644);
   c(auto_qmail,"man/cat5","addresses.0",auto_uido,auto_gidq,0644);

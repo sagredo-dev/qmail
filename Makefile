@@ -376,6 +376,15 @@ warn-auto.sh config-fast.sh conf-qmail conf-break conf-split
 	> config-fast
 	chmod 755 config-fast
 
+config-all: \
+warn-auto.sh config-all.sh conf-qmail conf-break conf-split
+	cat warn-auto.sh config-all.sh \
+	| sed s}QMAIL}"`head -n 1 conf-qmail`"}g \
+	| sed s}BREAK}"`head -n 1 conf-break`"}g \
+	| sed s}SPLIT}"`head -n 1 conf-split`"}g \
+	> config-all
+	chmod 755 config-all
+
 constmap.o: \
 compile constmap.c constmap.h alloc.h case.h
 	./compile constmap.c
@@ -839,13 +848,14 @@ qmail-clean qmail-send qmail-start splogger qmail-queue qmail-inject \
 predate datemail mailsubj qmail-upq qmail-showctl qmail-newu \
 qmail-pw2u qmail-qread qmail-qstat qmail-tcpto qmail-tcpok \
 qmail-pop3d qmail-popup qmail-qmqpc qmail-qmqpd qmail-qmtpd \
-qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast dnscname \
+qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast config-all dnscname \
 dnsptr dnsip dnsmxip dnsfq dnstxt hostname ipmeprint ipmetest qreceipt qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
 maildir2mbox maildirwatch qail elq pinq install \
 qmail-dkim dkim spawn-filter surblfilter \
 instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
-binm3 binm3+df srsfilter surblqueue dknewkey qmail-todo spfquery update_tmprsadh
+binm3 binm3+df srsfilter surblqueue dknewkey qmail-todo spfquery update_tmprsadh \
+helodnscheck
 
 load: \
 make-load warn-auto.sh systype
@@ -2473,3 +2483,6 @@ policy.o: policy.c policy.h conf-policy conf-qmail
 	| sed s}QMAILDIR}"`head -n 1 conf-qmail`"}g \
 	> conf-policy.temp
 	./compile policy.c `head -n 1 conf-policy.temp`
+
+helodnscheck: helodnscheck.cpp
+	c++ -o helodnscheck helodnscheck.cpp -lpcre

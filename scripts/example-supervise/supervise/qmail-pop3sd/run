@@ -1,0 +1,9 @@
+#!/bin/sh
+
+VPOPMAILUID=`id -u vpopmail`
+VPOPMAILGID=`id -g vpopmail`
+
+exec /usr/local/bin/tcpserver -l 0 -R -H -v \
+  -u"$VPOPMAILUID" -g"$VPOPMAILGID" 0 17998 \
+  /usr/sbin/stunnel /service/qmail-pop3sd/stunnel.conf 2>&1
+

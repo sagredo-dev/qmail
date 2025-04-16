@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# In addition to the ordinary logs,
+# saves NLOGS copies of the 'qlogenvelope' and 'qlogreceived' lines in the 'qlog' subdir.
+
+LOGUSER="qmaill"
+LOGDIR="/var/log/qmail/smtpd"
+LOGDIRQLOG="$LOGDIR/qlog"
+NLOGS=50
+
+exec /usr/local/bin/setuidgid $LOGUSER /usr/local/bin/multilog d n5 s16777215 $LOGDIR \
+n$NLOGS s16777215 '-*' '+*qlog*' $LOGDIRQLOG

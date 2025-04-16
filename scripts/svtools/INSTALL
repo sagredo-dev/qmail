@@ -1,0 +1,14 @@
+Install instructions:
+
+1. Edit the Makefile and change the default install locations if you like.
+
+2. Type 'make' to create the man pages
+
+3. Type 'make install' to install the scripts and man pages.
+
+
+You should then create the base service directory (Default: /etc/sv) and the
+base log directory (Default: /var/log/sv) and give them root as owner.
+Otherwise these directories are automatically created by your first service
+creation and they are then owned by the first created service/log user which
+is probably not what you want.

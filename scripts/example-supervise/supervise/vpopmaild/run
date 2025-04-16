@@ -1,0 +1,11 @@
+#!/bin/sh
+
+QMAILDUID=`id -u root`
+NOFILESGID=`id -g root`
+VPOPMAILUID=`id -g vpopmail`
+
+exec /usr/local/bin/softlimit -m 40000000 \
+    /usr/local/bin/tcpserver -v -H -R -l 0 \
+    -u "$QMAILDUID" -g "$NOFILESGID" 0 "$VPOPMAILUID" \
+    ~vpopmail/bin/vpopmaild 2>&1
+

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+LOGUSER="qmaill"
+LOGDIR="/var/log/qmail/smtpsd"
+
+exec /usr/local/bin/setuidgid $LOGUSER /usr/local/bin/multilog d n5 s16777215 $LOGDIR

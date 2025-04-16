@@ -1,0 +1,4 @@
+Utilities for daemontools and multilog
+
+This package provides some useful utilities to maintain supervised
+services and to handle multilog log files.

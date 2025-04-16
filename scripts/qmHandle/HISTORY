@@ -1,0 +1,91 @@
+qmHandle history
+(c) Michele Beltrame
+--------------------
+1.3.2 by Chan Chung Hang Christopher
+  * Printing message no: was code not tested prior to 1.3.1 release...perl compilation errors. Fixed.
+1.3.1 by Chan Chung Hang Christopher
+  * Reworked qmhandle left out printing message no: when detailed listing of messages is requested! Fixed.
+1.3.0 by Chan Chung Hang Christopher
+  * Reworked qmhandle to be more accurate in reporting queue information (todo state, bouncing...)
+  * Reworked qmhandle to be more efficient in handling message deletion when more than one message will be deleted
+  * Added big-todo support (required since todo files need to be handled)
+  * Added delete from sender support (both regular expression and string matching)
+  * Added touch info file for messages to remote domain for earlier retry (at the cost of longer queue life)
+  * Added delete if message header or body line matches regular expression (case sensitive and insensitive matching)
+1.2.3
+  * Fix: queue display transpose bug
+1.2.2
+  * Fix: added deletion routines to handle files in bounce subdirectory
+  * Fix: added whitespace remove line for pidof output reported by Charlies (cng-oz)
+1.2.1
+  * Corrested an error in the README, and on in the HISTORY
+
+1.2.0 (December 11, 2003)
+  * CHANGED SWITCH NAME: "-m" is now used to view messages (no more "-v")
+  * Added "-V" switch to print program version
+  * Added switch to delete messages based on subject [thanks Arne Bernin]
+  * Included GPL licence in the distribution
+  * Now qmail is stopped only once for multiple deletions of messages, which
+    makes things a bit faster
+  * Corrected a bug which might have caused wrong messages to be deleted
+  * Corrected several minor bugs
+
+1.1.1 (July 10, 2003)
+  * Corrected a bug which caused the -a switch not not work.
+
+1.1.0 (June 4, 2003)
+  * First release as a Sourceforge.Net community project... development
+    resumes!!!
+  * Added -a option to immediately send queued messages.
+
+1.0.0 (December 17, 2001)
+  * Made several functional and stylish adjustments to the code.
+    [Thanks Mike Marseglia]
+  * Much better handling of start/stop: qmHandle now can use system scripts
+    or DBJ daemontools if they are available. Also, it won't restart qmail
+    if it wasn't running when qmHandle was called.
+    [Thanks Philippe Gay]
+  * Updated the documentation.
+  * Finally named it version 1.0.0!!! Seems pretty stable, well I hope
+    it is. ;-)
+
+0.5.1 (July 23, 2001)
+  * Added a -D option which deletes al message in both local and remote queue.
+    [Thanks Kasper Holtze]
+  * Fixed a bug with the CC field when displaying message list.
+    [Thanks anonymous qmHandle user]
+
+0.5.0 (May 11, 2001)
+  * Added syntax check on message numbers passed to -v and -d, so that qmHandle
+    does not stop qmail or lookup messages if the argument is not valid.
+    [Thanks Bertu Barnard]
+  * Formatted the code in a more "Perlish" way.
+  * Added display of "Cc" fields in message list (-l).
+  * Empty fields in message list -l are not shown anymore.
+
+0.4.1 (October 22, 1999) [Thanks Franky Van Liedekerke]:
+  * Fixed a bug that caused messages in queue subdir "0" not to be
+    displayed.
+
+0.4.0 (February 2, 1999) [Thanks Rob]:
+  * Added multiple paramters and actions support.
+  * Added a more condensed queue display option.
+  * The program now show statistics also when listing queues.
+  * Added $pidcmd configuration variable, which allows to customize the
+    command used to get qmail process id (needed when deleting messages).
+
+0.3.0 (October 25, 1998):
+  * Fixed to support qmail 1.03. If you're using an older version, be
+    sure to change the $qmcmd variable if using previous version.
+  * Now when listing messages also message size is displayed. Thanks
+    to Jodok Sutterluety.
+
+0.2.0 (May 18, 1998):
+  * Fixed (with Rob help) a major problem in message deletion: qmHandle now
+    terminates qmail before deleting a message, and restarts it after doing
+    it.
+  * Improved documentation in README file.
+  * Changed executable file name from qmHandle.pl to qmHandle.
+
+0.1.0 (March 10, 1998):
+  * First release.
