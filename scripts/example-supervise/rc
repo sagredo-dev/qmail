@@ -4,7 +4,7 @@
 QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
 
 # Comment out to disable dkim sign at qmail-remote level
-#DKIM_ON=1
+DKIM_ON=1
 
 if [ -r $QMAILDIR/control/filterargs ] && [ -n "$DKIM_ON" ]; then
  # DKIM sign. You have to define your variables in control/filterargs (man spawn-filterargs)

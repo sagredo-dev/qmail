@@ -208,7 +208,7 @@ EOF
 chown root:qmail QMAIL/control/smtpplugins
 
 ########### dkim
-echo "Configuring control/filterargs for RSA 2048 bit long keys..."
+echo "Configuring control/filterargs for RSA 1024 bit long keys..."
 echo "*:remote:QMAIL/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
 
 ########## SURBL
@@ -265,7 +265,6 @@ cp -f scripts/svtools/svinitd \
 scripts/svtools/svinitd-create \
 scripts/svtools/svsetup \
 $SBINDIR
-mkdir -p $MANDIR
 cp -f scripts/svtools/svinitd.1 \
 scripts/svtools/svinitd-create.1 \
 scripts/svtools/svsetup.1 \
@@ -275,7 +274,7 @@ scripts/svtools/mltail.1 \
 scripts/svtools/mlcat.1 \
 scripts/svtools/mlhead.1 \
 scripts/svtools/mltac.1 \
-/usr/local/share/man/man1
+$MANDIR
 
 ############ qmHandle
 echo "Installing qmHandle in $BINDIR/qmHandle..."
