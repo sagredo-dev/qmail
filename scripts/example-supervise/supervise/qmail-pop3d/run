@@ -1,0 +1,11 @@
+#!/bin/sh
+
+QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
+VPOPMAILUID=`id -u vpopmail`
+VPOPMAILGID=`id -g vpopmail`
+
+exec /usr/local/bin/tcpserver -l 0 -R -H -v \
+	-u "$VPOPMAILUID" -g "$VPOPMAILGID" 0 17998 \
+	$QMAILDIR/bin/qmail-popup `hostname` \
+	~vpopmail/bin/vchkpw \
+	$QMAILDIR/bin/qmail-pop3d Maildir 2>&1
