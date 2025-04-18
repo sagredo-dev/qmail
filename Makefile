@@ -1,7 +1,7 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
 # freeBSD users should comment out the following line
-#LIBRESOLV=-lresolv
+LIBRESOLV=-lresolv
 
 VPOPMAIL_LIBS=$$(head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps) `cat dns.lib`
 
