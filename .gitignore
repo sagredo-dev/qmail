@@ -47,6 +47,8 @@ qmail-clean
 hasmkffo.h
 hasnpbg1.h
 qmail-send
+# scripts/example-supervise/supervise/qmail-send dir must be included
+!qmail-send/
 qmail-start
 syslog.lib
 splogger
@@ -65,12 +67,14 @@ qmail-qstat
 qmail-tcpto
 qmail-tcpok
 qmail-pop3d
+# scripts/example-supervise/supervise/qmail-pop3d must be included
+!qmail-pop3d/
 qmail-popup
 qmail-qmqpc
 qmail-qmqpd
 qmail-qmtpd
 qmail-smtpd
-# scripts/supervise/qmail-smtpd dir must be included
+# scripts/example-supervise/supervise/qmail-smtpd dir must be included
 !qmail-smtpd/
 sendmail
 tcp-env

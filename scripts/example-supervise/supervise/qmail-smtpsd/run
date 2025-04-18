@@ -19,53 +19,26 @@ export SSL_UID SSL_GID SSL_CHROOT
 export CERTFILE KEYFILE DHFILE
 
 #export ALLOW_BARELF=1
-
 #export REJECTNULLSENDERS=1
 export SMTPAUTH="!"
 
 # qmail-spp plugins
 export HELO_DNS_CHECK=GNLR
-if [[ !(-f $QMAILDIR/control/smtpplugins) || !(-d $QMAILDIR/plugins) ]]; then
+if [ ! -f $QMAILDIR/control/smtpplugins ] || [ ! -d $QMAILDIR/plugins ]; then
   export ENABLE_SPP=0
 else
   export ENABLE_SPP=1
 fi
 
 # enable greetdelay for qmail-smtpd
-export SMTPD_GREETDELAY=5
+export SMTPD_GREETDELAY=3
 export DROP_PRE_GREET=1
-
-# greylisting
-#export JGREYLIST_DIR=$QMAILDIR/jgreylist
-#export JGREYLIST_LOG_SMTP=1
 
 # enable chkuser
 export CHKUSER_START=ALWAYS
 
-# DKIM - SURBL configuration
-# DKIMQUEUE and SURBLQUEUE are front-ends of qmail-queue
-export SURBL=1 # Comment out to enable SURBL filtering
-#export QMAILQUEUE=$QMAILDIR/bin/simscan # do not execute SURBL nor DKIM filtering
-export QMAILQUEUE=$QMAILDIR/bin/surblqueue # executes surblfilter
-export SURBLQUEUE=$QMAILDIR/bin/simscan    # executes simscan after SURBL
-
-#### qmail-dkim disabled => no dkim verification
-#### to have verification active export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim
-
-#export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim # executes qmail-dkim after surblfilter
-#export DKIMQUEUE=$QMAILDIR/bin/simscan     # simscan is executed after qmail-dkim
-# DKIM verification. Use carefully
-#export DKIMVERIFY="FGHKLMNOQRTVWp"
-# allow msg without "subject" in the h= list
-#export UNSIGNED_SUBJECT=1
-# avoid verification of outgoing messages
-#export RELAYCLIENT_NODKIMVERIFY=1
-
-# turn off TLS on port 25
-# export DISABLETLS="1"
-
 # require that authenticated user and 'mail from' are identical
-#export FORCEAUTHMAILFROM="1"
+export FORCEAUTHMAILFROM="1"
 
 # rcptcheck-overlimit. Limits the number of emails sent by relayclients
 if [ -x $QMAILDIR/bin/rcptcheck-overlimit ]; then

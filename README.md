@@ -235,8 +235,8 @@ Install
 As already mentioned, this package has `vpopmail` as a prerequisite. Also it is intended that you already have
 created the `qmail` users as explained [here](https://notes.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
 
-This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name
-library version 2, `libidn2-dev` on `Debian` like OS).
+This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) (GNU Internationalized Domain Name
+library version 2, `libidn2-dev` on `Debian` like OS) and the [`pcre`](https://www.pcre.org/) libraries.
 
 * Install libsrs2
 ```
@@ -266,9 +266,15 @@ Compile and install:
 make setup check
 ```
 
-* You have to export SMTPAUTH in your run file if you want to do the auth
-* You have to export SURBL=1 in your run file if you want to enable SURBL
-* /var/qmail/control/cache must be owned by the user who runs qmail-smtpd, vpopmail:vchkpwd in my case.
+* Configure
+
+```
+./config-all <mxmydomain.tld>
+```
+
+* You have to export `SMTPAUTH` in your run file if you want to do the auth
+* You have to export `SURBL=1` in your run file if you want to enable `SURBL`
+* _/var/qmail/control/cache_ must be owned by the user who runs `qmail-smtpd`, `vpopmail:vchkpwd` in my case.
   Change the permissions according to your qmail configuration.
 
 Info and support

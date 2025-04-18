@@ -16,6 +16,22 @@
 # - queue-repair
 # - SSL key file (optional)
 
+if [ ! -d QMAIL/control ]; then
+  echo "QMAIL/control dir not found. Exiting."
+  exit 1
+fi
+
+if [ -f QMAIL/control/me ]; then
+  echo "It seems like this is not a fresh installation,"
+  echo "as the QMAIL/control/me file already exists."
+  echo -n "Do you want proceed overriding the current files in QMAIL? y/n? [n] "
+  read RESPONCE
+  if [ "$RESPONCE" != 'y' ] && [ "$RESPONCE" != 'Y' ]; then
+    echo "Exiting"
+    exit 1
+  fi
+fi
+
 if [ -z "$1" ]; then
   echo "You must provide your FQDN."
   echo "Usage: $0 mx.mydomain.tld"
@@ -65,13 +81,7 @@ echo "$FQDN:srs" >> QMAIL/control/virtualdomains
 chmod 644 QMAIL/control/virtualdomains
 
 echo "Putting a random string into control/srs_secrets..."
-chars='abcdefghijklmnopqrstuvwxyz'
-n=20
-str=""
-for ((i = 0; i < n; ++i)); do
-  str+=${chars:RANDOM%${#chars}:1}
-done
-echo "$str" > QMAIL/control/srs_secrets
+echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 13; echo) > QMAIL/control/srs_secrets
 chmod 644 QMAIL/control/srs_secrets
 
 echo "Creating the srs alias .qmail-srs-default..."
@@ -122,7 +132,7 @@ chmod 644 QMAIL/alias/.qmail*
 echo "Linking the services in /service..."
 mkdir -p /service
 # rebuild the services
-rm /service/*
+rm -f /service/*
 ln -s QMAIL/supervise/qmail-smtpd      /service
 ln -s QMAIL/supervise/qmail-smtpsd     /service
 ln -s QMAIL/supervise/qmail-submission /service
@@ -145,7 +155,11 @@ cp -rp $SRCDIR/scripts/example-supervise QMAIL/doc/
 echo "Configuring the $LOGDIR/qmail dir..."
 mkdir -p $LOGDIR/qmail
 chown -R qmaill:nofiles $LOGDIR/qmail
-chgrp root $LOGDIR/qmail
+if [ $(getent group root) ]; then
+  chgrp root $LOGDIR/qmail
+elif [ $(getent group wheel) ]; then
+  chgrp wheel $LOGDIR/qmail
+fi
 chmod -R og-wrx $LOGDIR/qmail
 chmod g+rx $LOGDIR/qmail
 mkdir -p $LOGDIR/qmail/backup

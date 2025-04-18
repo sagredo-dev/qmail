@@ -1,5 +1,29 @@
 # ChangeLog
 
+- Apr 18, 2025
+  - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
+    which configure and installs the following:
+    - main control files as per original `config-fast `script,
+    - aliases, 
+    - SRS (uses _control/me_ as the _srs_domain_),
+    - log dirs in _/var/log/qmail_, 
+    - tcprules (basic, just to make initial tests), 
+    - supervise scripts, 
+    - `qmailctl` script, 
+    - DKIM _control/filterargs_ and _control/domainkeys_ dir, 
+    - SURBL, 
+    - smtpplugins, 
+    - `helodnscheck` spp plugin, 
+    - `svtools`, 
+    - `qmHandle`, 
+    - `queue-repair`, 
+    - SSL key file (optional)
+
+Running `./config-all mx.mydomain.tld` after the compilation will get the `qmail` installation ready for testing.  
+Those who prefer to manually configure everything can stick with the original `config-fast` script, which now copies
+my supervise scripts to the _qmail/doc_ dir.  
+Consider this feature as testing.
+
 - Feb 11, 2025
   - Several adjustments to get freeBSD and netBSD compatibility. More info in the commit history.
     Hints/comments are welcome.
