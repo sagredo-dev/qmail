@@ -8,10 +8,6 @@ SOFTLIMIT=`cat $QMAILDIR/control/softlimit`
 LOCAL=`head -1 $QMAILDIR/control/me`
 TCPRULES_DIR=$QMAILDIR/control
 
-# qmail-spp plugins
-export ENABLE_SPP=1
-export GREYLISTING=""
-
 # You MUST export this, otherwise you'd get a 30 sec timeout
 # "!" if you want the submission feature (auth required)
 export SMTPAUTH="!"
@@ -30,7 +26,7 @@ export CHKUSER_START=ALWAYS
 #export DISABLETLS=1
 
 # require that authenticated user and 'mail from' are identical (default 0)
-#export FORCEAUTHMAILFROM=1
+export FORCEAUTHMAILFROM=1
 
 # rcptcheck-overlimit. Limits the number of emails sent by relayclients
 if [ -x $QMAILDIR/bin/rcptcheck-overlimit ]; then

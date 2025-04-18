@@ -1,15 +1,21 @@
 #!/bin/bash
 #
-# tx Sam Tang
+# This is a pure bash script.
+# FreeBSD users should change the bash path to /usr/local/bin/bash
+#
+#### LWQ qmailctl script modified by Sam Tang ###
+#
+# Subsequent adjustments by Roberto Puzzanghera:
 #
 # Apr 2025
-# QMAILDIR defined via getent
-#
-# May 25, 2022
-# a few modifications by Roberto Puzzanghera to avoid error strings in the service uptime when service is stopped
+# - QMAILDIR defined via getent
+# - qmailctl now works in FreeBSD, provided that the bash path in the very 1st line above is changed
 #
 # Aug 07, 2022
 # now the script exits if services are not started with svscanboot or the supervise script is missing
+#
+# May 25, 2022
+# avoiding error strings in the service uptime when service is stopped
 #
 
 # Put here the services you want to manage
@@ -26,7 +32,7 @@ TCPRULES_DIR=$QMAILDIR/control
 PATH=$QMAILDIR/bin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
 export PATH
 
-function show_uptime() {
+show_uptime() {
   re='^[0-9]+$'
   org="$(svstat /service/$1 | awk '{print $2,$3,$4;}' | sed 's/up/[ up ]/g' | sed 's/down/[ down ]/g' | sed ''/up/s//`printf "\033[1\;32mup\033[0m"`/'' | sed ''/down/s//`printf "\033[1\;31mdown\033[0m"`/'')"
   sec="$(svstat /service/$1 | awk '{print $5;}')"
@@ -50,12 +56,10 @@ function show_uptime() {
 }
 
 # check if qmail has been sttarted at boot time
-function svscan_check() {
-  if ! pgrep -x "svscanboot" > /dev/null; then
-    echo "/command/svscanboot not running. Please start qmail running:"
-    echo "qmailctl boot"
-    echo "or"
-    echo "/command/svscanboot"
+svscan_check() {
+  if ! pgrep -x "svscan" > /dev/null; then
+    echo "qmail not running. Please start qmail running:"
+    echo "'qmailctl boot' or '/command/svscanboot'"
     exit 1
   fi
 }
@@ -65,13 +69,15 @@ case "$1" in
     svscan_check
     echo "Starting qmail"
 
-    for svc in $svclist ; do
-      if svok /service/$svc ; then
-        svc -u /service/$svc
-      else
-        echo $svc service not running
-      fi
-    done
+    if [ -d /service/$svc ]; then
+      for svc in $svclist ; do
+        if svok /service/$svc ; then
+          svc -u /service/$svc
+        else
+          echo $svc service not running
+        fi
+      done
+    fi
 
     if [ -d /var/lock/subsys ]; then
       touch /var/lock/subsys/qmail
@@ -81,11 +87,13 @@ case "$1" in
     svscan_check
     echo "Stopping qmail..."
     for svc in $svclist ; do
-      echo " $svc"
-      svc -d /service/$svc
+      if [ -f /service/$svc ]; then
+        echo " $svc"
+        svc -d /service/$svc
+      fi
     done
     if [ -f /var/lock/subsys/qmail ]; then
-    rm /var/lock/subsys/qmail
+      rm /var/lock/subsys/qmail
     fi
     ;;
   stat)

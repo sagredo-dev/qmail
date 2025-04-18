@@ -1,7 +1,7 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
 # freeBSD users should comment out the following line
-LIBRESOLV=-lresolv
+#LIBRESOLV=-lresolv
 
 VPOPMAIL_LIBS=$$(head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps) `cat dns.lib`
 
@@ -357,7 +357,7 @@ load condredirect.o srs.o rcpthosts.o cdb.a control.o constmap.o case.a \
 	./load condredirect srs.o rcpthosts.o cdb.a control.o constmap.o \
 	case.a getln.a stralloc.a alloc.a open.a qmail.o strerr.a fd.a sig.a \
 	wait.a seek.a env.a substdio.a error.a str.a fs.a auto_qmail.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 condredirect.0: \
 condredirect.1
@@ -654,7 +654,7 @@ load forward.o srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
 	./load forward srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
 	cdb.a case.a open.a stralloc.a alloc.a getln.a \
 	fd.a wait.a sig.a env.a substdio.a error.a str.a fs.a auto_qmail.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 forward.0: \
 forward.1
@@ -1283,7 +1283,7 @@ substdio.a error.a str.a fs.a auto_qmail.o
 	case.a fd.a wait.a open.a getln.a sig.a getopt.a datetime.a \
 	token822.o env.a stralloc.a alloc.a substdio.a error.a \
 	str.a fs.a auto_qmail.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 qmail-inject.0: \
 qmail-inject.8
@@ -1323,7 +1323,7 @@ strtimet.o strpidt.o
 	substdio.a error.a str.a fs.a datetime.a auto_qmail.o \
 	auto_patrn.o  `cat socket.lib` maildirquota.o maildirgetquota.o \
 	maildiropen.o maildirparsequota.o overmaildirquota.o strtimet.o strpidt.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 qmail-local.0: \
 qmail-local.8
@@ -1659,7 +1659,7 @@ auto_split.o env.a auto_spawn.o
 	qmail.o date822fmt.o datetime.a case.a ndelay.a getln.a \
 	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a alloc.a \
 	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o env.a auto_spawn.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 qmail-send.0: \
 qmail-send.8
@@ -2057,7 +2057,7 @@ load srsfilter.o srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
 	./load srsfilter srs.o qmail.o strerr.a control.o rcpthosts.o constmap.o \
 	cdb.a case.a open.a stralloc.a alloc.a getln.a fd.a wait.a sig.a \
 	env.a substdio.a error.a str.a fs.a auto_qmail.o \
-	-I/usr/local/include -L/usr/local/lib -lsrs2
+	-lsrs2
 
 srsfilter.o: \
 compile srsfilter.c sig.h readwrite.h exit.h env.h qmail.h substdio.h strerr.h \
@@ -2466,9 +2466,7 @@ libdkim.a: $(DKIMOBJS) dkimverify.o dkimsign.o makelib time_t_size.h
 .cpp.o:
 	c++ -g -I. -DHAVE_EVP_SHA256 $(CFLAGS) $(INCL) -c $<
 
-cert cert-req: \
-Makefile-cert
-	@$(MAKE) -sf $< $@
+cert cert-req: Makefile-cert @$(MAKE) -sf $< $@
 
 Makefile-cert: \
 conf-qmail conf-users conf-groups Makefile-cert.mk
@@ -2496,4 +2494,6 @@ policy.o: policy.c policy.h conf-policy conf-qmail
 	./compile policy.c `head -n 1 conf-policy.temp`
 
 helodnscheck: helodnscheck.cpp
-	c++ -o helodnscheck helodnscheck.cpp -lpcre
+	c++ -o helodnscheck helodnscheck.cpp -lpcre \
+        -I/usr/local/include -I/usr/pkg/include \
+        -L/usr/local/lib -L/usr/pkg/lib

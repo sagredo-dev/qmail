@@ -10,11 +10,10 @@ TCPRULES_DIR=$QMAILDIR/control
 
 #export ALLOW_BARELF=1
 #export REJECTNULLSENDERS=1
-#export SMTPAUTH="!cram"
 
 # qmail-spp plugins
 export HELO_DNS_CHECK=GNLR
-if [[ !(-f $QMAILDIR/control/smtpplugins) || !(-d $QMAILDIR/plugins) ]]; then
+if [ ! -f $QMAILDIR/control/smtpplugins ] || [ ! -d $QMAILDIR/plugins ]; then
   export ENABLE_SPP=0
 else
   export ENABLE_SPP=1
@@ -31,24 +30,33 @@ export DROP_PRE_GREET=1
 # enable chkuser
 export CHKUSER_START=ALWAYS
 
-# DKIM - SURBL configuration
+################### DKIM - SURBL configuration #################################
 # DKIMQUEUE and SURBLQUEUE are front-ends of qmail-queue
-export SURBL=1 # Comment out to enable SURBL filtering
-#export QMAILQUEUE=$QMAILDIR/bin/simscan # do not execute SURBL nor DKIM filtering
-export QMAILQUEUE=$QMAILDIR/bin/surblqueue # executes surblfilter
-export SURBLQUEUE=$QMAILDIR/bin/simscan    # executes simscan after SURBL
 
-#### qmail-dkim disabled => no dkim verification
-#### to have verification active export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim
+# Enable SURBL filtering
+export SURBL=1
 
-#export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim # executes qmail-dkim after surblfilter
-#export DKIMQUEUE=$QMAILDIR/bin/simscan     # simscan is executed after qmail-dkim
-# DKIM verification. Use carefully
-#export DKIMVERIFY="FGHKLMNOQRTVWp"
-# allow msg without "subject" in the h= list
-#export UNSIGNED_SUBJECT=1
-# avoid verification of outgoing messages
-#export RELAYCLIENT_NODKIMVERIFY=1
+# If simscan is not installed yet, do not assign QMAILQUEUE
+# so that the installation works at the beginning stage as well
+if [ -x $QMAILDIR/bin/simscan ]; then
+  export QMAILQUEUE=$QMAILDIR/bin/surblqueue # executes surblfilter
+  export SURBLQUEUE=$QMAILDIR/bin/simscan    # executes simscan after SURBL
+  #export QMAILQUEUE=$QMAILDIR/bin/simscan # do not execute SURBL nor DKIM filtering
+
+  #### qmail-dkim disabled => no dkim verification
+  #### to have verification active export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim. Othewise the following will be ignored
+  #export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim # executes qmail-dkim after surblfilter
+
+  export DKIMQUEUE=$QMAILDIR/bin/simscan     # simscan is executed after qmail-dkim
+
+  # DKIM verification. Use carefully
+  export DKIMVERIFY="FGHKLMNOQRTVWp"
+  # allow msg without "subject" in the h= list
+  export UNSIGNED_SUBJECT=1
+  # avoid verification of outgoing messages
+  export RELAYCLIENT_NODKIMVERIFY=1
+fi
+################################################################################
 
 # turn off TLS on port 25
 # export DISABLETLS="1"
