@@ -1,9 +1,11 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-# freeBSD users should comment out the following line
-LIBRESOLV=-lresolv
+# freeBSD users should leave empty the very 1st line of conf-lib
+LIBRESOLV=$$(head -n 1 conf-lib)
 
-VPOPMAIL_LIBS=$$(head -n 1 $$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)/etc/lib_deps) `cat dns.lib`
+VPOPMAIL_DIR=$$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)
+VPOPMAIL_INC=-I$(VPOPMAIL_DIR)/include
+VPOPMAIL_LIBS=$$(head -n 1 $(VPOPMAIL_DIR)/etc/lib_deps) `cat dns.lib`
 
 SMTPD_CHKUSER_OBJ=chkuser.o dns.o utf8.o
 
@@ -329,7 +331,7 @@ exit.h auto_spawn.h
 
 chkuser.o: \
 compile chkuser.c chkuser.h chkuser_settings.h
-	./compile chkuser.c
+	./compile $(VPOPMAIL_INC) chkuser.c
 
 clean: \
 TARGETS
@@ -453,8 +455,7 @@ dnscname: \
 load dnscname.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a alloc.a \
 substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnscname dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat socket.lib`
 
 dnscname.o: \
 compile dnscname.c substdio.h subfd.h stralloc.h \
@@ -469,8 +470,7 @@ dnsfq: \
 load dnsfq.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a alloc.a \
 substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnsfq dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat socket.lib`
 
 dnsfq.o: \
 compile dnsfq.c substdio.h subfd.h stralloc.h gen_alloc.h \
@@ -481,8 +481,7 @@ dnsip: \
 load dnsip.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a alloc.a \
 substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnsip dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat socket.lib`
 
 dnsip.o: \
 compile dnsip.c substdio.h subfd.h stralloc.h gen_alloc.h \
@@ -493,8 +492,8 @@ dnsmxip: \
 load dnsmxip.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o now.o stralloc.a \
 alloc.a substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnsmxip dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o now.o \
-	stralloc.a alloc.a substdio.a error.a str.a fs.a  `cat \
-	dns.lib` `cat socket.lib`
+	stralloc.a alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` \
+	`cat socket.lib`
 
 dnsmxip.o: \
 compile dnsmxip.c substdio.h subfd.h stralloc.h \
@@ -506,8 +505,7 @@ dnsptr: \
 load dnsptr.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a alloc.a \
 substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnsptr dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat socket.lib`
 
 dnsptr.o: \
 compile dnsptr.c substdio.h subfd.h stralloc.h gen_alloc.h \
@@ -518,8 +516,7 @@ dnstxt: \
 load dnstxt.o dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a alloc.a \
 substdio.a error.a str.a fs.a dns.lib socket.lib
 	./load dnstxt dns.o dnsdoe.o ip.o ipalloc.o strsalloc.o stralloc.a \
-	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat \
-	socket.lib`
+	alloc.a substdio.a error.a str.a fs.a  `cat dns.lib` `cat socket.lib`
 
 dnstxt.o: \
 compile dnstxt.c substdio.h subfd.h stralloc.h gen_alloc.h \
@@ -1723,8 +1720,7 @@ qmail-spp.o $(SMTPD_CHKUSER_OBJ)
 	constmap.o received.o date822fmt.o now.o qmail.o spf.o cdb.a \
 	fd.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a qmail-spp.o \
 	alloc.a substdio.a error.a strerr.a str.a fs.a auto_qmail.o base64.o policy.o \
-	$(VPOPMAIL_LIBS) \
-	`cat socket.lib`
+	$(VPOPMAIL_LIBS) `cat socket.lib`
 
 qmail-smtpd.0: \
 qmail-smtpd.8
@@ -2033,8 +2029,8 @@ spf.h exit.h
 
 splogger: \
 load splogger.o substdio.a error.a str.a fs.a syslog.lib socket.lib
-	./load splogger substdio.a error.a str.a fs.a  `cat \
-	syslog.lib` `cat socket.lib`
+	./load splogger substdio.a error.a str.a fs.a  `cat syslog.lib` \
+	`cat socket.lib`
 
 splogger.0: \
 splogger.8

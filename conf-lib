@@ -1,0 +1,4 @@
+-lresolv
+
+Library to compile libresolv
+FreeBSD users should leave empty the very first line of this file
