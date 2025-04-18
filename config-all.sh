@@ -16,6 +16,22 @@
 # - queue-repair
 # - SSL key file (optional)
 
+if [ ! -d QMAIL/control ]; then
+  echo "QMAIL/control dir not found. Exiting."
+  exit 1
+fi
+
+if [ -f QMAIL/control/me ]; then
+  echo "It seems like this is not a fresh installation,"
+  echo "as the QMAIL/control/me file already exists."
+  echo -n "Do you want proceed overriding the current file in QMAIL? y/n? [n] "
+  read RESPONCE
+  if [ "$RESPONCE" != 'y' ] && [ "$RESPONCE" != 'Y' ]; then
+    echo "Exiting"
+    exit 1
+  fi
+fi
+
 if [ -z "$1" ]; then
   echo "You must provide your FQDN."
   echo "Usage: $0 mx.mydomain.tld"
