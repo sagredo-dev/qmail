@@ -87,7 +87,7 @@ case "$1" in
     svscan_check
     echo "Stopping qmail..."
     for svc in $svclist ; do
-      if [ -f /service/$svc ]; then
+      if [ -x /service/$svc ]; then
         echo " $svc"
         svc -d /service/$svc
       fi
