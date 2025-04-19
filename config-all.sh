@@ -4,6 +4,8 @@
 # - aliases
 # - srs (uses control/me as the srs_domain)
 # - log dirs in /var/log/qmail
+# - cronjobs
+# - logrotate
 # - tcprules (basic, just to make initial tests)
 # - rc + supervise scripts
 # - qmailctl script
