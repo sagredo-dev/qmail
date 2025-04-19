@@ -26,10 +26,10 @@ my ($bigtodo) = (-d "${queue}todo/0") ? 0 : 1; # 1 means no big-todo
 # ### Be sure to uncomment only ONE of each variable declarations ###
 
 # For instance, this is if you have DJB's daemontools
-# my ($stopqmail) = '/usr/local/bin/svc -d /service/qmail-deliver';
-# my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-deliver';
-my ($stopqmail)  = '/usr/local/bin/qmailctl stop';
-my ($startqmail) = '/usr/local/bin/qmailctl start';
+my ($stopqmail) = '/usr/local/bin/svc -d /service/qmail-send';
+my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-send';
+#my ($stopqmail)  = '/usr/local/bin/qmailctl stop';
+#my ($startqmail) = '/usr/local/bin/qmailctl start';
 
 # While this is if you have a Debian GNU/Linux with its qmail package
 #my ($stopqmail) = '/etc/init.d/qmail stop';
