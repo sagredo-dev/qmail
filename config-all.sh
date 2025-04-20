@@ -2,15 +2,17 @@
 # Configure/install the following as per notes.sagredo.eu guide:
 # - control scripts
 # - aliases
-# - srs (uses control/me as the srs_domain)
+# - SPF
+# - SRS (uses control/me as the srs_domain)
 # - log dirs in /var/log/qmail
 # - cronjobs
 # - logrotate
 # - tcprules (basic, just to make initial tests)
-# - rc + supervise scripts
+# - supervise scripts
 # - qmailctl script
-# - dkim control/filterargs and /control/domainkeys dir
-# - surbl
+# - RBL
+# - DKIM control/filterargs and /control/domainkeys dir
+# - SURBL
 # - smtpplugins
 # - helodnscheck spp plugin
 # - svtools
@@ -201,6 +203,15 @@ cat > /etc/cron.d/qmail << EOF
 2 2 23 * * $CRONUSER $BINDIR/update_tlds.sh 1> /dev/null
 # surbl cache purge
 2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
+EOF
+
+########### RBL
+echo "Configuring RBL..."
+cat > QMAIL/control/dnsbllist << EOF
+-b.barracudacentral.org
+-zen.spamhaus.org
+-psbl.surriel.com
+-bl.spamcop.net
 EOF
 
 ########### smtpplugins
