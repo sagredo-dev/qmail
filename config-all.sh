@@ -13,6 +13,7 @@
 # - RBL
 # - DKIM control/filterargs and /control/domainkeys dir
 # - SURBL
+# - moreipme
 # - smtpplugins
 # - helodnscheck spp plugin
 # - svtools
@@ -213,6 +214,19 @@ cat > QMAIL/control/dnsbllist << EOF
 -psbl.surriel.com
 -bl.spamcop.net
 EOF
+
+########### moreipme
+IPCOMMAND=$(which ip)
+if [ ! -z "$IPCOMMAND" ]; then
+  IP4=$($IPCOMMAND -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  echo "Adding $IP4 to QMAIL/control/moreipme..."
+  echo $IP4 > QMAIL/control/moreipme
+  IP6=$($IPCOMMAND -o -6 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  if [ -z "$IP6" ]; then
+    echo "Adding $IP6 to QMAIL/control/moreipme..."
+    echo $IP6 >> QMAIL/control/moreipme
+  fi
+fi
 
 ########### smtpplugins
 # install control/smtpplugins file if not existent (unable to read control crash otherwise)

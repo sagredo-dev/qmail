@@ -4,7 +4,9 @@
   - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
     which configure and installs the following:
     - main control files as per original `config-fast `script,
-    - aliases, 
+    - aliases,
+    - RBL
+    - SPF
     - SRS (uses _control/me_ as the _srs_domain_),
     - log dirs in _/var/log/qmail_, 
     - tcprules (basic, just to make initial tests), 
@@ -12,6 +14,7 @@
     - `qmailctl` script, 
     - DKIM _control/filterargs_ and _control/domainkeys_ dir, 
     - SURBL, 
+    - moreipme,
     - smtpplugins, 
     - `helodnscheck` spp plugin, 
     - `svtools`, 
