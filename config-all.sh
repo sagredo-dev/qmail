@@ -14,6 +14,7 @@
 # - DKIM control/filterargs and /control/domainkeys dir
 # - SURBL
 # - moreipme
+# - overlimit feature
 # - smtpplugins
 # - helodnscheck spp plugin
 # - svtools
@@ -284,7 +285,7 @@ qmailctl cdb
 
 ########## overlimit
 echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature..."
-cp scripts/rcptcheck-overlimit $BINDIR
+cp scripts/rcptcheck-overlimit QMAIL/bin
 if [ ! -f QMAIL/control/relaylimits ];then
 cat > QMAIL/control/relaylimits << EOF
 :1000

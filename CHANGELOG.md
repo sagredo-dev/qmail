@@ -1,6 +1,6 @@
 # ChangeLog
 
-- Apr 18, 2025
+- Apr 25, 2025
   - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
     which configure and installs the following:
     - main control files as per original `config-fast `script,
@@ -15,6 +15,7 @@
     - DKIM _control/filterargs_ and _control/domainkeys_ dir, 
     - SURBL, 
     - moreipme,
+    - overlimit feature
     - smtpplugins, 
     - `helodnscheck` spp plugin, 
     - `svtools`, 
