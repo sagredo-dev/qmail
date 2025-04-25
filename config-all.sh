@@ -223,7 +223,7 @@ if [ ! -z "$IPCOMMAND" ]; then
   echo "Adding $IP4 to QMAIL/control/moreipme..."
   echo $IP4 > QMAIL/control/moreipme
   IP6=$($IPCOMMAND -o -6 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
-  if [ -z "$IP6" ]; then
+  if [ ! -z "$IP6" ]; then
     echo "Adding $IP6 to QMAIL/control/moreipme..."
     echo $IP6 >> QMAIL/control/moreipme
   fi
