@@ -9,6 +9,9 @@
     - SPF
     - SRS (uses _control/me_ as the _srs_domain_),
     - log dirs in _/var/log/qmail_, 
+    - cronjobs
+    - logrotate
+    - PATH and MANPATH in _/etc/profile.d/qmail.sh_
     - tcprules (basic, just to make initial tests), 
     - supervise scripts, 
     - `qmailctl` script, 
