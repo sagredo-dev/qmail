@@ -10,6 +10,7 @@
 # Apr 2025
 # - QMAILDIR defined via getent
 # - qmailctl now works in FreeBSD, provided that the bash path in the very 1st line above is changed
+# - corrections in show_uptime function
 #
 # Aug 07, 2022
 # now the script exits if services are not started with svscanboot or the supervise script is missing
@@ -45,8 +46,8 @@ show_uptime() {
   s=$(($sec -d * 86400 - $h * 3600 - $m * 60))
 
   if [ $sec -le 60 ]; then
-    if [[ "$(svstat /service/qmail-smtpd | awk '{print $2}')" = 'down' ]]; then
-      printf "%-22s %s %s %s %s %s\n" "$1:" $org
+    if [[ "$(svstat /service/$1 | awk '{print $2}')" = 'down' ]]; then
+      printf "%-22s %s %s %s %s %s\n" "$1:" $org | sed 's/,//g'
     else
       printf "%-22s %s %s %s %s %s %s seconds\n" "$1:" $org $s
     fi
