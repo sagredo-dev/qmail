@@ -7,6 +7,7 @@
 # - log dirs in /var/log/qmail
 # - cronjobs
 # - logrotate
+# - add profile.d/qmail.sh with PATH and MANPATH
 # - tcprules (basic, just to make initial tests)
 # - supervise scripts
 # - qmailctl script
@@ -176,6 +177,16 @@ ln -s $LOGDIR/qmail/send       /service/qmail-send/log/main
 ln -s $LOGDIR/qmail/smtpd      /service/qmail-smtpd/log/main
 ln -s $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
 ln -s $LOGDIR/qmail/submission /service/qmail-submission/log/main
+
+########### set PATH and MANPATH
+echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
+VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
+cat > /etc/profile.d/qmail.sh << EOF
+PATH=\$PATH:QMAIL/qmail/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
+export PATH
+MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man
+export MANPATH
+EOF
 
 ########### qmailctl
 echo "Installing the qmailctl script in $BINDIR/qmailctl..."
