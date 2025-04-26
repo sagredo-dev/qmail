@@ -12,8 +12,8 @@
 # - qmailctl now works in FreeBSD, provided that the bash path in the very 1st line above is changed
 # - corrections in show_uptime function
 # - Added a restart_safe function to be used in a cronjob instead of start.
-#   It adds a sleep after qmail-send TERM signal to be sure that it job
-#   if restarting in a cronjob, just to prevent failures on restart in a cronjob.
+#   It adds a sleep after qmail-send TERM signal to be sure that it finished all deliveries
+#   just to prevent failures on restart in a cronjob.
 #
 # Aug 07, 2022
 # now the script exits if services are not started with svscanboot or the supervise script is missing
@@ -180,8 +180,8 @@ case "$1" in
     ;;
   restart_safe)
     # Function to be used in a cronjob instead of start
-    # Adds a sleep after qmail-send TERM signal to be sure that it job
-    # if restarting in a cronjob, just to prevent failures on restart in a cronjob
+    # Adds a sleep after qmail-send TERM signal to be sure that it finished all deliveries,
+    # just to prevent failures on restart in a cronjob
     svscan_check
     echo "Restarting qmail:"
     for svc in $svclist ; do
