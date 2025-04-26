@@ -11,6 +11,9 @@
 # - QMAILDIR defined via getent
 # - qmailctl now works in FreeBSD, provided that the bash path in the very 1st line above is changed
 # - corrections in show_uptime function
+# - Added a restart_safe function to be used in a cronjob instead of start.
+#   It adds a sleep after qmail-send TERM signal to be sure that it job
+#   if restarting in a cronjob, just to prevent failures on restart in a cronjob.
 #
 # Aug 07, 2022
 # now the script exits if services are not started with svscanboot or the supervise script is missing
@@ -175,6 +178,28 @@ case "$1" in
       fi
     done
     ;;
+  restart_safe)
+    # Function to be used in a cronjob instead of start
+    # Adds a sleep after qmail-send TERM signal to be sure that it job
+    # if restarting in a cronjob, just to prevent failures on restart in a cronjob
+    svscan_check
+    echo "Restarting qmail:"
+    for svc in $svclist ; do
+      if [ "$svc" != "qmail-send" ] ; then
+        echo "* Stopping $svc."
+        svc -d /service/$svc
+      fi
+    done
+    echo "* Sending qmail-send SIGTERM and restarting."
+    svc -t /service/qmail-send
+    sleep 20
+    for svc in $svclist ; do
+      if [ "$svc" != "qmail-send" ] ; then
+        echo "* Restarting $svc."
+        svc -u /service/$svc
+      fi
+    done
+    ;;
   cdb)
     if ! grep '\#define POP_AUTH_OPEN_RELAY 1' ~vpopmail/include/config.h >/dev/null; then
       (cd $TCPRULES_DIR ; cat tcp.smtp | tcprules tcp.smtp.cdb tcp.smtp.tmp)
@@ -215,27 +240,28 @@ case "$1" in
     ;;
   help)
     cat <<HELP
-    stop -- stops mail service (smtp connections refused, nothing goes out)
-   start -- starts mail service (smtp connection accepted, mail can go out)
-   pause -- temporarily stops mail service (connections accepted, nothing leaves)
-    cont -- continues paused mail service
-    stat -- displays status of mail service
-     cdb -- rebuild the tcpserver cdb file for smtp
- restart -- stops and restarts smtp, sends qmail-send a TERM & restarts it
- doqueue -- sends qmail-send ALRM, scheduling queued messages for delivery
-  reload -- sends qmail-send HUP, rereading locals and virtualdomains
-   queue -- shows status of queue
-    alrm -- same as doqueue
-   flush -- same as doqueue
-     hup -- same as reload
-   clear -- clears the readproctitle service errors with .....................
-    kill -- svc -d processes in svclist, then do 'killall -g svscanboot'
-    boot -- Boots qmail and all services in /service running /command/svscanboot
-  reboot -- kill & boot commands in sequence
+         stop -- stops mail service (smtp connections refused, nothing goes out)
+        start -- starts mail service (smtp connection accepted, mail can go out)
+        pause -- temporarily stops mail service (connections accepted, nothing leaves)
+         cont -- continues paused mail service
+         stat -- displays status of mail service
+          cdb -- rebuild the tcpserver cdb file for smtp
+      restart -- stops and restarts services, sends qmail-send a TERM & restarts it
+ restart_safe -- stops and restarts services, sends qmail-send a TERM & restarts it after a 20s sleep
+      doqueue -- sends qmail-send ALRM, scheduling queued messages for delivery
+        flush -- same as doqueue
+         alrm -- same as doqueue
+       reload -- sends qmail-send HUP, rereading locals and virtualdomains
+          hup -- same as reload
+        queue -- shows status of queue
+        clear -- clears the readproctitle service errors with .....................
+         kill -- svc -d processes in svclist, then do 'killall -g svscanboot'
+         boot -- Boots qmail and all services in /service running /command/svscanboot
+       reboot -- kill & boot commands in sequence
 HELP
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart|doqueue|flush|reload|stat|pause|cont|cdb|queue|clear|kill|boot|reboot|help}"
+    echo "Usage: $0 {start|stop|restart|restart_safe|doqueue|flush|reload|stat|pause|cont|cdb|queue|clear|kill|boot|reboot|help}"
     exit 1
     ;;
 esac
