@@ -32,7 +32,7 @@ fi
 if [ -f QMAIL/control/me ]; then
   echo "It seems like this is not a fresh installation,"
   echo "as the QMAIL/control/me file already exists."
-  echo -n "Do you want proceed overriding the current files in QMAIL? y/n? [n] "
+  echo -n "Do you want to proceed overriding the current files in QMAIL? y/n? [n] "
   read RESPONCE
   if [ "$RESPONCE" != 'y' ] && [ "$RESPONCE" != 'Y' ]; then
     echo "Exiting"
