@@ -1,6 +1,7 @@
-
 # Configure/install the following as per notes.sagredo.eu guide:
-# - control scripts
+# - control files: me, defaultdomain, plusdomain, rcpthosts, spfbehavior, softlimit,
+#   bouncefrom, bouncehost, databytes, queuelifetime, maxrcpt, brtlimit, defaultdelivery,
+#   tlsserverciphers.
 # - aliases
 # - SPF
 # - SRS (uses control/me as the srs_domain)
