@@ -183,11 +183,14 @@ ln -s $LOGDIR/qmail/submission /service/qmail-submission/log/main
 echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
 VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
 cat > /etc/profile.d/qmail.sh << EOF
+#!/bin/sh
 PATH=\$PATH:QMAIL/qmail/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
 export PATH
 MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man
 export MANPATH
 EOF
+chmod +x /etc/profile.d/qmail.sh
+/etc/profile.d/qmail.sh
 
 ########### qmailctl
 echo "Installing the qmailctl script in $BINDIR/qmailctl..."
