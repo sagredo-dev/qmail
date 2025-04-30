@@ -48,12 +48,12 @@ fi
 
 FQDN="$1"
 SRCDIR=$(dirname $0)
-BINDIR=/usr/local/bin
-SBINDIR=/usr/local/sbin
 LOGDIR=/var/log
-MANDIR=/usr/local/share/man/man1
+BINDIR=/usr/local/bin
+GREEN='\033[1;32m'
+NC='\033[0m' # No Color
 
-mkdir -p $BINDIR $SBINDIR $LOGDIR $MANDIR
+mkdir -p $LOGDIR $BINDIR
 
 echo "Your fully qualified host name is '$FQDN'"
 echo
@@ -173,7 +173,7 @@ chmod g+rx $LOGDIR/qmail
 mkdir -p $LOGDIR/qmail/backup
 
 echo "Configuring the 'convert-multilog' feature..."
-cp $SRCDIR/scripts/convert-multilog $BINDIR
+cp $SRCDIR/scripts/convert-multilog QMAIL/bin
 ln -s $LOGDIR/qmail/send       /service/qmail-send/log/main
 ln -s $LOGDIR/qmail/smtpd      /service/qmail-smtpd/log/main
 ln -s $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
@@ -184,17 +184,19 @@ echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d
 VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
 cat > /etc/profile.d/qmail.sh << EOF
 #!/bin/sh
-PATH=\$PATH:QMAIL/qmail/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
+PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
 export PATH
 MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man
 export MANPATH
 EOF
 chmod +x /etc/profile.d/qmail.sh
-/etc/profile.d/qmail.sh
 
 ########### qmailctl
-echo "Installing the qmailctl script in $BINDIR/qmailctl..."
-cp $SRCDIR/scripts/qmailctl $BINDIR
+echo "Installing the qmailctl script in QMAIL/bin/qmailctl..."
+cp $SRCDIR/scripts/qmailctl QMAIL/bin
+# Create a symbolic link in /usr/local/bin so that qmailctl will run in the shell with no path
+rm -f $BINDIR/qmailctl
+ln -s QMAIL/bin/qmailctl $BINDIR/qmailctl
 
 ########### cronjobs
 echo "Installing cronjobs in /etc/cron.d/qmail..."
@@ -206,7 +208,7 @@ else
 fi
 cat > /etc/cron.d/qmail << EOF
 # convert-multilog
-59 2 * * * $CRONUSER $BINDIR/convert-multilog 1> /dev/null
+59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
 # qmail log
 0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-submission/log
 0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpd/log
@@ -217,7 +219,7 @@ cat > /etc/cron.d/qmail << EOF
 # rcptcheck overlimit
 59 1 * * * $CRONUSER find QMAIL/overlimit/ -type f -exec rm -f "{}" \; >> $LOGDIR/cron
 # surbl tlds update
-2 2 23 * * $CRONUSER $BINDIR/update_tlds.sh 1> /dev/null
+2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
 # surbl cache purge
 2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
 EOF
@@ -270,13 +272,13 @@ echo "*:remote:QMAIL/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/do
 
 ########## SURBL
 echo "Configuring SURBL filter. Downloading tlds domains in QMAIL/control..."
-cat > $BINDIR/update_tlds.sh << EOF
+cat > QMAIL/bin/update_tlds << EOF
 #!/bin/sh
 wget -O QMAIL/control/level3-tlds https://www.surbl.org/static/three-level-tlds
 wget -O QMAIL/control/level2-tlds https://www.surbl.org/static/two-level-tlds
 EOF
-chmod +x $BINDIR/update_tlds.sh
-$BINDIR/update_tlds.sh
+chmod +x QMAIL/bin/update_tlds
+QMAIL/bin/update_tlds
 
 ########## tcprules
 echo "Installing the tcprules in QMAIL/control..."
@@ -296,7 +298,7 @@ EOF
 else
 echo "skipping tcp.submission (already exists)"
 fi
-qmailctl cdb
+QMAIL/bin/qmailctl cdb
 
 ########## overlimit
 echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature..."
@@ -317,11 +319,11 @@ scripts/svtools/mltail \
 scripts/svtools/mlcat \
 scripts/svtools/mlhead \
 scripts/svtools/mltac \
-$BINDIR
+QMAIL/bin
 cp -f scripts/svtools/svinitd \
 scripts/svtools/svinitd-create \
 scripts/svtools/svsetup \
-$SBINDIR
+QMAIL/bin
 cp -f scripts/svtools/svinitd.1 \
 scripts/svtools/svinitd-create.1 \
 scripts/svtools/svsetup.1 \
@@ -331,16 +333,16 @@ scripts/svtools/mltail.1 \
 scripts/svtools/mlcat.1 \
 scripts/svtools/mlhead.1 \
 scripts/svtools/mltac.1 \
-$MANDIR
+QMAIL/man/man1
 
 ############ qmHandle
-echo "Installing qmHandle in $BINDIR/qmHandle..."
-cp -f scripts/qmHandle/qmHandle $BINDIR
+echo "Installing qmHandle in QMAIL/bin/qmHandle..."
+cp -f scripts/qmHandle/qmHandle QMAIL/bin
 cp -f scripts/qmHandle/README.qmHandle.md QMAIL/doc/
 
 ############ queue-repair
-echo "Installing queue_repair in $BINDIR/queue_repair..."
-cp -f scripts/queue_repair/queue_repair $BINDIR
+echo "Installing queue_repair in QMAIL/bin/queue_repair..."
+cp -f scripts/queue_repair/queue_repair QMAIL/bin
 
 ############ SSL key file
 echo
@@ -355,8 +357,14 @@ else
   echo 'Skipping the SSL key file creation'
 fi
 
-##############
-
 echo
 echo "Be sure to have a valid MX record in your DNS, to configure the reverse DNS for '${FQDN}'"
 echo "and to create the SPF, DKIM and DMARC records for '${FQDN}' and for '${DEFAULTDOMAIN}'."
+echo
+echo "You have to update the PATH and MANPATH in the current shell by rebooting the OS"
+echo "or better by running:"
+echo -e "${GREEN}PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin"
+echo -e "MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man${NC}"
+echo
+echo "You can now start qmail by running"
+echo -e "${GREEN}qmailctl boot${NC}"
