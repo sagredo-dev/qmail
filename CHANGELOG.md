@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Jun 8, 2025
+  - CRLF fix for fastremote-3 patch ([thanks Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4593))
+
 - Apr 25, 2025
   - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
     which configure and installs the following:

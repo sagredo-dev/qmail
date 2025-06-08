@@ -238,7 +238,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   function scans the message one byte at a time to escape leading periods and newlines, as required by SMTP.  
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.  
-  http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch
+  http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch  
+  Added a fix for CRLF by [Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4593)
 * [Arnt Gulbrandsen's smtputf8](https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls)  
   adds [RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization support  
   - [Pull Request](https://github.com/sagredo-dev/qmail/pull/13)  
