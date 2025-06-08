@@ -72,6 +72,7 @@ stralloc proto = {0};
 int spp_val;
 
 unsigned int databytes = 0;
+char *greetdelays;
 unsigned int greetdelay = 0;
 unsigned int drop_pre_greet = 0;
 int timeout = 1200;
@@ -454,8 +455,8 @@ void setup()
   if (x) { scan_ulong(x,&u); databytes = u; }
   if (!(databytes + 1)) --databytes;
 
-  x = env_get("SMTPD_GREETDELAY");
-  if (x) { scan_ulong(x, &u); greetdelay = u; }
+  greetdelays = env_get("SMTPD_GREETDELAY");
+  if (greetdelays) { scan_ulong(greetdelays, &u); greetdelay = u; }
   x = env_get("DROP_PRE_GREET");
   if (x) { scan_ulong(x, &u); drop_pre_greet = u; }
 
@@ -2513,19 +2514,21 @@ char **argv;
   if (ipme_init() != 1) die_ipme();
   if (!relayclient && greetdelay) {
     if (drop_pre_greet) {
+      strerr_warn4(title.s, "GREETDELAY: ", greetdelays, "s", 0);
       n = timeoutread(greetdelay ? greetdelay : 1, 0, ssinbuf, sizeof(ssinbuf));
       if(n == -1) {
-        if (errno != error_timeout)
-          strerr_die3sys(1, "GREETDELAY from ", remoteip, ": ");
+        if (errno != error_timeout) {
+          strerr_die4sys(1, title.s, "GREETDELAY from ", remoteip, ": ");
+        }
       } else if (n == 0) {
-        strerr_die3x(1, "GREETDELAY from ", remoteip, ": client disconnected");
+        strerr_die4x(1, title.s, "GREETDELAY from ", remoteip, ": client disconnected");
       } else {
-        strerr_warn3("GREETDELAY from ", remoteip, ": client sent data before greeting", 0);
+        strerr_warn4(title.s, "GREETDELAY from ", remoteip, ": client sent data before greeting", 0);
         die_pre_greet();
       }
     }
     else {
-      strerr_warn3("GREETDELAY: ", greetdelay, "s", 0);
+      strerr_warn4(title.s, "GREETDELAY: ", greetdelays, "s", 0);
       sleep(greetdelay);
       m = 0;
       for (;;) {
@@ -2533,7 +2536,7 @@ char **argv;
         if (n <= 0)
           break;
         if (n > 0 && m == 0) {
-          strerr_warn3("GREETDELAY from ", remoteip, ": client sent data before greeting. ignoring", 0);
+          strerr_warn4(title.s, "GREETDELAY from ", remoteip, ": client sent data before greeting. ignoring", 0);
           m = 1;
         }
       }

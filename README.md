@@ -76,7 +76,9 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * John Simpson's (?) Greeting delay patch  
   adds a user-definable delay after SMTP clients have initiated SMTP sessions, prior to qmail-smtpd responding
   with "220 ESMTP". It can reject connections from clients which tried to send commands before greeting.  
-  https://notes.sagredo.eu/files/qmail/patches/qmail-greetdelay.patch
+  https://notes.sagredo.eu/files/qmail/patches/qmail-greetdelay.patch  
+  [Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4597) fixed a bug
+  where qmail-smtpd crashes if SMTPD_GREETDELAY is defined with no DROP_PRE_GREET defined.
 * Manvendra Bhangui's DKIM and SURBL filter v.1.48 patch  
   adds DKIM signing & verification and SURBL filtering support to qmail.  
   qmail-dk is based on Russ Nelson's patch: http//:www.qmail.org/qmail-1.03-dk-0.54.patch  
