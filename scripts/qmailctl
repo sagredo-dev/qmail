@@ -178,28 +178,6 @@ case "$1" in
       fi
     done
     ;;
-  restart_safe)
-    # Function to be used in a cronjob instead of start
-    # Adds a sleep after qmail-send TERM signal to be sure that it finished all deliveries,
-    # just to prevent failures on restart in a cronjob
-    svscan_check
-    echo "Restarting qmail:"
-    for svc in $svclist ; do
-      if [ "$svc" != "qmail-send" ] ; then
-        echo "* Stopping $svc."
-        svc -d /service/$svc
-      fi
-    done
-    echo "* Sending qmail-send SIGTERM and restarting."
-    svc -t /service/qmail-send
-    sleep 20
-    for svc in $svclist ; do
-      if [ "$svc" != "qmail-send" ] ; then
-        echo "* Restarting $svc."
-        svc -u /service/$svc
-      fi
-    done
-    ;;
   cdb)
     if ! grep '\#define POP_AUTH_OPEN_RELAY 1' ~vpopmail/include/config.h >/dev/null; then
       (cd $TCPRULES_DIR ; cat tcp.smtp | tcprules tcp.smtp.cdb tcp.smtp.tmp)
@@ -247,7 +225,6 @@ case "$1" in
          stat -- displays status of mail service
           cdb -- rebuild the tcpserver cdb file for smtp
       restart -- stops and restarts services, sends qmail-send a TERM & restarts it
- restart_safe -- stops and restarts services, sends qmail-send a TERM & restarts it after a 20s sleep
       doqueue -- sends qmail-send ALRM, scheduling queued messages for delivery
         flush -- same as doqueue
          alrm -- same as doqueue
@@ -261,7 +238,7 @@ case "$1" in
 HELP
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart|restart_safe|doqueue|flush|reload|stat|pause|cont|cdb|queue|clear|kill|boot|reboot|help}"
+    echo "Usage: $0 {start|stop|restart|doqueue|flush|reload|stat|pause|cont|cdb|queue|clear|kill|boot|reboot|help}"
     exit 1
     ;;
 esac
