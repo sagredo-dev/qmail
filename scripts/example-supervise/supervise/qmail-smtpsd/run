@@ -22,20 +22,16 @@ export CERTFILE KEYFILE DHFILE
 #export REJECTNULLSENDERS=1
 export SMTPAUTH="!"
 
-# qmail-spp plugins
-export HELO_DNS_CHECK=GNLR
-if [ ! -f $QMAILDIR/control/smtpplugins ] || [ ! -d $QMAILDIR/plugins ]; then
-  export ENABLE_SPP=0
-else
-  export ENABLE_SPP=1
-fi
-
 # enable greetdelay for qmail-smtpd
 export SMTPD_GREETDELAY=3
 export DROP_PRE_GREET=1
 
 # enable chkuser
 export CHKUSER_START=ALWAYS
+
+# turn off TLS on port 465
+export FORCETLS=0
+export DISABLETLS=1
 
 # require that authenticated user and 'mail from' are identical
 export FORCEAUTHMAILFROM="1"
@@ -45,10 +41,6 @@ if [ -x $QMAILDIR/bin/rcptcheck-overlimit ]; then
   export RCPTCHECK=$QMAILDIR/bin/rcptcheck-overlimit
   export RCPTCHECKRELAYCLIENT="1"
 fi
-
-# enable simscan debug
-#export SIMSCAN_DEBUG=4
-#export SIMSCAN_DEBUG_FILES=2
 
 exec /usr/local/bin/softlimit -m "$SOFTLIMIT" \
     /usr/local/bin/sslserver -seV -Rp -l "$LOCAL" \
