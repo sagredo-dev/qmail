@@ -4,6 +4,7 @@
   - CRLF fix for fastremote-3 patch ([thanks Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4593))
   - Bug fix to the greetdelay program ([thanks Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4597))  
     qmail-smtpd crashes if SMTPD_GREETDELAY is defined with no DROP_PRE_GREET defined.
+  - turned off TLS and helo dns check on qmail-smtpsd/run script (tx Luis)
 
 - Apr 25, 2025
   - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
