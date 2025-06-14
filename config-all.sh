@@ -216,8 +216,6 @@ cat > /etc/cron.d/qmail << EOF
 0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-send/log
 0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vpopmaild/log
 0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vusaged/log
-# rcptcheck overlimit
-59 1 * * * $CRONUSER find QMAIL/overlimit/ -type f -exec rm -f "{}" \; >> $LOGDIR/cron
 # surbl tlds update
 2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
 # surbl cache purge
@@ -310,6 +308,8 @@ EOF
 else
 echo "skipping control/relaylimits (already exists)"
 fi
+echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
+cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily
 
 ############ svtools
 echo "Installing svtools..."

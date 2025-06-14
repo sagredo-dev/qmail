@@ -1,0 +1,41 @@
+#!/bin/bash
+#
+# Cronjob example:
+#   # find /var/qmail/overlimit/ -type f -exec rm -f "{}" \;
+#
+# This is a version that only removes cases that didn't exceed the limit, i.e.
+# enforces a permanent ban.
+# To be installed in /etc/cron.daily
+#
+# by Andreas Gerstlauer
+# https://notes.sagredo.eu/en/qmail-notes-185/limiting-the-number-of-emails-sent-by-a-given-auth-userdomainip-231.html#comment4608
+
+EXITIGNORE=1
+
+LIMITSCONTROLFILE=/var/qmail/control/relaylimits
+OVERLIMITDIR=/var/qmail/overlimit
+DEBUGLOG=/var/log/overlimit/debug.log
+
+if [ ! -r "$LIMITSCONTROLFILE" ]; then exit $EXITIGNORE; fi
+if [ ! -w "$OVERLIMITDIR" ]; then exit $EXITIGNORE; fi
+
+# Read config file removing comments, blank lines, spaces and tabs
+PREFILTER="sed -e 's/#.*$//g' -e '/^$/d' -e 's/[ \t]*//g' $LIMITSCONTROLFILE"
+
+for f in `find $OVERLIMITDIR -type f`; do
+  limit=""
+  client=`basename "$f"`
+  value=$(eval ${PREFILTER} | grep -Fi "$client:" | tail -1); limit="${value##*:}" # specific ip address
+  if [ -z "${limit}" ]; then value=$(eval ${PREFILTER} | grep "^:" | tail -1); limit="${value##*:}"; fi  # default ':value'
+  if [ -z "${limit}" ]; then limit=0; fi # if nothing else
+
+  currentnum=$(stat -c%s "$f" 2>/dev/null)
+  if [ -z "$currentnum" ]; then currentnum=1; fi
+
+  if [ "$currentnum" -gt "$limit" ] && [ "$limit" -ne "0" ]; then
+    echo "qmail-overlimit: $client is over limit ($currentnum emails > $limit limit)"
+  else
+    rm -f "$f"
+  fi
+done
+
