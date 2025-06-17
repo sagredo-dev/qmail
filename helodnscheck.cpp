@@ -465,7 +465,7 @@ int main() {
 
   if (debug) {s<<"found = "<<matched; out(s,true);}
   if (matched == 1) return 0;
-  if (header) cout << "HX-Helo-Check: HELO ["<<helo_domain<<"] doesn't match IP ["<<remote_ip<<"]";
+  if (header) cout << "HX-Helo-Check: HELO ["<<helo_domain<<"] doesn't match IP ["<<remote_ip<<"]\n";
   if (log) {s<<"HELO ["<<helo_domain<<"] doesn't match IP ["<<remote_ip<<"]"; out(s);}
   if (block && !pass) block_permanent("HELO/EHLO command must provide FQDN that match your IP address.", remote_ip);
 
