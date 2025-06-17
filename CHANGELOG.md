@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Jun 17, 2025
+  - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
+
 - Jun 8, 2025
   - CRLF fix for fastremote-3 patch ([thanks Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4593))
   - Bug fix to the greetdelay program ([thanks Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4597))  
