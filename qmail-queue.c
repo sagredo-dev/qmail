@@ -1,6 +1,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include "readwrite.h"
+#include "env.h"
 #include "sig.h"
 #include "exit.h"
 #include "open.h"
@@ -76,6 +77,8 @@ void sigbug() { die(81); }
 unsigned int receivedlen;
 char *received;
 /* "Received: (qmail-queue invoked by alias); 26 Sep 1995 04:46:54 -0000\n" */
+unsigned int authenticatedlen;
+char *authenticated;
 
 static unsigned int receivedfmt(s)
 char *s;
@@ -108,6 +111,39 @@ void received_setup()
  received = alloc(receivedlen + 1);
  if (!received) die(51);
  receivedfmt(received);
+}
+
+static unsigned int authenticatedfmt(s)
+char *s;
+{
+ char *e;
+ unsigned int i;
+ unsigned int len;
+ stralloc authservid = {0};
+ len = 0;
+ e = env_get("QMAILAUTHENTICATED");
+ if (!e) return 0;
+ i = fmt_str(s,"Authentication-Results: "); len += i; if (s) s += i;
+ if (control_rldef(&authservid,"control/authservid",1,(char *) 0) != 1) die(55);
+ i = fmt_strn(s,authservid.s,authservid.len); len += i; if (s) s += i;
+ if(*e) {
+  i = fmt_str(s,";\n\t"); len += i; if (s) s += i;
+  i = fmt_str(s,e); len += i; if (s) s += i;
+  i = fmt_str(s,"\n"); len += i; if (s) s += i;
+ } else {
+  i = fmt_str(s,"; none\n"); len += i; if (s) s += i;
+ }
+ return len;
+}
+
+void authenticated_setup()
+{
+ authenticated = (char *) 0;
+ authenticatedlen = authenticatedfmt((char *) 0);
+ if (!authenticatedlen) return;
+ authenticated = alloc(authenticatedlen + 1);
+ if (!authenticated) die(51);
+ authenticatedfmt(authenticated);
 }
 
 unsigned int pidfmt(s,seq)
@@ -172,6 +208,10 @@ int main()
  sig_blocknone();
  umask(033);
  if (chdir(auto_qmail) == -1) die(61);
+
+ control_init();
+ authenticated_setup();
+
  if (chdir("queue") == -1) die(62);
 
  mypid = getpid();
@@ -211,6 +251,8 @@ int main()
  substdio_fdbuf(&ssin,read,0,inbuf,sizeof(inbuf));
 
  if (substdio_bput(&ssout,received,receivedlen) == -1) die_write();
+
+ if (substdio_bput(&ssout,authenticated,authenticatedlen) == -1) die_write();
 
  switch(substdio_copy(&ssout,&ssin))
   {

@@ -727,40 +727,46 @@ dkimverify_exit(int dkimRet, char *status, char *code)
 	}
 }
 
-void
-writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useSSP, int useADSP)
+char*
+dkim_hdr(stralloc *s, int ret, char** status)
 {
-	char           *dkimStatus = 0, *sspStatus = 0, *adspStatus = 0, *code = 0, *orig = 0;
-	char            strnum[FMT_ULONG];
+	char           *dkimStatus = 0, *dkimResult = 0, *code = 0;
 
 	switch (ret)
 	{
 	case DKIM_SUCCESS:			/*- 0 */ /*- A */
-		dkimStatus = "good        ";
-		code = "X.7.0";
-		break;
+		if (status) *status = "good        ";
+		if (status)  if (!stralloc_cats(s, "good")) return (char *) 0;
+		if (!status) if (!stralloc_cats(s, "pass")) return (char *) 0;
+		return "X.7.0";
 	case DKIM_FINISHED_BODY:	/*- 1 process result: no more message body is needed */
 		dkimStatus = "process result: no more message body is needed";
+		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
 	case DKIM_PARTIAL_SUCCESS:	/*- 2 verify result: at least one but not all signatures verified */
-		dkimStatus = "verify result: at least none but not all signatures verified";
+		dkimStatus = "verify result: at least one but not all signatures verified";
+		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
 	case DKIM_NEUTRAL:			/*- 3 verify result: no signatures verified but message is not suspicious */
 		dkimStatus = "verify result: no signatures verified but message is not suspicious";
+		dkimResult = status? "no signatures" : "policy";
 		code = "X.7.0";
 		break;
 	case DKIM_SUCCESS_BUT_EXTRA:/*- 4 signature result: signature verified but it did not include all of the body */
 		dkimStatus = "signature result: signature verified but it did not include all of the body";
+		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
 	case DKIM_FAIL:				/*- -1 */ /*- F */
 		dkimStatus = "DKIM Signature verification failed";
+		dkimResult = status? "bad" : "fail";
 		code = "X.7.0";
 		break;
 	case DKIM_BAD_SYNTAX:		/*- -2 */ /*- G */
 		dkimStatus = "signature error: DKIM-Signature could not parse or has bad tags/values";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_SIGNATURE_BAD:	/*- -3 */
@@ -769,6 +775,7 @@ writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useS
 #else
 		dkimStatus = "signature error: RSA verify failed";
 #endif
+		dkimResult = status? "bad" : "fail";
 		code = "X.7.5";
 		break;
 	case DKIM_SIGNATURE_BAD_BUT_TESTING:
@@ -777,69 +784,138 @@ writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useS
 #else
 		dkimStatus = "signature error: RSA verify failed but testing";
 #endif
+		dkimResult = status? "non-participant" : "neutral";
 		code = "X.7.5";
 		break;
 	case DKIM_SIGNATURE_EXPIRED:
 		dkimStatus = "signature error: x= is old";
+		dkimResult = status? "revoked" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_SELECTOR_INVALID:
 		dkimStatus = "signature error: selector doesn't parse or contains invalid values";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_SELECTOR_GRANULARITY_MISMATCH:
 		dkimStatus = "signature error: selector g= doesn't match i=";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_SELECTOR_KEY_REVOKED:
 		dkimStatus = "signature error: selector p= empty";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG:
 		dkimStatus = "signature error: selector domain name too long to request";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.0";
 		break;
 	case DKIM_SELECTOR_DNS_TEMP_FAILURE:
 		dkimStatus = "signature error: temporary dns failure requesting selector";
+		dkimResult = status? "no key" : "temperror";
 		code = "X.7.0";
 		break;
 	case DKIM_SELECTOR_DNS_PERM_FAILURE:
 		dkimStatus = "signature error: permanent dns failure requesting selector";
+		dkimResult = status? "no key" : "permerror";
 		code = "X.7.0";
 		break;
 	case DKIM_SELECTOR_PUBLIC_KEY_INVALID:
 		dkimStatus = "signature error: selector p= value invalid or wrong format";
+		dkimResult = status? "no key" : "permerror";
 		code = "X.7.5";
 		break;
 	case DKIM_NO_SIGNATURES:
 		dkimStatus = "no signatures";
+		dkimResult = status? "no signature" : "none";
 		code = "X.7.5";
 		break;
 	case DKIM_NO_VALID_SIGNATURES:
 		dkimStatus = "no valid signatures";
+		dkimResult = status? "no signature" : "none";
 		code = "X.7.5";
 		break;
 	case DKIM_BODY_HASH_MISMATCH:
 		dkimStatus = "signature verify error: message body does not hash to bh value";
+		dkimResult = status? "bad" : "fail";
 		code = "X.7.7";
 		break;
 	case DKIM_SELECTOR_ALGORITHM_MISMATCH:
 		dkimStatus = "signature error: selector h= doesn't match signature a=";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.7";
 		break;
 	case DKIM_STAT_INCOMPAT:
 		dkimStatus = "signature error: incompatible v=";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.6";
 		break;
 	case DKIM_UNSIGNED_FROM:
 		dkimStatus = "signature error: not all message's From headers in signature";
+		dkimResult = status? "bad format" : "policy";
 		code = "X.7.7";
 		break;
 	default:
 		dkimStatus = "error";
+		dkimResult = status? "bad format" : "permerror";
 		code = "X.3.0";
 		break;
 	}
+	if (!stralloc_cats(s, dkimResult)) return (char *) 0;
+	if (!stralloc_cats(s, " (")) return (char *) 0;
+	if (!stralloc_cats(s, dkimStatus)) return (char *) 0;
+	if (!stralloc_cats(s, ")")) return (char *) 0;
+	if (status) *status = dkimStatus;
+	return code;
+}
+
+void
+updateAuthenticated(int res, int nSigCount, DKIMVerifyDetails *pDetails)
+{
+	int		i;
+	char		*e;
+	stralloc	auth = {0};
+
+	if (e = env_get("QMAILAUTHENTICATED"))
+		if (!stralloc_copys(&auth, e)) die(51, 1);
+	if (!nSigCount) {
+		if (auth.len) if(!stralloc_cats(&auth, ";\n\t")) die(51, 1);
+		if (!stralloc_cats(&auth, "dkim=")) die(51, 1);
+		if (!dkim_hdr(&auth, res, (char **) 0)) die(51, 1);
+	}
+	for (i = 0; i < nSigCount; i++) {
+		if (auth.len) if(!stralloc_cats(&auth, ";\n\t")) die(51, 1);
+		if (!stralloc_cats(&auth, "dkim=")) die(51, 1);
+		if (!dkim_hdr(&auth, pDetails[i].nResult, (char **) 0)) die(51, 1);
+		if (pDetails[i].szSignatureDomain && *pDetails[i].szSignatureDomain) {
+			if (!stralloc_cats(&auth, " header.d=")) die(51, 1);
+			if (!stralloc_cats(&auth, pDetails[i].szSignatureDomain)) die(51, 1);
+		}
+		if (pDetails[i].szIdentityDomain && *pDetails[i].szIdentityDomain) {
+			if (!stralloc_cats(&auth, " header.i=@")) die(51, 1);
+			if (!stralloc_cats(&auth, pDetails[i].szIdentityDomain)) die(51, 1);
+		}
+		if (pDetails[i].szSelector && *pDetails[i].szSelector) {
+			if (!stralloc_cats(&auth, " header.s=")) die(51, 1);
+			if (!stralloc_cats(&auth, pDetails[i].szSelector)) die(51, 1);
+		}
+/*		if (pDetails[i].szSignatureData && *pDetails[i].szSignatureData) {
+			if (!stralloc_cats(&auth, " header.b=")) die(51, 1);
+			if (!stralloc_catb(&auth, pDetails[i].szSignatureData, 8)) die(51, 1);
+		}  */
+	}
+	if (!stralloc_0(&auth)) die(51, 1);
+	if (!env_put2("QMAILAUTHENTICATED",auth.s)) die(51, 1);
+}
+
+void
+writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useSSP, int useADSP)
+{
+	char           *dkimStatus = 0, *sspStatus = 0, *adspStatus = 0, *code = 0, *orig = 0;
+	char            strnum[FMT_ULONG];
+
 	if (useSSP && resDKIMSSP != -1) {
 		switch(resDKIMSSP)
 		{
@@ -883,7 +959,7 @@ writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useS
 		}
 	}
 	if (!stralloc_copys(&dkimoutput, "DKIM-Status: ") ||
-			!stralloc_cats(&dkimoutput, dkimStatus))
+			!(code = dkim_hdr(&dkimoutput, ret, &dkimStatus)))
 		die(51, 0);
 	if (origRet != DKIM_MAX_ERROR && ret != origRet) {
 		if (!stralloc_cats(&dkimoutput, "\n\t(old="))
@@ -1219,6 +1295,8 @@ main(int argc, char *argv[])
 				if (!nSigCount)
 					ret = DKIM_NO_SIGNATURES;
 			}
+			updateAuthenticated(ret, nSigCount, pDetails);
+
 			/*- what to do if DKIM Verification fails */
 			if (checkPractice(ret, useADSP, useSSP)) {
 				char           *domain;

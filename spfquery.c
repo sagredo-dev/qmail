@@ -11,7 +11,7 @@ void die(e,s) int e; char *s; { substdio_putsflush(subfderr,s); _exit(e); }
 void die_usage() { die(100,"fatal: invalid usage\nusage: spfquery <sender-ip> <sender-helo/ehlo> <envelope-from> [<local rules>] [<best guess rules>]\n"); }
 void die_nomem() { die(111,"fatal: out of memory\n"); }
 
-stralloc addr = {0};
+stralloc mailfrom = {0};
 stralloc helohost = {0};
 char *remoteip;
 char *local;
@@ -35,8 +35,8 @@ char **argv;
 	if (!stralloc_copys(&helohost, argv[2])) die_nomem();
 	if (!stralloc_0(&helohost)) die_nomem();
 
-	if (!stralloc_copys(&addr, argv[3])) die_nomem();
-	if (!stralloc_0(&addr)) die_nomem();
+	if (!stralloc_copys(&mailfrom, argv[3])) die_nomem();
+	if (!stralloc_0(&mailfrom)) die_nomem();
 
 	if (argc > 4) {
 		if (!stralloc_copys(&spflocal, argv[4])) die_nomem();
