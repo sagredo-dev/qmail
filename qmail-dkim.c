@@ -174,7 +174,7 @@ maybe_die_dkim(int e)
 	case DKIM_INVALID_CONTEXT:
 		custom_error("qmail-dkim", "Z", "DKIMContext structure invalid for this operation", 0, "X.3.0");
 	case DKIM_NO_SENDER:
-		custom_error("qmail-dkim", "Z", "Could not find From: or Sender: header in message", 0, "X.1.7");
+		custom_error("qmail-dkim", "D", "Could not find From: or Sender: header in message", 0, "X.1.7");
 	case DKIM_BAD_PRIVATE_KEY:
 		custom_error("qmail-dkim", "D", "Could not parse private key", 0, "X.7.5");
 	default:
@@ -1271,7 +1271,7 @@ main(int argc, char *argv[])
 
 			if (!(t = DKIMSignGetDomain(&ctxt))) {
 				DKIMSignFree(&ctxt);
-				maybe_die_dkim(DKIM_INVALID_CONTEXT);
+				maybe_die_dkim(DKIM_NO_SENDER);
 			}
 			write_signature(t, &sopts, sizeof(sopts.szSelector) - 1); /*- calls DKIMSignFree(&ctxt) */
 		} else
