@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Jun 18, 2025
+  - Authentication-Results: header support (tx Andreas Gerstlauer)
+
 - Jun 17, 2025
   - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
 

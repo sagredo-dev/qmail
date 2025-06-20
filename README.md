@@ -246,6 +246,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   adds [RFC 5336](https://datatracker.ietf.org/doc/html/rfc5336) SMTP Email Address Internationalization support  
   - [Pull Request](https://github.com/sagredo-dev/qmail/pull/13)  
   - More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
+* [Andreas Gerstlaue](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2)'s
+  Authentication-Results: header support
 
 Install
 -----

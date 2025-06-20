@@ -266,7 +266,7 @@ chown root:qmail QMAIL/control/smtpplugins
 
 ########### dkim
 echo "Configuring control/filterargs for RSA 1024 bit long keys..."
-echo "*:remote:QMAIL/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
+echo "*:remote:QMAIL/bin/qmail-dkim:ERROR_FD=2,DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
 
 ########## SURBL
 echo "Configuring SURBL filter. Downloading tlds domains in QMAIL/control..."
