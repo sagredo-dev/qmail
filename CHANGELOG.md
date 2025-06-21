@@ -1,10 +1,11 @@
 # ChangeLog
 
-- Jun 20, 2025
+- unreleased
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
   - DKIM: added ERROR_FD=2 in control/filterargs to send error output of qmail-dkim in stderr when acting
     as a qmail-remote filter ([Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4607))
   - improved qmail-dkim error reporting when signing outgoing messages ([Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4639))
+  - helodnscheck.cpp: qmail dir determined dinamically
 
 - Jun 17, 2025
   - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
