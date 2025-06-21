@@ -1,4 +1,4 @@
-/* helodnscheck.cpp - version 9.0.2 */
+/* helodnscheck.cpp - version 9.0.3 */
 
 /*
 * Copyright (C) 2007 Jason Frisvold <friz@godshell.com>
@@ -104,13 +104,13 @@
 #include <iostream>
 #include <netdb.h>
 #include <pcre.h>
+#include <pwd.h>
 #include <resolv.h>
 #include <sstream>
 #include <string>
 using namespace std;
 
 char default_action[] = "GNLR";
-const char *qmaildir = "/var/qmail";
 
 char dns_answer[1023];
 char *addr;
@@ -203,7 +203,8 @@ int valid_domain(const char *domain)
 
  @return  0: match not found
           1: match found
-         -1: file does not exist
+         -1: file does not exist/error
+         -2: qmaild user not found
  *****************************************************************************/
 int search_in_file(char *str) {
   FILE *fp;
@@ -211,7 +212,11 @@ int search_in_file(char *str) {
   char temp [512];
   char my_file[256];
 
-  snprintf(my_file, 256, "%s/control/moreipme", qmaildir);
+  // get the qmail dir as the home dir of user 'qmaild'
+  struct passwd* pw = getpwnam("qmaild");
+  if (pw == nullptr) return -2;
+
+  snprintf(my_file, 256, "%s/control/moreipme", pw->pw_dir);
   if ((fp = fopen(my_file, "r")) == NULL) return my_exit(-1, fp);
 
   while (fgets(temp, sizeof(temp), fp) != NULL) {
@@ -401,7 +406,7 @@ int main() {
   /*********************************************************************************
     check if any A record is present, not necessarily having TCPREMOTEIP
     in the address resolved.
-    injected by A or I
+    injected by A
    *********************************************************************************/
   if (!result) {
     out("no result in A record");
@@ -451,7 +456,8 @@ int main() {
         return 0;
       }
     }
-    else if(matched==-1 && log) {s<<"file "<<qmaildir<<"/control/moreipme not found"; out(s);}
+    else if(matched==-1 && log) {s<<"file control/moreipme not found"; out(s);}
+    else if(matched==-2 && log) {s<<"qmaild user not found"; out(s);}
   }
   /****************************************************************************/
 
