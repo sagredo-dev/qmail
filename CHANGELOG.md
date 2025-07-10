@@ -1,6 +1,6 @@
 # ChangeLog
 
-- unreleased
+- Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
   - DKIM: added ERROR_FD=2 in control/filterargs to send error output of qmail-dkim in stderr when acting
     as a qmail-remote filter ([Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4607))
