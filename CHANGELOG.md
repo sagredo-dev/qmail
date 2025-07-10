@@ -7,7 +7,8 @@
   - improved qmail-dkim error reporting when signing outgoing messages ([Andreas Gerstlauer](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4639))
   - helodnscheck.cpp: qmail dir determined dinamically
   - qmHandle: Add -x and -X parametr for remove email by To/Cc/Bcc (by [Stetinac](https://github.com/sagredo-dev/qmHandle/pull/1))
-
+  - Added a cronjob for `rcptcheck-overlimit` that only removes cases that didn't exceed the limit, i.e. enforces a permanent ban ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/3ea54851acf4ff6d405b9e404e3f1fce9242d445))
+  
 - Jun 17, 2025
   - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
 
