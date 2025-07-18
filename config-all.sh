@@ -1,4 +1,4 @@
-# Configure/install the following as per notes.sagredo.eu guide:
+# Configure/install the following as per www.sagredo.eu guide:
 # - control files: me, defaultdomain, plusdomain, rcpthosts, spfbehavior, softlimit,
 #   bouncefrom, bouncehost, databytes, queuelifetime, maxrcpt, brtlimit, defaultdelivery,
 #   tlsserverciphers.

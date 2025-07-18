@@ -8,7 +8,7 @@
 # To be installed in /etc/cron.daily
 #
 # by Andreas Gerstlauer
-# https://notes.sagredo.eu/en/qmail-notes-185/limiting-the-number-of-emails-sent-by-a-given-auth-userdomainip-231.html#comment4608
+# https://www.sagredo.eu/en/qmail-notes-185/limiting-the-number-of-emails-sent-by-a-given-auth-userdomainip-231.html#comment4608
 
 EXITIGNORE=1
 

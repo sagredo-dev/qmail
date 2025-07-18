@@ -131,4 +131,4 @@ http://www.gnu.org
 
 More info
 ---------
-More info here https://notes.sagredo.eu/en/qmail-notes-185/qmhandle-20.html
+More info at https://www.sagredo.eu/en/qmail-notes-185/qmhandle-20.html
