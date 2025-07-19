@@ -344,10 +344,11 @@ void blast()
   char in[4096];
   char out[4096*2+1];
   int sol;
+  int cr;
 
   substdio_put(&smtpto,firstpart.s,firstpart.len);
 
-  for (sol = 1;;) {
+  for (sol = 1, cr = 0;;) {
     r = substdio_get(&ssin,in,sizeof in);
     if (r == 0) break;
     if (r == -1) temp_read();
@@ -360,18 +361,32 @@ void blast()
       while (i < r) {
 	if (in[i] == '\n') {
 	  sol = 1;
+	  cr = 0;
 	  ++i;
 	  out[o++] = '\r';
 	  out[o++] = '\n';
 	  break;
+	}
+	if (cr) {
+	  sol = 1;
+	  cr = 0;
+	  out[o++] = '\r';
+	  out[o++] = '\n';
+	  break;
+	}
+	if (in[i] == '\r') {
+	  ++i;
+	  cr = 1;
+	  continue;
 	}
 	out[o++] = in[i++];
       }
     }
     substdio_put(&smtpto,out,o);
   }
- 
-  if (!sol) perm_partialline();
+
+  if (cr) substdio_put(&smtpto,"\r\n",2);
+  else if (!sol) perm_partialline();
   flagcritical = 1;
   substdio_put(&smtpto,".\r\n",3);
   substdio_flush(&smtpto);

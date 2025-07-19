@@ -50,6 +50,8 @@ stralloc proto = {0};
 #endif
 
 #include "spf.h"
+void spfreceived();
+void spfauthenticated();
 /* rbl: start */
 #include "strsalloc.h"
 /* rbl: end */
@@ -68,6 +70,7 @@ stralloc proto = {0};
 int spp_val;
 
 unsigned int databytes = 0;
+char *greetdelays;
 unsigned int greetdelay = 0;
 unsigned int drop_pre_greet = 0;
 int timeout = 1200;
@@ -450,8 +453,8 @@ void setup()
   if (x) { scan_ulong(x,&u); databytes = u; }
   if (!(databytes + 1)) --databytes;
 
-  x = env_get("SMTPD_GREETDELAY");
-  if (x) { scan_ulong(x, &u); greetdelay = u; }
+  greetdelays = env_get("SMTPD_GREETDELAY");
+  if (greetdelays) { scan_ulong(greetdelays, &u); greetdelay = u; }
   x = env_get("DROP_PRE_GREET");
   if (x) { scan_ulong(x, &u); drop_pre_greet = u; }
 
@@ -1258,6 +1261,10 @@ void smtp_mail(arg) char *arg;
   }
 /* qregex: end */
 
+  if (!stralloc_copys(&rcptto,"")) die_nomem();
+  if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
+  if (!stralloc_0(&mailfrom)) die_nomem();
+
   flagbarfspf = 0;
   if (spfbehavior && !relayclient)
    { 
@@ -1270,6 +1277,7 @@ void smtp_mail(arg) char *arg;
     case SPF_FAIL: env_put2("SPFRESULT","fail"); break;
     case SPF_ERROR: env_put2("SPFRESULT","error"); break;
     }
+    spfauthenticated();
     switch (r) {
     case SPF_NOMEM:
       die_nomem();
@@ -1295,9 +1303,6 @@ void smtp_mail(arg) char *arg;
   else
    env_unset("SPFRESULT");
   seenmail = 1;
-  if (!stralloc_copys(&rcptto,"")) die_nomem();
-  if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
-  if (!stralloc_0(&mailfrom)) die_nomem();
   out("250 ok\r\n");
 }
 
@@ -1710,7 +1715,7 @@ void spfreceived()
   if (!spfbehavior || relayclient) return;
 
   if (!stralloc_copys(&rcvd_spf, "Received-SPF: ")) die_nomem();
-  if (!spfinfo(&sa)) die_nomem();
+  if (!spfinfo(&sa,0)) die_nomem();
   if (!stralloc_cat(&rcvd_spf, &sa)) die_nomem();
   if (!stralloc_append(&rcvd_spf, "\n")) die_nomem();
   if (bytestooverflow) {
@@ -1719,6 +1724,28 @@ void spfreceived()
   }
   qmail_put(&qqt,rcvd_spf.s,rcvd_spf.len);
 }
+
+void spfauthenticated()
+{
+  const char* e;
+  stralloc sa = {0};
+  stralloc auth_spf = {0};
+
+  if (!spfbehavior || relayclient) return;
+
+  e = env_get("QMAILAUTHENTICATED");
+  if(e && *e) {
+     if (!stralloc_copys(&auth_spf, e)) die_nomem();
+     if (!stralloc_cats(&auth_spf, ";\n\tspf=")) die_nomem();
+  } else {
+     if (!stralloc_copys(&auth_spf, "spf=")) die_nomem();
+  }
+  if (!spfinfo(&sa,1)) die_nomem();
+  if (!stralloc_cat(&auth_spf, &sa)) die_nomem();
+  if (!stralloc_0(&auth_spf)) die_nomem();
+  if (!env_put2("QMAILAUTHENTICATED",auth_spf.s)) die_nomem();
+}
+
 
 /* rbl: start */
 /*
@@ -2406,19 +2433,21 @@ char **argv;
   if (ipme_init() != 1) die_ipme();
   if (!relayclient && greetdelay) {
     if (drop_pre_greet) {
+      strerr_warn4(title.s, "GREETDELAY: ", greetdelays, "s", 0);
       n = timeoutread(greetdelay ? greetdelay : 1, 0, ssinbuf, sizeof(ssinbuf));
       if(n == -1) {
-        if (errno != error_timeout)
-          strerr_die3sys(1, "GREETDELAY from ", remoteip, ": ");
+        if (errno != error_timeout) {
+          strerr_die4sys(1, title.s, "GREETDELAY from ", remoteip, ": ");
+        }
       } else if (n == 0) {
-        strerr_die3x(1, "GREETDELAY from ", remoteip, ": client disconnected");
+        strerr_die4x(1, title.s, "GREETDELAY from ", remoteip, ": client disconnected");
       } else {
-        strerr_warn3("GREETDELAY from ", remoteip, ": client sent data before greeting", 0);
+        strerr_warn4(title.s, "GREETDELAY from ", remoteip, ": client sent data before greeting", 0);
         die_pre_greet();
       }
     }
     else {
-      strerr_warn3("GREETDELAY: ", greetdelay, "s", 0);
+      strerr_warn4(title.s, "GREETDELAY: ", greetdelays, "s", 0);
       sleep(greetdelay);
       m = 0;
       for (;;) {
@@ -2426,7 +2455,7 @@ char **argv;
         if (n <= 0)
           break;
         if (n > 0 && m == 0) {
-          strerr_warn3("GREETDELAY from ", remoteip, ": client sent data before greeting. ignoring", 0);
+          strerr_warn4(title.s, "GREETDELAY from ", remoteip, ": client sent data before greeting. ignoring", 0);
           m = 1;
         }
       }

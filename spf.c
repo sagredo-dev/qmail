@@ -56,7 +56,7 @@ const static unsigned char urlchr_table[256] =
 };
 
 
-extern stralloc addr;
+extern stralloc mailfrom;
 extern stralloc helohost;
 extern char *local;
 
@@ -69,6 +69,8 @@ static stralloc explanation = {0};
 static stralloc expdomain = {0};
 static stralloc errormsg = {0};
 static char *received;
+static char *identity;
+static char *authprop;
 
 static int recursion;
 static struct ip_address ip;
@@ -76,14 +78,16 @@ static struct ip_address ip;
 static void hdr_pass() { received = "pass (%{xr}: %{xs} designates %{i} as permitted sender)"; };
 static void hdr_softfail() { received = "softfail (%{xr}: transitioning %{xs} does not designate %{i} as permitted sender)"; };
 static void hdr_fail() { received = "fail (%{xr}: %{xs} does not designate %{i} as permitted sender)"; };
-static void hdr_unknown() { received = "unknown (%{xr}: domain at %{d} does not designate permitted sender hosts)"; };
+static void hdr_unknown() { received = "permerror (%{xr}: domain at %{d} does not designate permitted sender hosts)"; };
 static void hdr_neutral() { received = "neutral (%{xr}: %{i} is neither permitted nor denied by %{xs})"; };
 static void hdr_none() { received = "none (%{xr}: domain at %{d} does not designate permitted sender hosts)"; };
-static void hdr_unknown_msg(e) char *e; { stralloc_copys(&errormsg, e); received = "unknown (%{xr}: %{xe})"; };
-static void hdr_ext(e) char *e; { stralloc_copys(&errormsg, e); received = "unknown %{xe} (%{xr}: %{xs} uses mechanism not recognized by this client)"; };
-static void hdr_syntax() { received = "unknown (%{xr}: parse error in %{xs})"; };
-static void hdr_error(e) char *e; { stralloc_copys(&errormsg, e); received = "error (%{xr}: error in processing during lookup of %{d}: %{xe})"; };
+static void hdr_unknown_msg(e) char *e; { stralloc_copys(&errormsg, e); received = "permerror (%{xr}: %{xe})"; };
+static void hdr_ext(e) char *e; { stralloc_copys(&errormsg, e); received = "permerror %{xe} (%{xr}: %{xs} uses mechanism not recognized by this client)"; };
+static void hdr_syntax() { received = "permerror (%{xr}: parse error in %{xs})"; };
+static void hdr_error(e) char *e; { stralloc_copys(&errormsg, e); received = "temperror (%{xr}: error in processing during lookup of %{d}: %{xe})"; };
 static void hdr_dns() { hdr_error("DNS problem"); }
+static void hdr_id_helo() { identity = " client-ip=%{i}; helo=%{h};"; authprop = " smtp.helo=%{h}"; }
+static void hdr_id_mailfrom() { identity = " client-ip=%{i}; envelope-from=%{s};"; authprop = " smtp.mailfrom=%{s}"; }
 
 
 static int matchip(struct ip_address *net, int mask, struct ip_address *ip)
@@ -198,19 +202,19 @@ int spfsubst(stralloc *expand, char *spec, char *domain)
 
 	switch(ch) {
 		case 'l':
-			pos = byte_rchr(addr.s, addr.len, '@');
-			if (pos < addr.len) {
-				if (!stralloc_copyb(&sa, addr.s, pos)) return 0;
+			pos = byte_rchr(mailfrom.s, mailfrom.len, '@');
+			if (pos < mailfrom.len) {
+				if (!stralloc_copyb(&sa, mailfrom.s, pos)) return 0;
 			} else
 				if (!stralloc_copys(&sa, "postmaster")) return 0;
 			break;
 		case 's':
-			if (!stralloc_copys(&sa, addr.s)) return 0;
+			if (!stralloc_copys(&sa, mailfrom.s)) return 0;
 			break;
 		case 'o':
-			pos = byte_rchr(addr.s, addr.len, '@') + 1;
-			if (pos > addr.len) break;
-			if (!stralloc_copys(&sa, addr.s + pos)) return 0;
+			pos = byte_rchr(mailfrom.s, mailfrom.len, '@') + 1;
+			if (pos > mailfrom.len) break;
+			if (!stralloc_copys(&sa, mailfrom.s + pos)) return 0;
 			break;
 		case 'd':
 			if (!stralloc_copys(&sa, domain)) return 0;
@@ -235,7 +239,12 @@ int spfsubst(stralloc *expand, char *spec, char *domain)
 			if (!stralloc_copys(&sa, "in-addr")) return 0;
 			break;
 		case 'h':
-			if (!stralloc_copys(&sa, helohost.s)) return 0; /* FIXME: FQDN? */
+			pos = byte_rchr(helohost.s, helohost.len, '@') + 1;
+			if (pos > helohost.len) {
+				if (!stralloc_copys(&sa, helohost.s)) return 0;
+			} else {
+				if (!stralloc_copys(&sa, helohost.s + pos)) return 0;
+			}
 			break;
 		case 'E':
 			if (errormsg.len && !stralloc_copy(&sa, &errormsg)) return 0;
@@ -823,15 +832,18 @@ int spfcheck(char *remoteip)
 	int pos;
 	int r;
 
-	pos = byte_rchr(addr.s, addr.len, '@') + 1;
-	if (pos < addr.len) {
-		if (!stralloc_copys(&domain, addr.s + pos)) return SPF_NOMEM;
+	identity = (char *) 0;
+	pos = byte_rchr(mailfrom.s, mailfrom.len, '@') + 1;
+	if (pos < mailfrom.len) {
+		if (!stralloc_copys(&domain, mailfrom.s + pos)) return SPF_NOMEM;
+	        hdr_id_mailfrom();
 	} else {
 		pos = str_rchr(helohost.s, '@');
 		if (helohost.s[pos]) {
 			if (!stralloc_copys(&domain, helohost.s + pos + 1)) return SPF_NOMEM;
 		} else
 			if (!stralloc_copys(&domain, helohost.s)) return SPF_NOMEM;
+	        hdr_id_helo();
 	}
 	if (!stralloc_copys(&explanation, spfexp.s)) return SPF_NOMEM;
 	if (!stralloc_0(&explanation)) return SPF_NOMEM;
@@ -866,11 +878,18 @@ stralloc *sa;
 	return spfexpand(sa, explanation.s, expdomain.s);
 }
 
-int spfinfo(sa)
+int spfinfo(sa, auth)
 stralloc *sa;
+int auth;
 {
 	stralloc tmp = {0};
 	if (!stralloc_copys(&tmp, received)) return 0;
+	if (!auth && identity) {
+		if (!stralloc_cats(&tmp, identity)) return 0;
+	}
+	if (auth && authprop) {
+		if (!stralloc_cats(&tmp, authprop)) return 0;
+	}
 	if (!stralloc_0(&tmp)) return 0;
 	if (!spfexpand(sa, tmp.s, expdomain.s)) return 0;
 	alloc_free(tmp.s);

@@ -1,17 +1,42 @@
 # ChangeLog
 
-- Apr 18, 2025
+- Jul 10, 2025
+  - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
+  - DKIM: added ERROR_FD=2 in control/filterargs to send error output of qmail-dkim in stderr when acting
+    as a qmail-remote filter ([Andreas Gerstlauer](https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4607))
+  - improved qmail-dkim error reporting when signing outgoing messages ([Andreas Gerstlauer](https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment4639))
+  - helodnscheck.cpp: qmail dir determined dinamically
+  - qmHandle: Add -x and -X parametr for remove email by To/Cc/Bcc (by [Stetinac](https://github.com/sagredo-dev/qmHandle/pull/1))
+  - Added a cronjob for `rcptcheck-overlimit` that only removes cases that didn't exceed the limit, i.e. enforces a permanent ban ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/3ea54851acf4ff6d405b9e404e3f1fce9242d445))
+  
+- Jun 17, 2025
+  - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
+
+- Jun 8, 2025
+  - CRLF fix for fastremote-3 patch ([thanks Andreas Gerstlauer](https://www.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4593))
+  - Bug fix to the greetdelay program ([thanks Andreas Gerstlauer](https://www.sagredo.eu/en/qmail-notes-185/upgrading-qmail-82.html#comment4597))  
+    qmail-smtpd crashes if SMTPD_GREETDELAY is defined with no DROP_PRE_GREET defined.
+  - turned off TLS and helo dns check on qmail-smtpsd/run script (tx Luis)
+
+- Apr 25, 2025
   - added a configuration script [config-all.sh](https://github.com/sagredo-dev/qmail/blob/main/config-all.sh),
     which configure and installs the following:
     - main control files as per original `config-fast `script,
-    - aliases, 
+    - aliases,
+    - RBL
+    - SPF
     - SRS (uses _control/me_ as the _srs_domain_),
     - log dirs in _/var/log/qmail_, 
+    - cronjobs
+    - logrotate
+    - PATH and MANPATH in _/etc/profile.d/qmail.sh_
     - tcprules (basic, just to make initial tests), 
     - supervise scripts, 
     - `qmailctl` script, 
     - DKIM _control/filterargs_ and _control/domainkeys_ dir, 
     - SURBL, 
+    - moreipme,
+    - overlimit feature
     - smtpplugins, 
     - `helodnscheck` spp plugin, 
     - `svtools`, 
@@ -44,7 +69,7 @@ Consider this feature as testing.
     Thanks to https://github.com/arnt/qmail-smtputf8/tree/smtputf8-tls.
   - chkuser is now smtputf8 compliant. It accepts utf8 characters in sender and recipient addresses provided that the
     remote server advertises the SMTPUTF8 verb in MAIL FROM, otherwise it allows only ASCII characters plus additional
-    chars from the CHKUSER_ALLOWED_CHARS set.  More info [here](https://notes.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)  
+    chars from the CHKUSER_ALLOWED_CHARS set.  More info [here](https://www.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)  
     - dropped variables CHKUSER_ALLOW_SENDER_CHAR_xx CHKUSER_ALLOW_RCPT_CHAR_xx (replaced by CHKUSER_ALLOWED_CHARS)
     - dropped variables CHKUSER_ALLOW_SENDER_SRS and CHKUSER_ALLOW_RCPT_SRS, as we are always accepting '+' and '#' characters
     - added variables CHKUSER_INVALID_UTF8_CHARS and CHKUSER_ALLOWED_CHARS  
@@ -100,7 +125,7 @@ Consider this feature as testing.
       - man spawn-filter for more info
     - In case of bounces the signature will be automatically based on the from: field. This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
     - In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from control/bouncehost and, if doesn't exist, from control/me
-    - More info [here](https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote)
+    - More info [here](https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote)
 
 - Jan 6, 2024
   - DKIM patch upgraded to v. 1.45
@@ -109,7 +134,7 @@ Consider this feature as testing.
 - Jan 4, 2024
   - DKIM patch upgraded to v. 1.44
     - fixed an issue with filterargs where spawn-filter is trying to execute remote:env xxxxx.... dk-filter. This issue happens when FILTERARGS environment variable is not defined in the qmail-send rc script.
-    - dkim.c fix: https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3668
+    - dkim.c fix: https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3668
     - adjustments fo dk-filter and dknewkey man pages
 
 - Dec 9, 2023
@@ -132,11 +157,11 @@ Consider this feature as testing.
 - 2023.08.20
   - install a sample control/smtpplugins file in case it does not exist yet,
  to avoid "unable to read control" crash.
- diff https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.08.20_patch.diff
+ diff https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.08.20_patch.diff
 
 - 2023.07.05
-  - vpopmail-dir.sh: now uses getent to gain compatibility with alpine/docker (tx BenV https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment3345)
- https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.07.05_vpopmail-auto_patch.diff
+  - vpopmail-dir.sh: now uses getent to gain compatibility with alpine/docker (tx BenV https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment3345)
+ https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.07.05_vpopmail-auto_patch.diff
 
 - 2023.07.03
   - bug fix in vpopmail-dir.sh: it was not searching the sed binary in /bin/sed as it is at least on Ubuntu systems (tx Mike G)
@@ -152,35 +177,35 @@ Consider this feature as testing.
   - vpopmail install directory is determined dinamically by means of a shell script.
  Now the variable in the conf-cc file is determined as well
  Feel free to post any issue in the comments as I'm not sure that /bin/sh will work in all Linux.
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.18_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.18_patch.diff
 
 - 2023.06.04
   - vpopmail uid and gid are determined dinamically instead of assigning 89:89 ids by default
   - vpopmail install directory is determined dinamically
-diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.04_patch.diff
+diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.06.04_patch.diff
 
 - 2023.04.26
   - dkim patch updated to v. 1.40
-  - qmail-dkim uses CUSTOM_ERR_FD as file descriptor for errors (more info https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3076)
+  - qmail-dkim uses CUSTOM_ERR_FD as file descriptor for errors (more info https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3076)
  
 - 2023.03.27
   - chkuser.c: double hyphens "--" are now allowed also in the rcpt email (tx Ali Erturk TURKER)
   - chkuser_settings.h CHKUSER_SENDER_NOCHECK_VARIABLE commented out. Sender check is now enabled also for RELAYCLIENT
   - removed a couple of redundant log lines caused by qmail-smtpd-logging
-diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.27_patch.diff
+diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.27_patch.diff
 
 - 2023.03.18
   - bugfix in dkimverify.cpp: now it checks if k= tag is missing (tx Raisa for providing detailed info)
   - dropped redundant esmtp-size patch, as the SIZE check is already done by the qmail-authentication patch (tx Ali Erturk TURKER)
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.18_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.18_patch.diff
 
 - 2023.03.14
   - The split_str() function in dknewkey was modified in order to work on debian 11
- tx J https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2922
+ tx J https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2922
 
 - 2023.03.12
   - The mail headers will change from "ESMTPA" to "ESMTPSA" when the user is authenticated via starttls/smtps (tx Ali Erturk TURKER)
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.12_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.03.12_patch.diff
  more info here https://marc.info/?l=qmail&m=118763997501287&w=2
 
 - 2023.03.01
@@ -195,11 +220,11 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2023.02.27
   - Now qmail-remote is rfc2821 compliant even for implicit TLS (SMTPS) connections (tx Ali Erturk TURKER)
- https://notes.sagredo.eu/files/qmail/patches/aet_qmail_remote_smtps_correction_202302271346.patch
+ https://www.sagredo.eu/files/qmail/patches/aet_qmail_remote_smtps_correction_202302271346.patch
 
 - 2023.02.24
   - several missing references to control/badmailto and control/badmailtonorelay files were corrected to control/badrcptto and control/badrcpttonorelay
- (tx Ali Erturk TURKER) diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.02.24_patch.diff
+ (tx Ali Erturk TURKER) diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2023.02.24_patch.diff
 
 - 2023.02.19
   - dkim patch upgraded to v. 1.37
@@ -211,17 +236,17 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2023.01.31
   - bug fix in qmail-smtpd.c. 4096 bit RSA key cannot be open (tx Ali Erturk TURKER)
- more info here https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment2758
+ more info here https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment2758
 
 - 2023.01.01
   - bug fix in dk-filter. It was calling a non existent function (tx Andreas).
  More info here:
- https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2721
+ https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2721
 
 - 2022.12.17
   - chkuser receipt check won't be disabled for RELAYCLIENT
   - CHKUSER_DISABLE_VARIABLE commented out from chkuser_settings.h
- More info here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.12.17_patch.diff
+ More info here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.12.17_patch.diff
 
 - 2022.10.01
   - dkim patch updated to v. 1.30
@@ -230,7 +255,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 - 2022.09.28
   - dkim patch updated to v. 1.29 (tx M. Bhangui and Computerism for troubleshooting)
     - Custom selector via new control file /var/qmail/control/dkimkeys and DKIMKEY or DKIMSIGN variables
-   More info here https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#selectors
+   More info here https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#selectors
 
 - 2022.05.22
   - "qmail-smtpd pid, qp log" (http://iain.cx/qmail/patches.html#smtpd_pidqp) patch removed,
@@ -239,33 +264,33 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2022.02.26
   - added REJECTNULLSENDERS env variable
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.26_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.26_patch.diff
 
 - 2022.02.10
   - Fixed a TLS Renegotiation DoS vulnerability. Disabled all renegotiation in TLSv1.2 and earlier.
  (https://blog.qualys.com/product-tech/2011/10/31/tls-renegotiation-and-denial-of-service-attacks)
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.10_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2022.02.10_patch.diff
 
 - 2022.01.17
   - now qmail-smtpd logs rejects when client tries to auth when auth is not allowed, or it's not allowed without TLS
  (a closed connection with no log at all appeared before).
   - added qmail-spp.o to the TARGET file so that it will be purged with "make clean".
- diff https://notes.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06//2022.01.17_patch.diff
+ diff https://www.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06//2022.01.17_patch.diff
 
 - 2021.12.19
   - qmail-spp patch added (more infor here http://qmail-spp.sourceforge.net)
 
 - 2021.09.27
   - chkuser: now it allows double hyphens "--" in the sender email, like in y--s.co.jp
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.09.27_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.09.27_patch.diff
 
 - 2021.08.22
   - qlog: now it logs correctly the auth-type
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.08.22_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.08.22_patch.diff
 
 - 2021.06.19
   - chkuser: defined extra allowed characters in sender/rcpt addresses and added the slash to the list (tx Thomas).
- diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.06.19_patch.diff
+ diff here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/2021.06.19_patch.diff
 
 - 2021.06.12
   - RSA key and DH parameters are created 4096 bit long also in Makefile-cert. qmail-smtpd.c and qmail-remote.c
@@ -277,7 +302,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2020.12.04
   - received.c: some adjustment to compile with gcc-10
- diff here https://notes.sagredo.eu/files/hacks/qmail/patches/roberto-netqmail-1.06/2020.12.04_gcc-10-compat.diff
+ diff here https://www.sagredo.eu/files/hacks/qmail/patches/roberto-netqmail-1.06/2020.12.04_gcc-10-compat.diff
 
 - 2020.07.29
   - dk-filter: corrected a bug where dk-filter was using DKIMDOMAIN unconditionally. Now it uses DKIMDOMAIN
@@ -289,7 +314,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 - 2020.04.25
   - qmail-smtpd.c: added rcptcount = 0; in smtp_rset function to prevent the maxrcpto error if control/maxrcpt limit
  has been exceeded in multiple messages sent sequentially rather than in a single mail (tx Alexandre Fonceca).
- More info here: https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1594
+ More info here: https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1594
 
 - 2020.04.16
   - qmail-remote-logging patch added
@@ -305,11 +330,11 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2019.12.08
   - BUG qmail-smtpd.c: now TLS is defined before chkuser.h call, to avoid errors on closing the db connection
- (tx ChangHo.Na https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1469)
+ (tx ChangHo.Na https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1469)
 
 - 2019.08.07
   - a couple of adjustments to chkuser (tx Luca Franceschini)
- more info here https://notes.sagredo.eu/files/qmail/patches/dmind/20190807/
+ more info here https://www.sagredo.eu/files/qmail/patches/dmind/20190807/
     - BUG - since any other definition of starting_string ends up as "DOMAIN", if starting_string is otherwise
    defined, chkuser will be turned off.
     - CHKUSER_ENABLE_ALIAS_DEFAULT, CHKUSER_VAUTH_OPEN_CALL and CHKUSER_DISABLE_VARIABLE are now defined in
@@ -321,7 +346,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
   - qmail-channels patch added
  more info here http://www.thesmbexchange.com/eng/qmail-channels_patch.html
   - improved verbosity of die_read function in qmail-smtpd.c (qmail-smtpd: read failure)
- more info here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/die_read.patch
+ more info here https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/die_read.patch
 
 - 2019.06.19
   - DKIM patch updated to v. 1.26
@@ -346,7 +371,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2019.03.22
   - fixed a bug causing crashes with qmail-remote when using openssl-1.1 (tx Luca Franceschini)
-(https://notes.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06/2019.03.22-fix.patch)
+(https://www.sagredo.eu/files/qmail//patches//roberto-netqmail-1.06/2019.03.22-fix.patch)
 
 - 2019.02.13
   - Port to openssl-1.1
@@ -365,7 +390,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
   - logging patch
     -  fixed a bug in logit and logit2 functions where after a RSET command and a subsequent brutal quit
    of the smtp conversation '^]' by the client cause a segfault (tx Mirko Buffoni, more info here
-   https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1132)
+   https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1132)
   - patch info moved to 'README.PATCH' file
 
 - 2018.04.03
@@ -376,7 +401,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 - 2018.01.10
   - maildir++
     -  fixed a bug where the filesize part of the S=<filesize> component of the Maildir++ compatible filename
-   is wrong (tx MG). More info here: http://notes.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-vpopmail-qmail-server-28.html#comment995
+   is wrong (tx MG). More info here: http://www.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-vpopmail-qmail-server-28.html#comment995
   - qmail-queue-extra
     -  removed, because it was causing more problems than advantages, as the domain of the log@yourdomain.tld
    had to match the system domain inside control/me and shouldn't be a virtual domain as well.
@@ -390,7 +415,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2017.08.18
   - qmail-smtpd now retains authentication upon rset
- (tx to Andreas http://notes.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment750)
+ (tx to Andreas http://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment750)
 
 - 2017-05-14
   - DKIM patch updated to v. 1.20
@@ -398,7 +423,7 @@ diff here https://notes.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06/202
 
 - 2016-12-19
   - Several new patches and improvements added (thanks to Luca Franceschini)
-More info here http://notes.sagredo.eu/node/178
+More info here http://www.sagredo.eu/node/178
    - qregex patch
    - brtlimit patch
    - validrcptto patch
@@ -417,7 +442,7 @@ More info here http://notes.sagredo.eu/node/178
 - 2016-12-02
   - fixed BUG in qmail-remote.c: in case of remote server who doesn't allow EHLO the response for an alternative
  HELO was checked twice, making the connection to die. (Thanks to Luca Franceschini)
- Patch applied: http://notes.sagredo.eu/files/qmail/patches/fix_sagredo_remotehelo.patch
+ Patch applied: http://www.sagredo.eu/files/qmail/patches/fix_sagredo_remotehelo.patch
 
 - 2016-09-19
   - qmail-tls patch updated to v. 20160918
@@ -508,7 +533,7 @@ More info here http://notes.sagredo.eu/node/178
 
 - 2013-08-25
   - qmail-qmqpc.c call to timeoutconn() needed a correction because the function signature was modified by the
- outgoingip patch. Thanks to Robbie Walker (diff here http://notes.sagredo.eu/node/82#comment-373)
+ outgoingip patch. Thanks to Robbie Walker (diff here http://www.sagredo.eu/node/82#comment-373)
 
 - 2013-08-21
   - fixed a bug in hier.c which caused the installation not to build properly the queue/todo dir structure (thanks to
@@ -524,7 +549,7 @@ More info here http://notes.sagredo.eu/node/178
 - 2013-08-08
   - qmail-SPF modified by Manvendra Bhangui to make it IPv6-mapped IPv4 addresses compliant. In order to have it
  working with such addresses you have to patch tcpserver.c accordingly. You can use a patch fot ucspi-tcp6-0.98
- by Manvendra Bhangui at http://notes.sagredo.eu/files/qmail/patches/tcpserver-ipv6mapped_ip
+ by Manvendra Bhangui at http://www.sagredo.eu/files/qmail/patches/tcpserver-ipv6mapped_ip
  v4.patch or wait for v. 0.99 relase of ucspi-tcp6
   - added outgoingip patch
   - added qmail-bounce patch

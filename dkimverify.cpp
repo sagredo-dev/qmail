@@ -1263,6 +1263,7 @@ CDKIMVerify::GetDetails(int *nSigCount, DKIMVerifyDetails **pDetails)
 		d.szIdentityDomain = (char*)i->IdentityDomain.c_str();
 		d.nResult = i->Status;
 		d.szCanonicalizedData = (char *) i->CanonicalizedData.c_str();
+		d.szSelector = (char *) i->Selector.c_str();
 		Details.push_back(d);
 	}
 	*nSigCount = Details.size();

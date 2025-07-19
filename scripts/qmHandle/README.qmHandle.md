@@ -81,6 +81,8 @@ Available parameters are:
   -b're'   : delete all messages with body matching regular expression re (case insensitive)
   -H're'   : delete all messages with headers matching regular expression re (case sensitive)
   -B're'   : delete all messages with body matching regular expression re (case sensitive)
+  -xaddr   : delete all messages where recipient address matches 'addr' (To/Cc/Bcc)
+  -X're'   : delete all messages where recipient address (To/Cc/Bcc) matching regular expression re
   -t're'   : flag messages with recipients in regular expression 're' for earlier retry (note: this lengthens the time message can stay in queue)
   -D       : delete all messages in the queue (local & remote)
   -V       : print program version
@@ -129,4 +131,4 @@ http://www.gnu.org
 
 More info
 ---------
-More info here https://notes.sagredo.eu/en/qmail-notes-185/qmhandle-20.html
+More info at https://www.sagredo.eu/en/qmail-notes-185/qmhandle-20.html

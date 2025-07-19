@@ -53,6 +53,7 @@ run_mailfilter(char *domain, char *ext, char *mailprog, char **argv)
 	int             wstat, filt_exitcode, e, len = 0;
 	char           *filterargs;
 	static stralloc filterdefs = { 0 };
+	int		custom = 0;
 	static char     errstr[1024];
 	char            inbuf[1024];
 	char            ch;
@@ -147,6 +148,8 @@ run_mailfilter(char *domain, char *ext, char *mailprog, char **argv)
 		report(0, "blackholed", filterargs, 0, 0, 0, 0); /*- Blackhole */
 	case 100:
 		report(100, "Mail Rejected by ", filterargs, " (#5.7.1)", 0, 0, 0);
+	case 88:
+		custom = 1;  /* custom error, get result from error response */
 	default:
 		e = errno;
 		substdio_fdbuf(&errbuf, read, pipefe[0], inbuf, sizeof(inbuf));
@@ -155,6 +158,7 @@ run_mailfilter(char *domain, char *ext, char *mailprog, char **argv)
 		errstr[len] = 0;
 		strnum[fmt_ulong(strnum, filt_exitcode)] = 0;
 		errno = e;
+		if (custom) report((*errstr == 'D')? 100: 111, filterargs, ": (spawn-filter) exit code: ", strnum, *errstr ? ": " : 0, *errstr ? errstr : 0, *errstr ? 0 : ". (#4.3.0)");
 		report(111, filterargs, ": (spawn-filter) exit code: ", strnum, *errstr ? ": " : 0, *errstr ? errstr : 0, ". (#4.3.0)");
 	}
 	/*- Not reached */

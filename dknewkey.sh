@@ -19,7 +19,7 @@ usage()
 # split a long string into multiple strings
 # of length 255 or less.
 # Credits: J
-# See https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2961
+# See https://www.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2961
 split_str()
 {
 	local INPUT="$1"
