@@ -27,15 +27,6 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   optionally gets qmail to require TLS before authentication to improve security.  
   You have to declare FORCETLS=0 if you want to allow the auth without TLS  
   https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06_force-tls/force-tls_marcel.patch
-* Antonio Nati's chkuser patch v. 2.0.9  
-  performs, among the other things, a check for the existence of recipients during the SMTP conversation,
-  bouncing emails of fake senders.  
-  http://opensource.interazioni.it/qmail/chkuser.html  
-  Small adjustments and a bug fix by Luca Franceschini here https://www.sagredo.eu/files/qmail/patches/dmind/20190807/:  
-  Now CHKUSER_DISABLE_VARIABLE, CHKUSER_SENDER_NOCHECK_VARIABLE, CHKUSER_SENDER_FORMAT_NOCHECK,
-  CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.  
-  chkuser' MAV program has been modified in order to be compliant with EAI (RFC 5336 SMTP Email Address Internationalization).  
-  More info [here](https://www.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 * Flavio Curti's qmail-queue-custom-error patch  
   enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.  
   https://www.sagredo.eu/files/qmail/patches/qmail-queue-custom-error-v2.netqmail-1.05.patch
