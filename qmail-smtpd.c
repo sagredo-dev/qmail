@@ -148,7 +148,7 @@ void err_maxrcpt()
   qlogenvelope("rejected","max_rcpt_exceeded","","452");
   flush();
 }
-void straynewline() { qlogenvelope("rejected","bad_newlines","","451"); out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+void straynewline() { qlogenvelope("rejected","bad_newlines","","451"); out("451 See https://cr.yp.to/docs/smtplf.html.\r\n"); flush(); _exit(1); }
 void die_pre_greet() { qlogenvelope("rejected","pregreet","","554"); out("554 SMTP protocol violation\r\n"); flush(); _exit(1); }
 
 void err_size() { qlogreceived("rejected","databytes_limit_exceeded","","552"); out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); }
