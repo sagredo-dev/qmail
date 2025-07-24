@@ -221,7 +221,7 @@ void smtp_greet(code) char *code;
 }
 void smtp_help(arg) char *arg;
 {
-  out("214 netqmail home page: http://qmail.org/netqmail\r\n");
+  out("214 Roberto's qmail notes home page: https://www.sagredo.eu\r\n");
 }
 void smtp_quit(arg) char *arg;
 {
