@@ -1,5 +1,10 @@
 # ChangeLog
 
+- unreleased
+  - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
+    Support for RBLRESULT environment variable and RBL ignore ('=') option.  
+    ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))
+
 - Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
   - DKIM: added ERROR_FD=2 in control/filterargs to send error output of qmail-dkim in stderr when acting
