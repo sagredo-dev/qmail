@@ -260,6 +260,8 @@ plugins/helodnscheck
 
 [rcpt]
 
+[pass]
+
 [data]
 EOF
 chown root:qmail QMAIL/control/smtpplugins

@@ -50,6 +50,8 @@ cat > QMAIL/control/smtpplugins << EOF
 
 [rcpt]
 
+[pass]
+
 [data]
 EOF
 chown root:qmail QMAIL/control/smtpplugins
