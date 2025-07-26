@@ -35,7 +35,7 @@
 #include "policy.h"
 #include <string.h>
 
-extern void spp_rcpt_accepted();
+extern int spp_rcpt_accepted();
 
 /* chkuser.h will check if TLS_H is defined, so this has to come before chkuser.h */
 #ifdef TLS
@@ -777,6 +777,7 @@ void rbl(char *base)
   int whitelisted = 0;
   int altmustbounce = 0;
   char *altreply = 0;
+  int ignore = 0;
   strsalloc ssa = {0};
 
   if (!str_len(base)) return;
@@ -800,10 +801,14 @@ void rbl(char *base)
     if (!stralloc_catb(&rblserver,base+1,i-1)) die_nomem();
   }
   else if (base[0] == '-') { /* force bounce (553 error message), instead of default reject (451) */
-    whitelisted = 0;
+    altmustbounce = 1;
     if (!stralloc_catb(&rblhost,base+1,i-1)) die_nomem();
     if (!stralloc_catb(&rblserver,base+1,i-1)) die_nomem();
-    altmustbounce = 1;
+  }
+  else if (base[0] == '=') { /* ignore and just log */
+    ignore = 1;
+    if (!stralloc_catb(&rblhost,base+1,i-1)) die_nomem();
+    if (!stralloc_catb(&rblserver,base+1,i-1)) die_nomem();
   }
   else {
     if (!stralloc_catb(&rblhost,base,i)) die_nomem();
@@ -820,7 +825,7 @@ void rbl(char *base)
       rblhosterror = 1;
       if (flagrblfailclosed) {
         if (!stralloc_copys(&rbltext,"temporary RBL lookup error")) die_nomem();
-        if (whitelisted) rbldecision = 1; else rbldecision = 2;
+        if (whitelisted) rbldecision = 1; else if (ignore) rbldecision = -1; else rbldecision = 2;
       }
       return;
     }
@@ -849,7 +854,7 @@ void rbl(char *base)
       rblhosterror = 1;
       if (flagrblfailclosed) {
         if (!stralloc_copys(&rbltext,"temporary RBL lookup error")) die_nomem();
-        if (whitelisted) rbldecision = 1; else rbldecision = 2;
+        if (whitelisted) rbldecision = 1; else if (ignore) rbldecision = -1; else rbldecision = 2;
       }
       return;
     }
@@ -866,10 +871,14 @@ void rbl(char *base)
       rbldecision = 1;
     }
     else {
-      if (altmustbounce)
-        rbldecision = 3;
-      else
-        rbldecision = 2;
+      if (ignore) {
+        rbldecision = -1;
+      } else {
+	 if (altmustbounce)
+           rbldecision = 3;
+         else
+           rbldecision = 2;
+      }
     }
   }
   else rbldecision = 0;
@@ -913,7 +922,8 @@ int rblcheck()
     else {
       if (!stralloc_cats(&sar," result=")) die_nomem();
       switch (rbldecision) {
-        case 0: if (!stralloc_cats(&sar,"ignore")) die_nomem(); break;
+        case -1: if (!stralloc_cats(&sar,"ignore")) die_nomem(); break;
+        case 0: if (!stralloc_cats(&sar,"pass")) die_nomem(); break;
         case 1: if (!stralloc_cats(&sar,"accept")) die_nomem(); break;
         case 2: if (!stralloc_cats(&sar,"delay")) die_nomem(); break;
         case 3: if (!stralloc_cats(&sar,"reject")) die_nomem(); break;
@@ -1173,11 +1183,14 @@ void mailfrom_parms(arg) char *arg;
 void smtp_helo(arg) char *arg;
 {
   envelopepos = 1;
-  if(!spp_helo(arg)) return;
+  if(!(spp_val = spp_helo(arg))) return;
   smtp_greet("250 "); out("\r\n");
   seenmail = 0; dohelo(arg);
-  if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
-  if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+  flagbarfbhelo = 0;
+  if (spp_val == 1) {
+    if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
+    if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+  }
 }
 /* ESMTP extensions are published here */
 void smtp_ehlo(arg) char *arg;
@@ -1188,7 +1201,7 @@ void smtp_ehlo(arg) char *arg;
 #endif
   size[fmt_ulong(size,(unsigned int) databytes)] = 0;
   envelopepos = 1;
-  if(!spp_helo(arg)) return;
+  if(!(spp_val = spp_helo(arg))) return;
   smtp_greet("250-");
   #ifdef TLS
   if (!disabletls && !ssl && (stat("control/servercert.pem",&st) == 0))
@@ -1206,9 +1219,13 @@ void smtp_ehlo(arg) char *arg;
 #endif
   out("250 SIZE "); out(size); out("\r\n");
   seenmail = 0; dohelo(arg);
-  if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
-  if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+  flagbarfbhelo = 0;
+  if (spp_val == 1) {
+    if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
+    if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+  }
 }
+
 void smtp_rset(arg) char *arg;
 {
   spp_rset();
@@ -1238,56 +1255,55 @@ void smtp_mail(arg) char *arg;
 /* rejectnullsenders: start */
   if ((rejnsmf) && (addr.len <= 1)) { die_nullsender(); return; }
 /* rejectnullsenders: end */
-/* qregex: start */
-  /*
-  flagbarf = bmfcheck();
-  */
-  flagbarfbmf = 0; /* bmcheck is skipped for empty envelope senders */
-  if ((bmfok) && (addr.len != 1)) flagbarfbmf = bmcheck(BMCHECK_BMF);
-  if ((!flagbarfbmf) && (bmfnrok) && (addr.len != 1) && (!relayclient)) {
-    flagbarfbmf = bmcheck(BMCHECK_BMFNR);
-  }
-/* qregex: end */
   flagsize = 0;
   mailfrom_parms(arg);
+  if (flagsize) {
+    logit("exceeded datasize limit");
+    err_size();
+    return;
+  }
+  if (!(spp_val = spp_mail())) return;
+
 /* start chkuser code */
-  switch (chkuser_sender (&addr)) {
-    case CHKUSER_OK:
+  if (spp_val == 1) {
+    switch (chkuser_sender (&addr)) {
+      case CHKUSER_OK:
         break;
-    case CHKUSER_ERR_MUSTAUTH:
+      case CHKUSER_ERR_MUSTAUTH:
         qlogenvelope("rejected","chkusersender","mustauth","530");
         return;
         break;
-    case CHKUSER_ERR_SENDER_FORMAT:
+      case CHKUSER_ERR_SENDER_FORMAT:
         qlogenvelope("rejected","chkusersender","senderformat","553");
         return;
         break;
-    case CHKUSER_ERR_SENDER_MX:
+      case CHKUSER_ERR_SENDER_MX:
         qlogenvelope("rejected","chkusersender","sendermxinvalid","550");
         return;
         break;
-    case CHKUSER_ERR_SENDER_MX_TMP:
+      case CHKUSER_ERR_SENDER_MX_TMP:
         qlogenvelope("rejected","chkusersender","sendermxdnstmpfail","451");
         return;
         break;
-    default:
+      default:
         qlogenvelope("rejected","chkusersender","invalid","550");
         return;
         break;
-   }
+    }
+  }
 /* end chkuser code */
-  if (flagsize) { err_size(); return; }
-  if (!(spp_val = spp_mail())) return;
-  if (spp_val == 1)
 
 /* qregex: start */
+  flagbarfbmf = 0;
+  if (spp_val == 1) {
   /*
-  flagbarf = bmfcheck();
+    flagbarf = bmfcheck();
   */
-  flagbarfbmf = 0; /* bmcheck is skipped for empty envelope senders */
-  if ((bmfok) && (addr.len != 1)) flagbarfbmf = bmcheck(BMCHECK_BMF);
-  if ((!flagbarfbmf) && (bmfnrok) && (addr.len != 1) && (!relayclient)) {
-    flagbarfbmf = bmcheck(BMCHECK_BMFNR);
+    /* bmcheck is skipped for empty envelope senders */
+    if ((bmfok) && (addr.len != 1)) flagbarfbmf = bmcheck(BMCHECK_BMF);
+    if ((!flagbarfbmf) && (bmfnrok) && (addr.len != 1) && (!relayclient)) {
+      flagbarfbmf = bmcheck(BMCHECK_BMFNR);
+    }
   }
 /* qregex: end */
 
@@ -1297,7 +1313,7 @@ void smtp_mail(arg) char *arg;
 
   flagbarfspf = 0;
   if (spfbehavior && !relayclient)
-   { 
+   {
     switch(r = spfcheck(remoteip4)) {
     case SPF_OK: env_put2("SPFRESULT","pass"); break;
     case SPF_NONE: env_put2("SPFRESULT","none"); break;
@@ -1330,8 +1346,10 @@ void smtp_mail(arg) char *arg;
       flagbarfspf = 1;
     }
    }
-  else
-   env_unset("SPFRESULT");
+  else env_unset("SPFRESULT");
+
+  if (spp_val != 1) flagbarfspf = 0;
+
   seenmail = 1;
   out("250 ok\r\n");
 }
@@ -1362,7 +1380,7 @@ void smtp_rcpt(arg) char *arg; {
   int flagrcptmatch = 0; /* 0 undefined, 1 validrcptto, 2 chkuser, 3 chkuserrelay, 4 rcptcheck */
 /* added by empf patch */
   int ret = 0;
-/* end of empf pacth  */
+/* end of empf patch  */
   envelopepos = 3;
   if (!seenmail) { err_wantmail(); return; }
   if (!addrparse(arg)) { err_syntax(); return; }
@@ -1402,7 +1420,7 @@ void smtp_rcpt(arg) char *arg; {
   if (!relayclient) allowed = addrallowed();
   else allowed = 1;
   if (!(spp_val = spp_rcpt(allowed))) return;
-
+fprintf(stderr,"spp_val2: %d\n",spp_val);
   if (flagbarfspf) { qlogenvelope("rejected","spf",env_get("SPFRESULT"),"550"); err_spf(); return; }
 
 /* dnsbl: start */
@@ -1420,14 +1438,15 @@ void smtp_rcpt(arg) char *arg; {
   else
     if (!addrallowed()) { err_nogateway(); return; }
 */
- /* end of substituted code */
 
 /* qregex: start */
+  if (spp_val == 1) {
     if (brtlimit && (brtcount >= brtlimit)) {
       strerr_warn3(title.s,"badrcptto: excessive rcptto violations hanging up on ",remoteip,0);
       die_brtlimit();
     }
 
+    flagbarfbmt = 0;
     if (bmtok) flagbarfbmt = bmcheck(BMCHECK_BMT);
     if ((!flagbarfbmt) && (bmtnrok) && (!relayclient)) {
       flagbarfbmt = bmcheck(BMCHECK_BMTNR);
@@ -1443,10 +1462,11 @@ void smtp_rcpt(arg) char *arg; {
       err_bmt();
       return;
     }
+  }
 /* qregex: end */
 
 /* realbadrcpt: start */
-  if (!relayclient) {	/* if relayclient is defined, skip valid recipient checking */
+  if ((spp_val == 1) && !relayclient) {	/* if relayclient is defined, skip valid recipient checking */
     /* validrcptto */
     flagvrt = 0;
     int vrtres = 0;
@@ -1465,15 +1485,9 @@ void smtp_rcpt(arg) char *arg; {
         return;
       }
     }
-    if (spp_val == 1) {
-        if (!allowed) { err_nogateway(); return; }
-    }
-
   } // if (!relayclient)
 
-  spp_rcpt_accepted();
-
-    if (!flagvrt) {
+    if ((spp_val == 1) &&  !flagvrt) {
       switch (chkuser_realrcpt (&mailfrom, &addr)) {
          case CHKUSER_OK:
 		flagrcptmatch = 2;
@@ -1621,8 +1635,15 @@ void smtp_rcpt(arg) char *arg; {
 /* rbl: start */
   if ((rblok) && !(relayclient || seenauth || dnsblskip || flagrbldns)) {
     flagrbldns = 1;
-    rblcheck();
+    switch(rblcheck()) {
+      case -1: env_put2("RBLRESULT","ignore"); break;
+      case 0: env_put2("RBLRESULT","pass"); break;
+      case 1: env_put2("RBLRESULT","accept"); break;
+      case 2: env_put2("RBLRESULT","delay"); break;
+      case 3: env_put2("RBLRESULT","reject"); break;
+    }
   }
+  else env_unset("RBLRESULT");
   if (rbldecision >= 2) {
     if (!stralloc_ready(&rblmessage,0)) die_nomem();
     if (flagmustnotbounce || (rbldecision == 2)) {
@@ -1643,6 +1664,8 @@ void smtp_rcpt(arg) char *arg; {
   }
 /* rbl: end */
 
+  if (!spp_rcpt_accepted()) return;
+
 /* start empf code */
   ret = policy_check();
 
@@ -1658,6 +1681,7 @@ void smtp_rcpt(arg) char *arg; {
     else if (flagrcptmatch == 4) { qlogenvelope("accepted","rcptto","rcptcheck","250"); }
     else {
       if (relayclient) { qlogenvelope("accepted","relayclient","","250"); }
+      else if (spp_val != 1) { qlogenvelope("accepted","spp","","250"); }
       else { qlogenvelope("accepted","rcpthosts","","250"); }
     }
     out("250 ok\r\n");
