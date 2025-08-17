@@ -1,3 +1,6 @@
+#include <fmt.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include "subfd.h"
 #include "substdio.h"
@@ -20,16 +23,28 @@ int main()
   }
  for (j = 0;j < ipme.len;++j)
   {
-   substdio_put(subfdout,temp,ip_fmt(temp,&ipme.ix[j].ip));
+   switch(ipme.ix[j].af) {
+   case AF_INET:
+      substdio_put(subfdout,temp,ip_fmt(temp,&ipme.ix[j].addr.ip));
+      break;
+#ifdef INET6
+   case AF_INET6:
+      substdio_put(subfdout,temp,ip6_fmt(temp,&ipme.ix[j].addr.ip6));
+      break;
+#endif
+   default:
+      substdio_puts(subfdout,"Unknown address family = ");
+      substdio_put(subfdout,temp,fmt_ulong(temp,ipme.ix[j].af));
+   }
    substdio_puts(subfdout,"/");
-   substdio_put(subfdout,temp,ip_fmt(temp,&ipme_mask.ix[j].ip));
+   substdio_put(subfdout,temp,ip_fmt(temp,&ipme_mask.ix[j].addr.ip));
    substdio_puts(subfdout," is me\n");
   }
  for (j = 0;j < notipme.len;++j)
   {
-   substdio_put(subfdout,temp,ip_fmt(temp,&notipme.ix[j].ip));
+   substdio_put(subfdout,temp,ip_fmt(temp,&notipme.ix[j].addr.ip));
    substdio_puts(subfdout,"/");
-   substdio_put(subfdout,temp,ip_fmt(temp,&notipme_mask.ix[j].ip));
+   substdio_put(subfdout,temp,ip_fmt(temp,&notipme_mask.ix[j].addr.ip));
    substdio_puts(subfdout," is not me\n");
   }
 

@@ -48,6 +48,11 @@
 #include "mess822.h"
 #include "base64.h"
 
+#ifdef INET6
+#warning "undef INET6"
+#undef INET6
+#endif
+
 #define FATAL "surblfilter: fatal: "
 
 char           *dns_text(char *);
@@ -438,8 +443,8 @@ getdnsip(stralloc *ip, stralloc *domain, int *code)
 			die_soft();
 	}
 	if (code)
-		*code = *(&ia.ix->ip.d[3]);
-	len = ip_fmt(x, &ia.ix->ip);
+                *code = *(&ia.ix->addr.ip.d[3]);
+        len = ip_fmt(x, &ia.ix->addr.ip);
 	if (!stralloc_copyb(ip, x, len))
 		die_nomem();
 	return 0;

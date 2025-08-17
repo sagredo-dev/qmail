@@ -1,5 +1,8 @@
 # qmail
 
+This branch is experimental and contains an ipv6 patch from Manvendra Bhangui
+https://sourceforge.net/projects/indimail/files/netqmail-addons/qmail-dkim-1.0/
+
 [`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts.
 It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 

@@ -1,3 +1,6 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <fmt.h>
 #include "substdio.h"
 #include "subfd.h"
 #include "stralloc.h"
@@ -27,8 +30,20 @@ char **argv;
  dnsdoe(dns_ip(&ia,&sa));
  for (j = 0;j < ia.len;++j)
   {
-   substdio_put(subfdout,temp,ip_fmt(temp,&ia.ix[j].ip));
-   substdio_putsflush(subfdout,"\n");
+   switch(ia.ix[j].af) {
+   case AF_INET:
+      substdio_put(subfdout,temp,ip_fmt(temp,&ia.ix[j].addr.ip));
+      break;
+#ifdef INET6
+   case AF_INET6:
+      substdio_put(subfdout,temp,ip6_fmt(temp,&ia.ix[j].addr.ip6));
+      break;
+#endif
+   default:
+      substdio_puts(subfdout,"Unknown address family = ");
+      substdio_put(subfdout,temp,fmt_ulong(temp,ia.ix[j].af));
+   }
+  substdio_putsflush(subfdout,"\n");
   }
  _exit(0);
 }

@@ -1,3 +1,5 @@
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <unistd.h>
 #include "substdio.h"
 #include "subfd.h"
@@ -32,7 +34,19 @@ char **argv;
  dnsdoe(dns_mxip(&ia,&sa,r));
  for (j = 0;j < ia.len;++j)
   {
-   substdio_put(subfdout,temp,ip_fmt(temp,&ia.ix[j].ip));
+   switch(ia.ix[j].af) {
+   case AF_INET:
+      substdio_put(subfdout,temp,ip_fmt(temp,&ia.ix[j].addr.ip));
+      break;
+#ifdef INET6
+   case AF_INET6:
+      substdio_put(subfdout,temp,ip6_fmt(temp,&ia.ix[j].addr.ip6));
+      break;
+#endif
+   default:
+      substdio_puts(subfdout,"Unknown address family = ");
+      substdio_put(subfdout,temp,fmt_ulong(temp,ia.ix[j].af));
+   }
    substdio_puts(subfdout," ");
    substdio_put(subfdout,temp,fmt_ulong(temp,(unsigned long) ia.ix[j].pref));
    substdio_putsflush(subfdout,"\n");

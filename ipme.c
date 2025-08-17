@@ -30,6 +30,8 @@ ipalloc notipme_mask = {0};
 int ipme_match(struct ipalloc *ipa, struct ipalloc *ipa_mask, struct ip_address *ip);
 int ipme_readipfile(ipalloc *ipa, ipalloc *ipa_mask, char *fn);
 
+/* code dropped by ipme_is() for ipv6 */
+/*
 int ipme_is(ip)
 struct ip_address *ip;
 {
@@ -72,6 +74,33 @@ struct ip_address *ip;
   }
   return longest_masklen;
 }
+*/
+/* end code dropped */
+
+int ipme_is(ip)
+struct ip_address *ip;
+{
+  int i;
+  if (ipme_init() != 1) return -1;
+  for (i = 0;i < ipme.len;++i)
+    if (ipme.ix[i].af == AF_INET && byte_equal(&ipme.ix[i].addr.ip,4,ip))
+      return 1;
+  return 0;
+}
+
+#ifdef INET6
+int ipme_is6(ip)
+struct ip6_address *ip;
+{
+  int i;
+  if (ipme_init() != 1) return -1;
+  for (i = 0;i < ipme.len;++i)
+    if (ipme.ix[i].af == AF_INET6 && byte_equal(&ipme.ix[i].addr.ip6,16,ip))
+      return 1;
+  return 0;
+}
+#endif
+
 static stralloc buf = {0};
 
 #define ipme_init_retclean(ret) { \
@@ -79,13 +108,16 @@ static stralloc buf = {0};
   if (moreipme_mask.ix) alloc_free(moreipme_mask.ix); \
   if (buf.s) alloc_free(buf.s); \
   return ret; }
-   
+
 int ipme_init()
 {
   struct ifconf ifc;
   char *x;
   struct ifreq *ifr;
   struct sockaddr_in *sin;
+#ifdef INET6
+  struct sockaddr_in6 *sin6;
+#endif
   int len;
   int s;
   struct ip_mx ix, ix_mask;
@@ -110,21 +142,21 @@ int ipme_init()
      every address in this range as a local interface, even if it
      isn't explicitly configured.
   */
-  byte_copy(&ix.ip,4,"\x7f\0\0\0");
-  byte_copy(&ix_mask.ip,4,"\xff\0\0\0");
+  byte_copy(&ix.addr.ip,4,"\x7f\0\0\0");
+  byte_copy(&ix_mask.addr.ip,4,"\xff\0\0\0");
   if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
   if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
 
   /* 0.0.0.0 is a special address which always refers to
    * "this host, this network", according to RFC 1122, Sec. 3.2.1.3a.  */
-  byte_copy(&ix.ip,4,"\0\0\0\0");
-  byte_copy(&ix_mask.ip,4,"\xff\xff\xff\xff");
+  byte_copy(&ix.addr.ip,4,"\0\0\0\0");
+  byte_copy(&ix_mask.addr.ip,4,"\xff\xff\xff\xff");
   if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
   if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
 
   if ((s = socket(AF_INET,SOCK_STREAM,0)) == -1) ipme_init_retclean(-1);
 
-  len = 256;
+  len = 8192; /* any value big enough to get all the interfaces in one read is good */
   for (;;) {
     if (!stralloc_ready(&buf,len)) { close(s); ipme_init_retclean(0); }
     buf.len = 0;
@@ -136,7 +168,7 @@ int ipme_init()
         break;
       }
     if (len > 200000) { close(s);  ipme_init_retclean(-1); }
-    len += 100 + (len >> 2);
+    len *= 2;
   }
   x = buf.s;
   while (x < buf.s + buf.len) {
@@ -147,7 +179,17 @@ int ipme_init()
       len = sizeof(*ifr);
     if (ifr->ifr_addr.sa_family == AF_INET) {
       sin = (struct sockaddr_in *) &ifr->ifr_addr;
-      byte_copy(&ix.ip,4,&sin->sin_addr);
+      byte_copy(&ix.addr.ip,4,&sin->sin_addr);
+      ix.af = AF_INET;
+      if (ioctl(s,SIOCGIFFLAGS,x) == 0)
+        if (ifr->ifr_flags & IFF_UP)
+          if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
+    }
+#ifdef INET6
+       else if (ifr->ifr_addr.sa_family == AF_INET6) {
+      sin6 = (struct sockaddr_in6 *) &ifr->ifr_addr;
+      byte_copy(&ix.addr.ip6,16,&sin6->sin6_addr);
+      ix.af = AF_INET6;
       if (ioctl(s,SIOCGIFFLAGS,x) == 0)
         if (ifr->ifr_flags & IFF_UP)
         {
@@ -155,6 +197,7 @@ int ipme_init()
           if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
         }
     }
+#endif
 #else
     len = sizeof(*ifr);
     if (ioctl(s,SIOCGIFFLAGS,x) == 0)
@@ -162,10 +205,19 @@ int ipme_init()
         if (ioctl(s,SIOCGIFADDR,x) == 0)
 	  if (ifr->ifr_addr.sa_family == AF_INET) {
 	    sin = (struct sockaddr_in *) &ifr->ifr_addr;
-	    byte_copy(&ix.ip,4,&sin->sin_addr);
+            ix.af = AF_INET;
+            byte_copy(&ix.addr.ip,4,&sin->sin_addr);
+            if (!ipalloc_append(&ipme,&ix)) { close(s); return 0; }
+          }
+#ifdef INET6
+      else if (ifr->ifr_addr.sa_family == AF_INET6) {
+           sin6 = (struct sockaddr_in6 *) &ifr->ifr_addr;
+           ix.af = AF_INET6;
+           byte_copy(&ix.addr.ip6,16,&sin6->sin6_addr);
             if (!ipalloc_append(&ipme,&ix)) { close(s);  ipme_init_retclean(0); }
             if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
-	  }
+      }
+#endif
 #endif
     x += len;
   }
@@ -203,15 +255,15 @@ int ipme_readipfile(ipa, ipa_mask, fn)
       if (l.s[slash=str_chr(l.s,'/')]!='\0')
       {
         l.s[slash]='\0';
-        if (!ip_scan(l.s+slash+1,&ix_mask.ip))
+        if (!ip_scan(l.s+slash+1,&ix_mask.addr.ip))
           continue;
       }
       else
-        if (!ip_scan("255.255.255.255",&ix_mask.ip)) { ret = 0; break; }
+        if (!ip_scan("255.255.255.255",&ix_mask.addr.ip)) { ret = 0; break; }
 
-      if (!ip_scan(l.s, &ix.ip)) continue;
+      if (!ip_scan(l.s, &ix.addr.ip)) continue;
       if (!ipalloc_append(ipa,&ix)) { ret = 0; break; }
-      if (!ipalloc_append(ipa_mask,&ix_mask.ip)) { ret = 0; break; }
+      if (!ipalloc_append(ipa_mask,&ix_mask.addr.ip)) { ret = 0; break; }
     }
     if (l.s) alloc_free(l.s);
     if ( (fd >= 0) && (close(fd) == -1) )

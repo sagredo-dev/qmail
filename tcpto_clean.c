@@ -1,9 +1,10 @@
+#include "ipalloc.h"
 #include "tcpto.h"
 #include "open.h"
 #include "substdio.h"
 #include "readwrite.h"
 
-char tcpto_cleanbuf[1024];
+struct tcpto_buf tcpto_cleanbuf[TCPTO_BUFSIZ];
 
 void tcpto_clean() /* running from queue/mess */
 {

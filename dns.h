@@ -12,4 +12,8 @@ int dns_ip();
 int dns_ptr();
 int dns_txt();
 
+#ifdef INET6
+int dns_ptr6();
+#endif
+
 #endif

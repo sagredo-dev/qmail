@@ -166,6 +166,7 @@ void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); }
 void err_unrecog() { out("500 unrecognised (#5.5.2)\r\n"); }
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); }
+void err_seenmail() { out("503 only one MAIL command allowed (#5.5.1)\r\n"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); }
 void err_noop(arg) char *arg; { out("250 ok\r\n"); }
 void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); }
@@ -1224,6 +1225,7 @@ void smtp_rset(arg) char *arg;
 void smtp_mail(arg) char *arg;
 {
   int r;
+  if (seenmail) { err_seenmail(); return; }
 
   envelopepos = 2;
   if (smtpauth)

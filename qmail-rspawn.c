@@ -1,5 +1,6 @@
 #include <unistd.h>
 #include "env.h"
+#include "ipalloc.h"
 #include "fd.h"
 #include "wait.h"
 #include "substdio.h"
