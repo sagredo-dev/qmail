@@ -4,6 +4,7 @@
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
     ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))
+  - Added -std=gnu17 to conf-cc, fixed some other issues and now it compiles on gcc-15.2
 
 - Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
@@ -13,7 +14,7 @@
   - helodnscheck.cpp: qmail dir determined dinamically
   - qmHandle: Add -x and -X parametr for remove email by To/Cc/Bcc (by [Stetinac](https://github.com/sagredo-dev/qmHandle/pull/1))
   - Added a cronjob for `rcptcheck-overlimit` that only removes cases that didn't exceed the limit, i.e. enforces a permanent ban ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/3ea54851acf4ff6d405b9e404e3f1fce9242d445))
-  
+
 - Jun 17, 2025
   - Fix for missing end of line in helodnscheck.cpp ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/a144829980fe1834d9b33ddc674b43e523d6d69f))
 
