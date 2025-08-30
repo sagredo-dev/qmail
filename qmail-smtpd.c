@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <stdlib.h>
 #include "sig.h"
 #include "readwrite.h"
 #include "stralloc.h"
@@ -33,7 +35,6 @@
 #include "fd.h"
 #include "open.h"
 #include "policy.h"
-#include <string.h>
 
 extern int spp_rcpt_accepted();
 
@@ -1420,7 +1421,6 @@ void smtp_rcpt(arg) char *arg; {
   if (!relayclient) allowed = addrallowed();
   else allowed = 1;
   if (!(spp_val = spp_rcpt(allowed))) return;
-fprintf(stderr,"spp_val2: %d\n",spp_val);
   if (flagbarfspf) { qlogenvelope("rejected","spf",env_get("SPFRESULT"),"550"); err_spf(); return; }
 
 /* dnsbl: start */
@@ -2522,7 +2522,10 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
 
   substdio_puts(&sslog, " authuser="); if (user.len) outsqlog(user.s);
   substdio_puts(&sslog, " authtype="); x = env_get("SMTPAUTHMETHOD"); if (x) outsqlog(x);
-  substdio_puts(&sslog, " encrypted="); if (smtps) outsqlog("ssl"); else if (flagtls) outsqlog("tls");
+  substdio_puts(&sslog, " encrypted=");
+#ifdef TLS
+  if (smtps) outsqlog("ssl"); else if (flagtls) outsqlog("tls");
+#endif
 
   substdio_puts(&sslog, " sslverified=");
 #ifdef TLS
