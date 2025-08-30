@@ -6,7 +6,6 @@ qmailp
 qmailq
 qmailr
 qmails
-vpopmail
 
 The qmail system is heavily partitioned for security; it does almost
 nothing as root.

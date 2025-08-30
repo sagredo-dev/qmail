@@ -38,7 +38,6 @@
 
 extern int spp_rcpt_accepted();
 
-/* chkuser.h will check if TLS_H is defined, so this has to come before chkuser.h */
 #ifdef TLS
 #include <sys/stat.h>
 #include "tls.h"
@@ -51,9 +50,6 @@ int forcetls = 1;
 stralloc proto = {0};
 #endif
 
-/* start chkuser code */
-#include "chkuser.h"
-/* end chkuser code */
 #include "spf.h"
 void spfreceived();
 void spfauthenticated();
@@ -1258,41 +1254,13 @@ void smtp_mail(arg) char *arg;
 /* rejectnullsenders: end */
   flagsize = 0;
   mailfrom_parms(arg);
+
   if (flagsize) {
     logit("exceeded datasize limit");
     err_size();
     return;
   }
   if (!(spp_val = spp_mail())) return;
-
-/* start chkuser code */
-  if (spp_val == 1) {
-    switch (chkuser_sender (&addr)) {
-      case CHKUSER_OK:
-        break;
-      case CHKUSER_ERR_MUSTAUTH:
-        qlogenvelope("rejected","chkusersender","mustauth","530");
-        return;
-        break;
-      case CHKUSER_ERR_SENDER_FORMAT:
-        qlogenvelope("rejected","chkusersender","senderformat","553");
-        return;
-        break;
-      case CHKUSER_ERR_SENDER_MX:
-        qlogenvelope("rejected","chkusersender","sendermxinvalid","550");
-        return;
-        break;
-      case CHKUSER_ERR_SENDER_MX_TMP:
-        qlogenvelope("rejected","chkusersender","sendermxdnstmpfail","451");
-        return;
-        break;
-      default:
-        qlogenvelope("rejected","chkusersender","invalid","550");
-        return;
-        break;
-    }
-  }
-/* end chkuser code */
 
 /* qregex: start */
   flagbarfbmf = 0;
@@ -1378,7 +1346,7 @@ int flagdnsbl = 0;
 stralloc dnsblhost = {0};
 
 void smtp_rcpt(arg) char *arg; {
-  int flagrcptmatch = 0; /* 0 undefined, 1 validrcptto, 2 chkuser, 3 chkuserrelay, 4 rcptcheck */
+  int flagrcptmatch = 0; /* 0 undefined, 1 validrcptto, 4 rcptcheck */
 /* added by empf patch */
   int ret = 0;
 /* end of empf patch  */
@@ -1429,16 +1397,15 @@ void smtp_rcpt(arg) char *arg; {
     if (dnsblcheck()) die_dnsbl(dnsblhost.s);
 */
 /* dnsbl: end */
-/* Original code substituted by chkuser code */
-/*  if (relayclient) {
+  if (relayclient) {
     --addr.len;
     if (!stralloc_cats(&addr,relayclient)) die_nomem();
     if (!stralloc_0(&addr)) die_nomem();
   }
-  else
-    if (!addrallowed()) { err_nogateway(); return; }
-*/
-
+  else if (spp_val == 1) {
+    if (!allowed) { err_nogateway(); return; }
+  }
+  
 /* qregex: start */
   if (spp_val == 1) {
     if (brtlimit && (brtcount >= brtlimit)) {
@@ -1487,77 +1454,7 @@ void smtp_rcpt(arg) char *arg; {
     }
   } // if (!relayclient)
 
-    if ((spp_val == 1) &&  !flagvrt) {
-      switch (chkuser_realrcpt (&mailfrom, &addr)) {
-         case CHKUSER_OK:
-		flagrcptmatch = 2;
-                break;
-         case CHKUSER_RELAYING:
-                --addr.len;
-                if (!stralloc_cats(&addr,relayclient)) die_nomem();
-                if (!stralloc_0(&addr)) die_nomem();
-		flagrcptmatch = 3;
-                break;
-         case CHKUSER_NORCPTHOSTS:
-                qlogenvelope("rejected","chkuser","notinrcpthosts","553");
-                ++brtcount;
-                return;
-                break;
-         case CHKUSER_KO:
-                qlogenvelope("rejected","chkuser","nomailbox","550");
-            	++brtcount;
-                return;
-                break;
-         case CHKUSER_ERR_AUTH_RESOURCE:
-                qlogenvelope("rejected","chkuser","noauthresource","451");
-                return;
-                break;
-         case CHKUSER_ERR_MUSTAUTH:
-                qlogenvelope("rejected","chkuser","mustauth","530");
-                return;
-                break;
-         case CHKUSER_ERR_MBXFULL:
-                qlogenvelope("rejected","chkuser","mailboxfull","552");
-                return;
-                break;
-         case CHKUSER_ERR_MAXRCPT:
-                qlogenvelope("rejected","chkuser","maxrcpt","550");
-                return;
-                break;
-         case CHKUSER_ERR_MAXWRONGRCPT:
-                qlogenvelope("rejected","chkuser","maxwrongrcpt","550");
-                return;
-                break;
-         case CHKUSER_ERR_INTRUSION_THRESHOLD:
-                qlogenvelope("rejected","chkuser","instrusionthreshold","550");
-                ++brtcount;
-                return;
-                break;
-         case CHKUSER_ERR_DOMAIN_MISSING:
-                qlogenvelope("rejected","chkuser","domainmissing","550");
-            	++brtcount;
-                return;
-                break;
-         case CHKUSER_ERR_RCPT_FORMAT:
-                qlogenvelope("rejected","chkuser","rcptformat","553");
-                ++brtcount;
-                return;
-                break;
-         case CHKUSER_ERR_RCPT_MX:
-                qlogenvelope("rejected","chkuser","rcptmxinvalid","550");
-            	++brtcount;
-                return;
-                break;
-         case CHKUSER_ERR_RCPT_MX_TMP:
-                qlogenvelope("rejected","chkuser","rcptmxdnstmpfail","451");
-                return;
-                break;
-         default:
-                qlogenvelope("rejected","chkuser","invalid","550");
-                return;
-                break;
-      }
-    }
+  spp_rcpt_accepted();
 
   /* rcptcheck */
   if ( (rcptcheck[0]) && (!relayclient || rcptcheckrelayclient) ) { // if RCPTCHECK is not defined, addrvalid returns 1 (rcpt ok),check before calling
@@ -1676,8 +1573,6 @@ void smtp_rcpt(arg) char *arg; {
     rcptcount++;
     if (checkrcptcount() == 1) { err_maxrcpt(); return; }
     if (flagrcptmatch == 1) { qlogenvelope("accepted","rcptto","validrcptto","250"); }
-    else if (flagrcptmatch == 2) { qlogenvelope("accepted","rcptto","chkuser","250"); }
-    else if (flagrcptmatch == 3) { qlogenvelope("accepted","rcptto","chkuserrelay","250"); }
     else if (flagrcptmatch == 4) { qlogenvelope("accepted","rcptto","rcptcheck","250"); }
     else {
       if (relayclient) { qlogenvelope("accepted","relayclient","","250"); }
