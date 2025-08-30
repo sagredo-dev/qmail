@@ -258,6 +258,10 @@ case_lowers.o: \
 compile case_lowers.c case.h
 	./compile case_lowers.c
 
+case_startb.o: \
+compile case_startb.c case.h
+	./compile case_startb.c
+
 case_starts.o: \
 compile case_starts.c case.h
 	./compile case_starts.c
@@ -1885,6 +1889,10 @@ scan_ulong.o: \
 compile scan_ulong.c scan.h
 	./compile scan_ulong.c
 
+scan_xlong.o: \
+compile scan_xlong.c scan.h
+	./compile scan_xlong.c
+
 seek.a: \
 makelib seek_cur.o seek_end.o seek_set.o seek_trunc.o
 	./makelib seek.a seek_cur.o seek_end.o seek_set.o \
@@ -2346,6 +2354,7 @@ compile str.h str_cspn.c
 
 mess822_ok.o: \
 compile mess822_ok.c uint64.h
+	./compile mess822_ok.c
 
 surblfilter.0: surblfilter.8
 	nroff -man surblfilter.8 > surblfilter.0

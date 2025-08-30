@@ -131,7 +131,7 @@ running, give it a HUP.
 
 2.4. How do I set up a separate queue for a SLIP/PPP link?
 
-Answer: Use serialmail (http://pobox.com/~djb/serialmail.html).
+Answer: Use serialmail (https://cr.yp.to/serialmail.html).
 
 
 2.5. How do I deal with ``CNAME lookup failed temporarily''? The log
@@ -215,7 +215,7 @@ incoming mail for me-sos will be forwarded to each of those addresses.
 You should also touch ~me/.qmail-sos-owner so that bounces come back to
 you rather than the original sender.
 
-Alternative: ezmlm (http://pobox.com/~djb/ezmlm.html) is a modern
+Alternative: ezmlm (https://cr.yp.to/ezmlm.html) is a modern
 mailing list manager, supporting automatic subscriptions, confirmations,
 archives, fully automatic bounce handling (including warnings to
 subscribers saying which messages they've missed), and more.
@@ -263,13 +263,13 @@ uppercase is converted to lowercase.
 4.7. How do I use sendmail's .forward files with qmail?
 
 Answer: Install the dot-forward package
-(http://pobox.com/~djb/dot-forward.html).
+(https://cr.yp.to/dot-forward.html).
 
 
 4.8. How do I use sendmail's /etc/aliases with qmail?
 
 Answer: Install the fastforward package
-(http://pobox.com/~djb/fastforward.html).
+(https://cr.yp.to/fastforward.html).
 
 
 4.9. How do I make qmail defer messages during NFS or NIS outages? If
@@ -311,7 +311,7 @@ loads, cutting off service for ten-minute stretches. I'd also like
 better connection logging.
 
 Answer: First, install the tcpserver program, part of the ucspi-tcp
-package (http://pobox.com/~djb/ucspi-tcp.html). Second, remove the smtp
+package (https://cr.yp.to/ucspi-tcp.html). Second, remove the smtp
 line from /etc/inetd.conf, and put the line
 
    tcpserver -u 7770 -g 2108 0 smtp /var/qmail/bin/qmail-smtpd &
@@ -353,7 +353,7 @@ question 5.1 for more details on tcpserver.
 delivery; I'd like to switch to maildir delivery.
 
 Answer: Four steps. First, install the checkpassword program
-(http://pobox.com/~djb/checkpwd.html). Second, make sure you have a
+(https://cr.yp.to/checkpwd.html). Second, make sure you have a
 
    pop3 110/tcp
 
@@ -622,7 +622,7 @@ any data.
 
 7.6. How do I run a supervised copy of qmail? svc sounds useful.
 
-Answer: Install daemontools (http://pobox.com/~djb/daemontools.html).
+Answer: Install daemontools (https://cr.yp.to/daemontools.html).
 Create a /var/run/qmail directory. Change
 
    /var/qmail/rc
@@ -639,7 +639,7 @@ whether qmail is running.
 7.7. How do I avoid syslog? It chews up a lot of CPU time and isn't
 reliable.
 
-Answer: Install daemontools (http://pobox.com/~djb/daemontools.html).
+Answer: Install daemontools (https://cr.yp.to/daemontools.html).
 Make a /var/log/qmail directory, owned by qmaill, mode 2700. Do
 
    qmail-start ./Mailbox /usr/local/bin/accustamp \

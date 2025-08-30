@@ -273,7 +273,7 @@
 19970701 doc: changed ``forwarded'' to ``resent'' in qmail-header.5.
 19970629 code: reformatted constmap.c.
 19970628 code: changed straynewline() message in qmail-smtpd.c to point
-         to http://pobox.com/~djb/smtplf.html. tnx RDM.
+         to https://cr.yp.to/smtplf.html. tnx RDM.
 19970609 doc: added preline to vacation example in dot-qmail.9. tnx C2S.
 19970421 code: cleaned up slurpclose to handle interrupts.
 19970421 code: set qmail-popup to mode 711. tnx MD.

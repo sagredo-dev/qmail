@@ -28,7 +28,6 @@
  * added, if needed.
  *
  */
-
 #include "readwrite.h"
 #include "stralloc.h"
 #include "substdio.h"
@@ -56,7 +55,7 @@ static int sppfok = 0;
 static int sppret;
 static stralloc sppf = {0};
 static stralloc plugins_dummy = {0}, plugins_connect = {0}, plugins_helo = {0}, plugins_mail = {0},
-                plugins_rcpt = {0}, plugins_data = {0}, plugins_auth = {0}; /* ... */
+                plugins_rcpt = {0}, plugins_pass = {0}, plugins_data = {0}, plugins_auth = {0}; /* ... */
 static stralloc error_mail = {0}, error_rcpt = {0}, error_data = {0}; /* ... */
 static stralloc sppmsg = {0};
 static char rcptcountstr[FMT_ULONG];
@@ -88,6 +87,7 @@ int spp_init()
           case 'h': plugins_to = &plugins_helo; break;
           case 'm': plugins_to = &plugins_mail; break;
           case 'r': plugins_to = &plugins_rcpt; break;
+          case 'p': plugins_to = &plugins_pass; break;
           case 'd': plugins_to = &plugins_data; break;
           case 'a': plugins_to = &plugins_auth; break;
           /* ... */
@@ -181,7 +181,6 @@ int spp(plugins, addrenv) stralloc *plugins; char *addrenv;
     if (wait_pid(&wstat,pid) == -1) { err_spp(plugins->s + i, "wait_pid() failed"); return 0; }
     if (wait_crashed(wstat)) { err_spp(plugins->s + i, "child crashed"); return 0; }
     if (wait_exitcode(wstat) == 120) { err_spp(plugins->s + i, "can't execute"); return 0; }
-
     if (last)
       switch (*data.s) {
         case 'E': return 0;
@@ -192,7 +191,6 @@ int spp(plugins, addrenv) stralloc *plugins; char *addrenv;
         case 'D': flush(); _exit(0);
       }
   }
-
   return 1;
 }
 
@@ -241,7 +239,13 @@ int spp_rcpt(allowed) int allowed;
   return sppret;
 }
 
-void spp_rcpt_accepted() { rcptcount++; }
+int spp_rcpt_accepted() {
+  rcptcount++;
+  rcptcountstr[fmt_ulong(rcptcountstr, rcptcount)] = 0;
+  if (!env_put2("SMTPRCPTCOUNT", rcptcountstr)) die_nomem();
+  sppret = spp(&plugins_pass, "SMTPRCPTTO");
+  return sppret;
+}
 
 int spp_data()
 {
