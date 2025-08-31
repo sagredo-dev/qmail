@@ -85,6 +85,8 @@ Consider this feature as testing.
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
     (tx Alexandre Fonceca)
+  - defined CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" in chkuser_settings.h
+  - enabled CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT" in chkuser_settings.h
   - fixed several compilation breaks/warnings on later gcc compilers (tx Pablo Murillo)
   - invalid auth fix in qmail-smtpd.c's smtp_auth function (tx Alexandre Fonceca for the advice)
   - qmail path determined dinamically in conf-policy

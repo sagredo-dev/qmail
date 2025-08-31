@@ -6,15 +6,24 @@ It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 This `qmail` distribution is part of a [complete `qmail` guide](https://www.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html).
 Not everything you need to know about `qmail` or its installation is covered here so, in case of issues in the installation, have a look at the link above.
 
-This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) library (GNU Internationalized Domain Name library version 2, `libidn2-dev` on `Debian` like OSs)
+This `qmail` package contains `chkuser`, which has [`vpopmail`](https://www.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) as a prerequisite,
+while `vpopmail` itself requires to be installed over the vanilla `qmail`. So the compilation chain is [`netqmail`](https://www.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html) > [`vpopmail`](https://www.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html) > patched `qmail`.
+
+If you are looking for a `qmail` variant without `chkuser` and `vpopmail` you can switch to the [specific branch](https://github.com/sagredo-dev/qmail/tree/no-chkuser-vpopmail)
+where you can find this same `qmail` without `chkuser`.  
+Download like this:  
+
+```
+git clone -b no-chkuser-vpopmail https://github.com/sagredo-dev/qmail.git
+```
 
 ## `qmail` package details
 
 This distribution of `qmail` puts together `netqmail-1.06` with the following patches:
 
 * Erwin Hoffmann's qmail-authentication patch v. 0.8.3, which updates the patches provided
-  by Krysztof Dabrowski and Bjoern Kalkbrenner.
-  It provides cram-md5, login, plain authentication support for qmail-smtpd and qmail-remote.
+  by Krysztof Dabrowski and Bjoern Kalkbrenner.  
+  It provides cram-md5, login, plain authentication support for qmail-smtpd and qmail-remote.  
   http://www.fehcom.de/qmail/smtpauth.html##PATCHES
 * Frederik Vermeulen's qmail-tls patch v. 20231230  
   implements SSL or TLS encrypted and authenticated SMTP.  
@@ -27,6 +36,15 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   optionally gets qmail to require TLS before authentication to improve security.  
   You have to declare FORCETLS=0 if you want to allow the auth without TLS  
   https://www.sagredo.eu/files/qmail/patches/roberto-netqmail-1.06_force-tls/force-tls_marcel.patch
+* Antonio Nati's chkuser patch v. 2.0.9  
+  performs, among the other things, a check for the existence of recipients during the SMTP conversation,
+  bouncing emails of fake senders.  
+  http://opensource.interazioni.it/qmail/chkuser.html  
+  Small adjustments and a bug fix by Luca Franceschini here https://www.sagredo.eu/files/qmail/patches/dmind/20190807/:  
+  Now CHKUSER_DISABLE_VARIABLE, CHKUSER_SENDER_NOCHECK_VARIABLE, CHKUSER_SENDER_FORMAT_NOCHECK,
+  CHKUSER_RCPT_FORMAT_NOCHECK and CHKUSER_RCPT_MX_NOCHECK can be defined at runtime level as well.  
+  chkuser' MAV program has been modified in order to be compliant with EAI (RFC 5336 SMTP Email Address Internationalization).  
+  More info [here](https://www.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 * Flavio Curti's qmail-queue-custom-error patch  
   enables simscan and qmail-kim to return the appropriate message for each e-mail it refuses to deliver.  
   https://www.sagredo.eu/files/qmail/patches/qmail-queue-custom-error-v2.netqmail-1.05.patch
@@ -34,8 +52,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   Modified by Manvendra Bhangui to make it IPv4-mapped IPv6 addresses compliant.  
   checks incoming mails inside the SMTP daemon, add Received-SPF lines and optionally block undesired transfers.  
   http://www.saout.de/misc/spf/
-* Marcelo Coelho's qmail-SRS patch
-  implements Sender Rewriting Scheme fixing SPF break upon email forwarding.
+* Marcelo Coelho's qmail-SRS patch  
+  implements Sender Rewriting Scheme fixing SPF break upon email forwarding.  
   http://www.mco2.com.br/opensource/qmail/srs/
 * Christopher K. Davis' oversize dns patch  
   enables qmail to handle large DNS packets.  
@@ -55,7 +73,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * Kyle B. Wheeler's "Better qmail-smtpd Logging" v.5 patch  
   facilitates diagnostics of qmail-smtpd logging its actions and decisions (search for a line with qmail-smtp:)  
   http://www.memoryhole.net/qmail/#logging
-* John Simpson's (?) Greeting delay patch
+* John Simpson's (?) Greeting delay patch  
   adds a user-definable delay after SMTP clients have initiated SMTP sessions, prior to qmail-smtpd responding
   with "220 ESMTP". It can reject connections from clients which tried to send commands before greeting.  
   https://www.sagredo.eu/files/qmail/patches/qmail-greetdelay.patch  
@@ -82,7 +100,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   More info here: http://www.dovecot.org/list/dovecot/2009-June/040811.html  
   https://www.sagredo.eu/files/qmail/patches/qmail-inject-null-sender.patch
 * Russell Nelson's (modified by Charles Cazabon) doublebounce-trim patch, which updates the original
-  version by Russel Nelson
+  version by Russel Nelson  
   prevents double bounces from hitting your queue a second time provided that you delete the first line
   from /var/qmail/control/doublebounceto  
   https://www.sagredo.eu/files/qmail/patches/doublebounce-trim.patch
@@ -111,9 +129,9 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * Fabio Busatto's qmail-dnsbl patch  
   allows you to reject spam and virus looking at the sender's ip address.  
   Modified by Luca Franceschini to add support for whitelists, TXT and A queries, configurable return codes
-  451 or 553 with custom messages
+  451 or 553 with custom messages  
   http://qmail-dnsbl.sourceforge.net/
-* Scott Gifford's qmail-moreipme patch v. 0.6
+* Scott Gifford's qmail-moreipme patch v. 0.6  
   prevents a problem caused by an MX or other mail routing directive instructing qmail to connect to
   itself without realizing it's connecting to itself, saving CPU time.  
   https://www.sagredo.eu/files/qmail/patches/moreipme.README  
@@ -126,11 +144,11 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   https://www.sagredo.eu/files/qmail/patches/qmail-date-localtime.patch
 * Dean Gaudet's qmail-liberal-lf patch v. 0.95  
   allow qmail-smtpd to accept messages that are terminated with a single \n instead of the required \r\n
-  sequence.
-  http://www.arctic.org/~dean/patches/qmail-0.95-liberal-lf.patch
-  Disabled by default due to smuggling vulnerability (CVE-2023-51765
-  https://nvd.nist.gov/vuln/detail/CVE-2023-51765). Enable bare LF by defining ALLOW_BARELF in tcprules.
-* Michael Samuel's maxrcpt patch
+  sequence.  
+  http://www.arctic.org/~dean/patches/qmail-0.95-liberal-lf.patch  
+  Disabled by default due to smuggling vulnerability (CVE-2023-51765 https://nvd.nist.gov/vuln/detail/CVE-2023-51765).  
+  Enable bare LF by defining ALLOW_BARELF in tcprules.
+* Michael Samuel's maxrcpt patch  
   allows you to set a limit on how many recipients are specified for any one email message by setting
   control/maxrcpt. [RFC 2821 section 4.5.3.1](https://datatracker.ietf.org/doc/html/rfc2821#section-4.5.3.1)
   says that an MTA MUST allow at least 100 recipients for each message, since this is one of the favourite
@@ -144,8 +162,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   variety of security-enhancing services.  
   https://www.sagredo.eu/files/qmail/patches/qmail-empf.patch
 * qregex (by  Andrew St. Jean http://www.arda.homeunix.net/downloads-qmail/, contributors: Jeremy Kitchen,
-  Alex Pleiner, Thanos Massias. Original patch by Evan Borgstrom)
-  adds the ability to match address evelopes via Regular Expressions (REs) in the qmail-smtpd process.
+  Alex Pleiner, Thanos Massias. Original patch by Evan Borgstrom)  
+  adds the ability to match address evelopes via Regular Expressions (REs) in the qmail-smtpd process.  
   Added new control file 'badhelonorelay', control/badmailto renamed control/badrcptto (Tx Luca Franceschini).
 * brtlimit  
   Luca Franceschini derived this patch from https://www.sagredo.eu/files/qmail/patches/goodrcptto-12.patch  
@@ -158,7 +176,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   https://www.sagredo.eu/files/qmail/patches/goodrcptto-ms-12.patch,  
   http://patch.be/qmail/badrcptto.html  
   It works in conjunction with chkuser with both cdb and mysql accounts.
-* reject-relay-test by Russell Nelson
+* reject-relay-test by Russell Nelson  
   It gets qmail to reject relay probes generated by so-called anti-spammers. These relay probes have
   '!', '%' and '@' in the local (username) part of the address.  
   https://www.sagredo.eu/files/qmail//patches/qmail-smtpd-relay-reject.patch
@@ -167,21 +185,21 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   added FORCEAUTHMAILFROM environment variable to REQUIRE that authenticated user and 'mail from' are identical  
   added SMTPAUTHMETHOD, SMTPAUTHUSER and SMTP_AUTH_USER env variables for external plugins (see
   http://qmail-spp.sourceforge.net/doc/)
-* fixed little bug in 'mail from' address handling
+* fixed little bug in 'mail from' address handling  
   patch by Andre Opperman at http://qmail.cr.yp.narkive.com/kBry6GJl/bug-in-qmail-smtpd-c-addrparse-function
-* Luca Franceschini's qlog patch
+* Luca Franceschini's qlog patch  
   smtpd logging with fixed format. An entry 'qlogenvelope' is generated after accepting or rejecting
   every recipients in the envelope phase.
-* Luca Franceschini's reject null senders patch
-  useful in special cases if you temporarily need to reject the null sender (although breaks RFC compatibility).
+* Luca Franceschini's reject null senders patch  
+  useful in special cases if you temporarily need to reject the null sender (although breaks RFC compatibility).  
   You just need to put 1 (actually any number different from 0) in your control/rejectnullsenders or define
   REJECTNULLSENDERS to reject the null sender with 421 error message.
-* Luca Franceschini's remove-cname-check patch
+* Luca Franceschini's remove-cname-check patch  
   Removed dns_cname call in qmail-remote.c instead of changing the funcion in dns.c,in case another
   patch requires dns_cname().  
   https://www.sagredo.eu/files/qmail/patches/remove-cname-check.patch  
   More info here https://lists.gt.net/qmail/users/138190
-* Jonathan de Boyne Pollard's any-to-cname patch
+* Jonathan de Boyne Pollard's any-to-cname patch  
   avoids qmail getting large amounts of DNS data we have no interest in and that may overflow our response
   buffer.  
   https://www.sagredo.eu/files/qmail/patches/any-to-cname.patch
@@ -196,30 +214,30 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   Allows you to add an arbitrary number of supplemental remote queues, each distinguished by a list of
   recipient domains and separate throttling (concurrency) capabilities. This patch also allows dynamic
   throttling of the concurrency control files so you can just send qmail-send a HUP signal instead of
-  restarting the service every time.
+  restarting the service every time.  
   This patch is useful when some email providers complain of too many emails receveid at the same time
   (in case of news letters for instance). Look here for more info
   https://www.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1328  
   Edit conf-channels before compiling: Total number of channels (queues) available for delivery. Must be at
-  least 2, and anything above 2 are considered supplemental channels.
+  least 2, and anything above 2 are considered supplemental channels.  
   http://www.thesmbexchange.com/eng/qmail-channels_patch.html
-* Endersys R&D team's qmail-remote-logging patch
+* Endersys R&D team's qmail-remote-logging patch  
   gets qmail-remote to log sender, recipient and IP adddress all together in the "Delivery success/failure" line
   https://web.archive.org/web/20120530051612/http://blog.endersys.com/2009/12/qmail-canonicalised-recipient-logging-and-more-patch/
-* notqmail.org's cve-2005-1513 patch
-  addresses a vulnerability issue spotted by Georgi Guninski in 2005
+* notqmail.org's cve-2005-1513 patch  
+  addresses a vulnerability issue spotted by Georgi Guninski in 2005  
   https://www.qualys.com/2020/05/19/cve-2005-1513/remote-code-execution-qmail.txt
 * Pawel Foremski's qmail-spp patch v. 0.42, which provides plug-in support for qmail-smtpd. It allows you to
   write external programs and use them to check SMTP command argument validity. The plug-in can trigger
-  several actions, like denying a command with an error message, logging data, adding a header and much more.
+  several actions, like denying a command with an error message, logging data, adding a header and much more.  
   The qmail-spp functionality is disabled by default, so that it will be transparent for ancient users of
   this patch. If you want to enable qmail-spp just export the variable ENABLE_SPP in your run file. Note that
-  the variable NOSPP is not available here.
+  the variable NOSPP is not available here.  
   More info here http://qmail-spp.sourceforge.net
-* Bruce Guenter's qmail-1.03-fastremote-3 patch
+* Bruce Guenter's qmail-1.03-fastremote-3 patch  
   While sending individual messages with qmail consumes very little CPU, sending multiple large messages in parallel can
   effectively DoS a sender due to inefficiencies in qmail-remote's "blast" function. In its original form, this
-  function scans the message one byte at a time to escape leading periods and newlines, as required by SMTP.
+  function scans the message one byte at a time to escape leading periods and newlines, as required by SMTP.  
   This patch modifies blast to scan the message in larger chunks. I have benchmarked before and after, and the change
   reduced the CPU time consumed by qmail-remote by a factor of 10.  
   http://untroubled.org/qmail/qmail-1.03-fastremote-3.patch  
@@ -251,6 +269,10 @@ make install
 ldconfig
 cd ../
 ```
+
+* Download
+
+Download the latest release from the [github repo](https://github.com/sagredo-dev/qmail/releases).
 
 * Compile and install
 
