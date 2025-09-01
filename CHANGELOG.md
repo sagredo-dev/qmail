@@ -5,6 +5,7 @@
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
     ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))
   - Added -std=gnu17 to conf-cc, fixed some other issues and now it compiles on gcc-15.2
+  - scripts/qmail-pop3d and qmail/pop3sd: ports changed to 110 and 995
 
 - Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
