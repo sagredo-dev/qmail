@@ -6,7 +6,7 @@
 #include "date822fmt.h"
 #include "received.h"
 
-static int issafe(ch) char ch;
+static int issafe(char ch)
 {
   if (ch == '.') return 1;
   if (ch == '@') return 1;
@@ -22,12 +22,7 @@ static int issafe(ch) char ch;
   return 0;
 }
 
-extern char *relayclient;
-extern int relayclientlen;
-
-void safeput(qqt,s)
-struct qmail *qqt;
-char *s;
+void safeput(struct qmail *qqt, char *s)
 {
   char ch;
   while ((ch = *s++)) {
@@ -41,19 +36,26 @@ static char buf[DATE822FMT];
 /* "Received: from relay1.uu.net (HELO uunet.uu.net) (7@192.48.96.5)\n" */
 /* "  by silverton.berkeley.edu with SMTP; 26 Sep 1995 04:46:54 -0000\n" */
 
-void received(qqt,protocol,local,remoteip,remotehost,remoteinfo,helo)
-struct qmail *qqt;
-char *protocol;
-char *local;
-char *remoteip;
-char *remotehost;
-char *remoteinfo;
-char *helo;
+void received(
+struct qmail *qqt,
+char *protocol,
+char *local,
+char *remoteip,
+char *remotehost,
+char *remoteinfo,
+char *helo)
 {
   struct datetime dt;
+  char *relayclient;
+  relayclient = env_get("RELAYCLIENT");
+  char *authuser;
+  authuser = env_get("SMTPAUTHUSER");
 
-  qmail_puts(qqt,"Received: from ");
-  safeput(qqt,remotehost);
+  qmail_puts(qqt,"Received:");
+  if (!relayclient && !authuser) {
+    qmail_puts(qqt," from ");
+    safeput(qqt,remotehost);
+  }
   if (helo) {
     qmail_puts(qqt," (HELO ");
     safeput(qqt,helo);
@@ -63,9 +65,7 @@ char *helo;
   if (remoteinfo) {
     safeput(qqt,remoteinfo);
   }
-  char *relayclient;
-  relayclient = env_get("RELAYCLIENT");
-  if (!relayclient) {
+  if (!relayclient && !authuser) {
     if (remoteinfo) { qmail_puts(qqt,"@"); }
      safeput(qqt,remoteip);
   }

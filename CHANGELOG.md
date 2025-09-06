@@ -4,6 +4,8 @@
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
     ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))
+  - Received: email header now hides the sender's hostname when the sender
+    is RELAYCLIENT or is authenticated.
 
 - Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
