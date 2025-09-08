@@ -1,6 +1,6 @@
 # ChangeLog
 
-- unreleased
+- Sep 8, 2025
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
     ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))

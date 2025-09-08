@@ -138,7 +138,11 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   https://www.sagredo.eu/files/qmail/patches/qmail-1.03-moreipme-0.6.patch
 * Alex Nee's qmail-hide-ip-headers patch  
   It will hide your Private or Public IP in the email Headers when you are sending Mail as a Relay Client.  
-  https://www.sagredo.eu/files/qmail/patches/qmail-hide-ip-headers.patch
+  I upgraded the patch in order to hide also the sender's hostname when the sender is RELAYCLIENT or is  
+  authenticated.
+  - [original patch](https://www.sagredo.eu/files/qmail/patches/qmail-hide-ip-headers.patch)
+  - [patch upgrade commit](https://github.com/sagredo-dev/qmail/commit/785e84b8715ee5a4c36193e1f0b0108d82f7c028)
+  
 * John Saunders' qmail-date-localtime patch  
   causes the various qmail programs to generate date stamps in the local timezone.  
   https://www.sagredo.eu/files/qmail/patches/qmail-date-localtime.patch
