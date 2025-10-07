@@ -2471,7 +2471,8 @@ libdkim.a: $(DKIMOBJS) dkimverify.o dkimsign.o makelib time_t_size.h
 .cpp.o:
 	c++ -g -I. -DHAVE_EVP_SHA256 $(CFLAGS) $(INCL) -c $<
 
-cert cert-req: Makefile-cert @$(MAKE) -sf $< $@
+cert cert-req: Makefile-cert
+	@$(MAKE) -sf $< $@
 
 Makefile-cert: \
 conf-qmail conf-users conf-groups Makefile-cert.mk

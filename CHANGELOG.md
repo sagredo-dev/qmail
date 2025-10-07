@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Oct, 2025
+  - Fixed incorrect rule syntax for "make cert"
+
 - Sep 8, 2025
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
