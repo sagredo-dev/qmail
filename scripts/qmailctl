@@ -62,7 +62,7 @@ show_uptime() {
 # check if qmail has been started at boot time
 svscan_check() {
   if ! pgrep -x "svscan" > /dev/null; then
-    echo "qmail not running. Please start qmail running:"
+    echo "qmail not running. Please start qmail by running:"
     echo "'qmailctl boot' or '/command/svscanboot'"
     exit 1
   fi
