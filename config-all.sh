@@ -99,8 +99,9 @@ chmod 644 QMAIL/alias/.qmail-srs-default
 echo "Putting '3' in control/spfbehavior..."
 echo 3 > QMAIL/control/spfbehavior
 
-echo "Putting \"| ~vpopmail/bin/vdelivermail '' delete\" in control/defaultdelivery..."
-echo "| ~vpopmail/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
+VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
+echo "Putting \"| ${VPOPMAIL}/bin/vdelivermail '' delete\" in control/defaultdelivery..."
+echo "| ${VPOPMAIL}/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
 
 echo "Putting '200' in control/concurrencyincoming..."
 echo 200 > QMAIL/control/concurrencyincoming
@@ -181,7 +182,6 @@ ln -s $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### set PATH and MANPATH
 echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
-VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
 cat > /etc/profile.d/qmail.sh << EOF
 #!/bin/sh
 PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
@@ -267,8 +267,16 @@ EOF
 chown root:qmail QMAIL/control/smtpplugins
 
 ########### dkim
+echo "Configuring control/filterargs for DKIM"
+echo -n "Do you want to configure DKIM for RSA 1024 or 2048 bit long keys? [1024/2028]"
+read RESPONCE
+if [ "$RESPONCE" = '2048' ]; then
+echo "Configuring control/filterargs for RSA 2048 bit long keys..."
+echo "*:remote:QMAIL/bin/qmail-dkim:ERROR_FD=2,DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=-z 2" > QMAIL/control/filterargs
+else
 echo "Configuring control/filterargs for RSA 1024 bit long keys..."
 echo "*:remote:QMAIL/bin/qmail-dkim:ERROR_FD=2,DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
+fi
 
 ########## SURBL
 echo "Configuring SURBL filter. Downloading tlds domains in QMAIL/control..."
