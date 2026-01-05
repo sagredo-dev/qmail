@@ -260,7 +260,7 @@ As already mentioned, this package has `vpopmail` as a prerequisite. Also it is 
 created the `qmail` users as explained [here](https://www.sagredo.eu/en/qmail-notes-185/netqmail-106-basic-setup-42.html).
 
 This package requires the [`libidn2`](https://gitlab.com/libidn/libidn2) (GNU Internationalized Domain Name
-library version 2, `libidn2-dev` on `Debian` like OS) and the [`pcre`](https://www.pcre.org/) libraries.
+library version 2, `libidn2-dev` on `Debian` like OS) library.
 
 * Install libsrs2
 ```

@@ -1,4 +1,4 @@
-/* helodnscheck.cpp - version 9.0.3 */
+/* helodnscheck.cpp - version 10.0 */
 
 /*
 * Copyright (C) 2007 Jason Frisvold <friz@godshell.com>
@@ -85,9 +85,9 @@
   Note: If there is no HELO/EHLO argument, it defaults to GNLR
 
   Compile as follows:
-  g++ -o /var/qmail/plugins/helodnscheck helodnscheck.cpp -lpcre
+  g++ -o /var/qmail/plugins/helodnscheck helodnscheck.cpp
   or, on freeBSD/clang:
-  clang++ -o /var/qmail/plugin/helodnscheck helodnscheck.cpp -lpcre -I/usr/local/include -L/usr/local/lib
+  clang++ -o /var/qmail/plugin/helodnscheck helodnscheck.cpp
 
   Test as follows:
   SMTPHELOHOST="test.tld" TCPREMOTEIP="1.2.3.4" HELO_DNS_CHECK="BLRD" ./helodnscheck
@@ -102,8 +102,8 @@
 #include <sys/socket.h>
 #include <cstring>
 #include <iostream>
+#include <regex>
 #include <netdb.h>
-#include <pcre.h>
 #include <pwd.h>
 #include <resolv.h>
 #include <sstream>
@@ -168,34 +168,19 @@ int my_exit(int fail, FILE *fp)
 /***************************************************
   Check if the HELO/EHLO hostname has a valid syntax
 
-  @return PCRE_ERROR_NOMATCH (-1): no match found
-                                0: match found
-                              <-1: regex error
+  @return false: no match found
+           true: match found
  ***************************************************/
-int valid_domain(const char *domain)
+bool valid_domain(const string &str)
 {
-  // regex grabbed from
+  // Regex to check valid Domain Name
   // https://www.geeksforgeeks.org/how-to-validate-a-domain-name-using-regular-expression/
   // tld length increased to 12 (.amsterdam found)
-  const char *regex = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{2,12}$";
+  regex pattern("^[A-Za-z0-9-]{1,63}\\.[A-Za-z]{2,12}$");
 
-  pcre *re;
-  const char *error;
-  int erroffset;
-  int rc;
-  int ovector[30];
-
-  re = pcre_compile(regex, 0, &error, &erroffset, NULL);
-  rc = pcre_exec(re, NULL, domain, strlen(domain), 0, 0, ovector, 30);
-  pcre_free(re);
-
-  if (erroffset > 0) {
-    s << "pcre error: "<<error<<". offset: "<<erroffset;
-    out(s);
-  }
-  return rc;
+  // Return true if the string matches the regex
+  return regex_match(str, pattern);
 }
-
 
 /*****************************************************************************
  Search a string in a file.
@@ -383,10 +368,9 @@ int main() {
     injected by G
    ********************************************************/
   if (garbage || block || notsolving) {
-    int nomatch = valid_domain(helo_domain);
+    bool nomatch = valid_domain(helo_domain);
     if (debug) {s << "G filter 'nomatch': ["<<nomatch<<"]"; out(s,true);}
-    if (nomatch < -1 && log) out("regex error");
-    else if (nomatch == PCRE_ERROR_NOMATCH) {
+    if (!nomatch) {
       if (log) {s << "malformed HELO/EHLO ["<<helo_domain<<"]"<<" from ["<<remote_ip<<"]"; out(s);}
       if (!pass) {
         block_permanent("malformed HELO/EHLO hostname", remote_ip);
