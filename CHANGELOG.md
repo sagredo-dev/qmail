@@ -1,9 +1,10 @@
 # ChangeLog
 
-- Jan, 2026
+- Jan 5, 2026
   - Fixed incorrect rule syntax for "make cert"
   - config-all will now prompt for 1024/2048 key length for DKIM
   - config-all now grabs the correct network interface
+  - helodnscheck.cpp: PCRE dependency avoided, to make happy Debian 13
 
 - Sep 8, 2025
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  

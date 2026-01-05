@@ -2500,6 +2500,4 @@ policy.o: policy.c policy.h conf-policy conf-qmail
 	./compile policy.c `head -n 1 conf-policy.temp`
 
 helodnscheck: helodnscheck.cpp
-	c++ -o helodnscheck helodnscheck.cpp -lpcre \
-        -I/usr/local/include -I/usr/pkg/include \
-        -L/usr/local/lib -L/usr/pkg/lib
+	c++ -o helodnscheck helodnscheck.cpp
