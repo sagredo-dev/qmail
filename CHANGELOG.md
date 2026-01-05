@@ -1,7 +1,9 @@
 # ChangeLog
 
-- Oct, 2025
+- Jan, 2026
   - Fixed incorrect rule syntax for "make cert"
+  - config-all will now prompt for 1024/2048 key length for DKIM
+  - config-all now grabs the correct network interface
 
 - Sep 8, 2025
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  

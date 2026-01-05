@@ -234,10 +234,12 @@ EOF
 ########### moreipme
 IPCOMMAND=$(which ip)
 if [ ! -z "$IPCOMMAND" ]; then
-  IP4=$($IPCOMMAND -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  IFACE=$(ip route show default | awk '{print $5}')
+  IP4=$($IPCOMMAND -o -4 addr list "$IFACE" | awk '{print $4}' | cut -d/ -f1)
   echo "Adding $IP4 to QMAIL/control/moreipme..."
   echo $IP4 > QMAIL/control/moreipme
-  IP6=$($IPCOMMAND -o -6 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  IFACE6=$(ip -o -6 route show default | awk '{print $5}')
+  IP6=$($IPCOMMAND -o -6 addr list "$IFACE6" scope global | awk '{print $4}' | cut -d/ -f1)
   if [ ! -z "$IP6" ]; then
     echo "Adding $IP6 to QMAIL/control/moreipme..."
     echo $IP6 >> QMAIL/control/moreipme
