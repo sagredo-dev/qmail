@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Jan 8, 2026
+  - Bug fixed in helodnscheck: it allowed only domains with only one dot 
+
 - Jan 5, 2026
   - Fixed incorrect rule syntax for "make cert"
   - config-all will now prompt for 1024/2048 key length for DKIM
