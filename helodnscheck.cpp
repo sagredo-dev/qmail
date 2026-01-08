@@ -1,4 +1,4 @@
-/* helodnscheck.cpp - version 10.0 */
+/* helodnscheck.cpp - version 10.0.1 */
 
 /*
 * Copyright (C) 2007 Jason Frisvold <friz@godshell.com>
@@ -174,9 +174,9 @@ int my_exit(int fail, FILE *fp)
 bool valid_domain(const string &str)
 {
   // Regex to check valid Domain Name
-  // https://www.geeksforgeeks.org/how-to-validate-a-domain-name-using-regular-expression/
-  // tld length increased to 12 (.amsterdam found)
-  regex pattern("^[A-Za-z0-9-]{1,63}\\.[A-Za-z]{2,12}$");
+  static const regex pattern(
+    R"(^(?=.{1,253}$)([A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}\.?$)"
+  );
 
   // Return true if the string matches the regex
   return regex_match(str, pattern);
