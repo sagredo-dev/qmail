@@ -137,7 +137,7 @@ while :; do
 		grep -w "$2" $controldir/rcpthosts $controldir/me >/dev/null 2>&1
 	fi
 	if [ $? -ne 0 ] ; then
-		echo "$domain not in rcpthosts or bouncehost/me" 1>&2
+		echo "$2 not in rcpthosts or bouncehost/me" 1>&2
 		exit 1
 	fi
 	domain="$2"
