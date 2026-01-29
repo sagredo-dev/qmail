@@ -1,5 +1,9 @@
 # ChangeLog
 
+- unreleased
+  - Bug fix for verifying multiple DKIM signatures (second one always
+    failed due to a DNS lookup bug) tx Andreas Gerstlaurer.
+
 - Jan 8, 2026
   - Bug fixed in helodnscheck: it allowed only domains with only one dot 
 
