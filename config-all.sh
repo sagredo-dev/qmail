@@ -232,17 +232,28 @@ cat > QMAIL/control/dnsbllist << EOF
 EOF
 
 ########### moreipme
-IPCOMMAND=$(which ip)
-if [ ! -z "$IPCOMMAND" ]; then
-  IFACE=$(ip route show default | awk '{print $5}')
-  IP4=$($IPCOMMAND -o -4 addr list "$IFACE" | awk '{print $4}' | cut -d/ -f1)
-  echo "Adding $IP4 to QMAIL/control/moreipme..."
-  echo $IP4 > QMAIL/control/moreipme
-  IFACE6=$(ip -o -6 route show default | awk '{print $5}')
-  IP6=$($IPCOMMAND -o -6 addr list "$IFACE6" scope global | awk '{print $4}' | cut -d/ -f1)
-  if [ ! -z "$IP6" ]; then
-    echo "Adding $IP6 to QMAIL/control/moreipme..."
-    echo $IP6 >> QMAIL/control/moreipme
+if [ -f "QMAIL/control/moreipme" ]; then
+  echo
+  echo -n "Do you want to overwite QMAIL/control/moreipme y/n? [n]"
+  read RESPONCE
+  if [ "$RESPONCE" = 'y' ] || [ "$RESPONCE" = 'Y' ]; then
+    IPCOMMAND=$(command -v ip) || exit 0
+    OUT=QMAIL/control/moreipme
+    : > "$OUT"   # svuota il file
+    # IPv4
+    ip -o -4 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip4; do
+      echo "Adding $ip4 to $OUT..."
+      printf '%s\n' "$ip4" >> "$OUT"
+    done
+    # IPv6
+    ip -o -6 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip6; do
+      echo "Adding $ip6 to $OUT..."
+      printf '%s\n' "$ip6" >> "$OUT"
+    done
   fi
 fi
 
