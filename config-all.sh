@@ -99,8 +99,9 @@ chmod 644 QMAIL/alias/.qmail-srs-default
 echo "Putting '3' in control/spfbehavior..."
 echo 3 > QMAIL/control/spfbehavior
 
-echo "Putting \"| ~vpopmail/bin/vdelivermail '' delete\" in control/defaultdelivery..."
-echo "| ~vpopmail/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
+VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
+echo "Putting \"| ${VPOPMAIL}/bin/vdelivermail '' delete\" in control/defaultdelivery..."
+echo "| ${VPOPMAIL}/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
 
 echo "Putting '200' in control/concurrencyincoming..."
 echo 200 > QMAIL/control/concurrencyincoming
@@ -181,7 +182,6 @@ ln -s $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### set PATH and MANPATH
 echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
-VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
 cat > /etc/profile.d/qmail.sh << EOF
 #!/bin/sh
 PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
@@ -234,10 +234,12 @@ EOF
 ########### moreipme
 IPCOMMAND=$(which ip)
 if [ ! -z "$IPCOMMAND" ]; then
-  IP4=$($IPCOMMAND -o -4 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  IFACE=$(ip route show default | awk '{print $5}')
+  IP4=$($IPCOMMAND -o -4 addr list "$IFACE" | awk '{print $4}' | cut -d/ -f1)
   echo "Adding $IP4 to QMAIL/control/moreipme..."
   echo $IP4 > QMAIL/control/moreipme
-  IP6=$($IPCOMMAND -o -6 addr list eth0 | awk '{print $4}' | cut -d/ -f1)
+  IFACE6=$(ip -o -6 route show default | awk '{print $5}')
+  IP6=$($IPCOMMAND -o -6 addr list "$IFACE6" scope global | awk '{print $4}' | cut -d/ -f1)
   if [ ! -z "$IP6" ]; then
     echo "Adding $IP6 to QMAIL/control/moreipme..."
     echo $IP6 >> QMAIL/control/moreipme
@@ -267,8 +269,16 @@ EOF
 chown root:qmail QMAIL/control/smtpplugins
 
 ########### dkim
+echo "Configuring control/filterargs for DKIM"
+echo -n "Do you want to configure DKIM for RSA 1024 or 2048 bit long keys? [1024/2028]"
+read RESPONCE
+if [ "$RESPONCE" = '2048' ]; then
+echo "Configuring control/filterargs for RSA 2048 bit long keys..."
+echo "*:remote:QMAIL/bin/qmail-dkim:ERROR_FD=2,DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=-z 2" > QMAIL/control/filterargs
+else
 echo "Configuring control/filterargs for RSA 1024 bit long keys..."
 echo "*:remote:QMAIL/bin/qmail-dkim:ERROR_FD=2,DKIMQUEUE=/bin/cat,DKIMSIGN=QMAIL/control/domainkeys/%/default,DKIMSIGNOPTIONS=" > QMAIL/control/filterargs
+fi
 
 ########## SURBL
 echo "Configuring SURBL filter. Downloading tlds domains in QMAIL/control..."

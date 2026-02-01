@@ -1,10 +1,26 @@
 # ChangeLog
 
 - unreleased
+  - Bug fix for verifying multiple DKIM signatures (second one always
+    failed due to a DNS lookup bug) tx Andreas Gerstlaurer.
+
+- Jan 8, 2026
+  - Bug fixed in helodnscheck: it allowed only domains with only one dot 
+
+- Jan 5, 2026
+  - Fixed incorrect rule syntax for "make cert"
+  - config-all will now prompt for 1024/2048 key length for DKIM
+  - config-all now grabs the correct network interface
+  - helodnscheck.cpp: PCRE dependency avoided, to make happy Debian 13
+
+- Sep 8, 2025
   - Fixes in SPP handling and support for [pass] plugins after RCPT accept.  
     Support for RBLRESULT environment variable and RBL ignore ('=') option.  
     ([tx Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/76b6306a40131cfc999457c247838e50cbb585c7))
   - Added -std=gnu17 to conf-cc, fixed some other issues and now it compiles on gcc-15.2
+  - scripts/qmail-pop3d and qmail/pop3sd: ports changed to 110 and 995
+  - Received: email header now hides the sender's hostname when the sender
+    is RELAYCLIENT or is authenticated.
 
 - Jul 10, 2025
   - Authentication-Results: header support ([Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2))
@@ -85,6 +101,8 @@ Consider this feature as testing.
   - qmail-remote.c patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
     number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version.  
     (tx Alexandre Fonceca)
+  - defined CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" in chkuser_settings.h
+  - enabled CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT" in chkuser_settings.h
   - fixed several compilation breaks/warnings on later gcc compilers (tx Pablo Murillo)
   - invalid auth fix in qmail-smtpd.c's smtp_auth function (tx Alexandre Fonceca for the advice)
   - qmail path determined dinamically in conf-policy
