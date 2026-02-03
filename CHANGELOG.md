@@ -3,6 +3,9 @@
 - unreleased
   - Bug fix for verifying multiple DKIM signatures (second one always
     failed due to a DNS lookup bug) tx Andreas Gerstlaurer.
+  - config-all.sh: moreipme is now populated with IPs in separate lines
+  - config-all.sh: rsa dh keys can be created even if the certificate creation is skipped
+  - config-all requires to accept overwriting with y/N/a=all options
 
 - Jan 8, 2026
   - Bug fixed in helodnscheck: it allowed only domains with only one dot 
