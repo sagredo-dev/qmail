@@ -1,6 +1,6 @@
 # ChangeLog
 
-- unreleased
+- Feb 3, 2026
   - Bug fix for verifying multiple DKIM signatures (second one always
     failed due to a DNS lookup bug) tx Andreas Gerstlaurer.
   - config-all.sh: moreipme is now populated with IPs in separate lines
