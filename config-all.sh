@@ -87,6 +87,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+##################################################
+
 FQDN="$1"
 SRCDIR=$(pwd)
 LOGDIR="/var/log"
@@ -320,20 +322,20 @@ if check_file "/etc/cron.d/qmail"; then
   else
     CRONUSER="root"
   fi
-  cat > /etc/cron.d/qmail << EOF
-# convert-multilog
-59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
-# qmail log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-submission/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpd/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpsd/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-send/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vpopmaild/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vusaged/log
-# surbl tlds update
-2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
-# surbl cache purge
-2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
+  cat > /etc/cron.d/qmail <<- EOF
+	# convert-multilog
+	59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
+	# qmail log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-submission/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpd/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpsd/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-send/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vpopmaild/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vusaged/log
+	# surbl tlds update
+	2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
+	# surbl cache purge
+	2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
 EOF
 fi
 
@@ -440,9 +442,7 @@ QMAIL/bin/qmailctl cdb
 echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature..."
 cp scripts/rcptcheck-overlimit QMAIL/bin
 if check_file "QMAIL/control/relaylimits"; then
-  cat > QMAIL/control/relaylimits <<- EOF
-	:1000
-EOF
+  echo ":1000" > QMAIL/control/relaylimits
 fi
 if check_file "/etc/cron.daily/rcptcheck-overlimit.cron.daily"; then
   echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
@@ -452,26 +452,26 @@ fi
 ############ svtools
 echo "Installing svtools..."
 cp -f scripts/svtools/svdir \
-scripts/svtools/svinfo \
-scripts/svtools/mltail \
-scripts/svtools/mlcat \
-scripts/svtools/mlhead \
-scripts/svtools/mltac \
-QMAIL/bin
+  scripts/svtools/svinfo \
+  scripts/svtools/mltail \
+  scripts/svtools/mlcat \
+  scripts/svtools/mlhead \
+  scripts/svtools/mltac \
+  QMAIL/bin
 cp -f scripts/svtools/svinitd \
-scripts/svtools/svinitd-create \
-scripts/svtools/svsetup \
-QMAIL/bin
+  scripts/svtools/svinitd-create \
+  scripts/svtools/svsetup \
+  QMAIL/bin
 cp -f scripts/svtools/svinitd.1 \
-scripts/svtools/svinitd-create.1 \
-scripts/svtools/svsetup.1 \
-scripts/svtools/svdir.1 \
-scripts/svtools/svinfo.1 \
-scripts/svtools/mltail.1 \
-scripts/svtools/mlcat.1 \
-scripts/svtools/mlhead.1 \
-scripts/svtools/mltac.1 \
-QMAIL/man/man1
+  scripts/svtools/svinitd-create.1 \
+  scripts/svtools/svsetup.1 \
+  scripts/svtools/svdir.1 \
+  scripts/svtools/svinfo.1 \
+  scripts/svtools/mltail.1 \
+  scripts/svtools/mlcat.1 \
+  scripts/svtools/mlhead.1 \
+  scripts/svtools/mltac.1 \
+  QMAIL/man/man1
 
 ############ qmHandle
 echo "Installing qmHandle in QMAIL/bin/qmHandle..."
