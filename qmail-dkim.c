@@ -1304,7 +1304,7 @@ main(int argc, char *argv[])
 								int fromLen = strlen(domain);
 								int sigLen = strlen(pDetails[i].szSignatureDomain);
 								if ((fromLen >= sigLen) &&
-							            ((fromLen == sigLen) || domain[fromLen - sigLen - 1] == '.') &&
+							            ((fromLen == sigLen) || (domain[fromLen - sigLen - 1] == '.')) &&
 							            !strcasecmp(domain + fromLen - sigLen, pDetails[i].szSignatureDomain))
 									ret = pDetails[i].nResult;
 							}
