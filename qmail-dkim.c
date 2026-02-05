@@ -751,12 +751,17 @@ dkim_hdr(stralloc *s, int ret, char** status)
 		break;
 	case DKIM_NEUTRAL:			/*- 3 verify result: no signatures verified but message is not suspicious */
 		dkimStatus = "verify result: no signatures verified but message is not suspicious";
-		dkimResult = status? "no signatures" : "policy";
+		dkimResult = status? "no signature" : "policy";
 		code = "X.7.0";
 		break;
 	case DKIM_SUCCESS_BUT_EXTRA:/*- 4 signature result: signature verified but it did not include all of the body */
 		dkimStatus = "signature result: signature verified but it did not include all of the body";
 		dkimResult = status? "good" : "neutral";
+		code = "X.7.0";
+		break;
+	case DKIM_3PS_SIGNATURE:/*- 5 signature result: 3rd-party signature */
+		dkimStatus = "signature result: 3rd-party signature";
+		dkimResult = status? "good" : "policy";
 		code = "X.7.0";
 		break;
 	case DKIM_FAIL:				/*- -1 */ /*- F */
@@ -1277,33 +1282,46 @@ main(int argc, char *argv[])
 		} else
 		if (dkimverify) {
 			char            szPolicy[512];
+			int             retres = 0;
+			char           *domain = NULL;
 
 			if (!ret) {
-				if ((ret = DKIMVerifyResults(&ctxt, &sCount, &sSize)) != DKIM_SUCCESS)
-					maybe_die_dkim(ret);
+				if ((retres = DKIMVerifyResults(&ctxt, &sCount, &sSize)) != DKIM_SUCCESS)
+					maybe_die_dkim(retres);
 				if ((ret = DKIMVerifyGetDetails(&ctxt, &nSigCount, &pDetails, szPolicy)) != DKIM_SUCCESS)
 					maybe_die_dkim(ret);
-				else
-				for (ret = DKIM_FAIL,i = 0; i < nSigCount; i++) {
-					if (pDetails[i].nResult >= 0) {
-						ret = 0;
-					} else {
-						if (ret == DKIM_FAIL)
-							ret = pDetails[i].nResult;
+				else if((ret = retres) >= 0) { /* no errors so far, set failure code in case there are */
+					if ((sSize > 1) && !sCount)
+						domain = DKIMVerifyGetDomain(&ctxt);
+					for (ret = DKIM_FAIL,i = 0; i < nSigCount; i++) {
+						if (pDetails[i].nResult >= 0) {
+							ret = retres;
+						} else {
+							if (ret == DKIM_FAIL)
+								ret = pDetails[i].nResult;
+							else if ((ret < 0) && domain && pDetails[i].szSignatureDomain) {
+								/* get failure code from signature that matches From domain */
+								int fromLen = strlen(domain);
+								int sigLen = strlen(pDetails[i].szSignatureDomain);
+								if ((fromLen >= sigLen) &&
+							            ((fromLen == sigLen) || domain[fromLen - sigLen - 1] == '.') &&
+							            !strcasecmp(domain + fromLen - sigLen, pDetails[i].szSignatureDomain))
+									ret = pDetails[i].nResult;
+							}
+						}
 					}
+					if (!nSigCount)
+						ret = DKIM_NO_SIGNATURES;
 				}
-				if (!nSigCount)
-					ret = DKIM_NO_SIGNATURES;
 			}
 			updateAuthenticated(ret, nSigCount, pDetails);
 
 			/*- what to do if DKIM Verification fails */
 			if (checkPractice(ret, useADSP, useSSP)) {
-				char           *domain;
 				int             skip_nosignature_domain = 0;
 
 				origRet = ret;
-				if ((domain = DKIMVerifyGetDomain(&ctxt))) {
+				if (domain || (domain = DKIMVerifyGetDomain(&ctxt))) {
 					if (!(ptr = env_get("SIGNATUREDOMAINS"))) {
 						format_controlfile("signaturedomains", 2);
 						if (control_readfile(&sigdomains, fntmp.s, 0) == -1)
