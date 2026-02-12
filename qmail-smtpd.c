@@ -2337,21 +2337,17 @@ int tls_verify()
   return relayclient ? 1 : 0;
 }
 
-void tls_init()
+static SSL_CTX *tls_ctx(const char *servercert)
 {
-  SSL *myssl;
   SSL_CTX *ctx;
-  const char *ciphers;
-  stralloc saciphers = {0};
+  struct stat st;
   X509_STORE *store;
   X509_LOOKUP *lookup;
   int session_id_context = 1; /* anything will do */
 
-  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
-
   /* a new SSL context with the bare minimum of options */
   ctx = SSL_CTX_new(TLS_server_method());
-  if (!ctx) { tls_err("unable to initialize ctx"); return; }
+  if (!ctx) { logit("unable to create ctx"); return NULL; }
 
   /* renegotiation should include certificate request */
   SSL_CTX_set_options(ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
@@ -2368,32 +2364,92 @@ void tls_init()
   SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
   if (!SSL_CTX_set_session_id_context(ctx, (void *)&session_id_context,
                                         sizeof(session_id_context)))
-    { SSL_CTX_free(ctx); tls_err("failed to set session_id_context"); return; }
+    { SSL_CTX_free(ctx); logit("failed to set session_id_context"); return NULL; }
 
-  if (!SSL_CTX_use_certificate_chain_file(ctx, SERVERCERT))
-    { SSL_CTX_free(ctx); tls_err("missing certificate"); return; }
-  SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL);
+  if (!SSL_CTX_use_certificate_chain_file(ctx, servercert))
+    { SSL_CTX_free(ctx); logit("missing certificate"); return NULL; }
 
-  /* crl checking */
-  store = SSL_CTX_get_cert_store(ctx);
-  if ((lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file())) &&
-      (X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
-    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
-                                X509_V_FLAG_CRL_CHECK_ALL);
+  if (stat(CLIENTCA, &st) == 0) { /* custom client CA list */
+    if(!SSL_CTX_load_verify_locations(ctx, CLIENTCA, NULL))
+      { SSL_CTX_free(ctx); logit("error loading CA list"); return NULL; }
+
+    /* crl checking */
+    store = SSL_CTX_get_cert_store(ctx);
+    if ((lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file())) &&
+	(stat(CLIENTCRL, &st) == 0) &&
+        (X509_load_crl_file(lookup, CLIENTCRL, X509_FILETYPE_PEM) == 1))
+      X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
+                                  X509_V_FLAG_CRL_CHECK_ALL);
+  }
 
   SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
 
   SSL_CTX_set_dh_auto(ctx, 1);
+
+  /* this will also check whether public and private keys match */
+  if (!SSL_CTX_use_PrivateKey_file(ctx, servercert, SSL_FILETYPE_PEM))
+    { SSL_CTX_free(ctx); logit("no valid RSA private key"); return NULL; }
+
+  return ctx;
+}
+
+static int tls_servername_cb(SSL *myssl, int *ad, void *arg)
+{
+  SSL_CTX *ctx;
+  const char *servername;
+  stralloc servercert = {0};
+  struct stat st;
+
+  servername = SSL_get_servername(myssl, TLSEXT_NAMETYPE_host_name);
+  if (!servername) return SSL_TLSEXT_ERR_OK; /* no SNI, use default cert */
+  if (!servername[0]) return SSL_TLSEXT_ERR_NOACK; /* sanity checks */
+  if (servername[str_chr(servername,'/')]) return SSL_TLSEXT_ERR_NOACK;
+
+  logit2("SNI provided", logclean(servername));
+
+  if (!stralloc_copys(&servercert, "control/servercerts/")
+    || !stralloc_cats(&servercert, servername)
+    || !stralloc_cats(&servercert, "/servercert.pem")) die_nomem();
+  if (!stralloc_0(&servercert)) die_nomem();
+
+  if (stat(servercert.s, &st) != 0) /* no SNI-specific certificate */
+    { alloc_free(servercert.s); return SSL_TLSEXT_ERR_NOACK; }
+
+  ctx = tls_ctx(servercert.s);
+  if (!ctx) { alloc_free(servercert.s); return SSL_TLSEXT_ERR_ALERT_FATAL; }
+
+  /* apply new context and certificate to this SSL connection */
+  SSL_set_SSL_CTX(myssl, ctx);
+  SSL_CTX_free(ctx);
+
+  /* update greeting */
+  if (!stralloc_copys(&greeting, servername)) die_nomem();
+
+  alloc_free(servercert.s);
+  return SSL_TLSEXT_ERR_OK;
+}
+
+void tls_init()
+{
+  SSL *myssl;
+  SSL_CTX *ctx;
+  const char *ciphers;
+  stralloc saciphers = {0};
+
+  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+
+  ctx = tls_ctx(SERVERCERT);
+  if (!ctx) { tls_err("unable to initialize ctx"); return; }
+
+  /* set SNI callback */
+  SSL_CTX_set_tlsext_servername_callback(ctx, tls_servername_cb);
 
   /* a new SSL object, with the rest added to it directly to avoid copying */
   myssl = SSL_new(ctx);
   SSL_CTX_free(ctx);
   if (!myssl) { tls_err("unable to initialize ssl"); return; }
 
-  /* this will also check whether public and private keys match */
-  if (!SSL_use_PrivateKey_file(myssl, SERVERCERT, SSL_FILETYPE_PEM))
-    { SSL_free(myssl); tls_err("no valid RSA private key"); return; }
-
+  /* set ciphers, it seems set_SSL_CTX does not update it (but undocumented) */
   ciphers = env_get("TLSCIPHERS");
   if (!ciphers) {
     if (control_readfile(&saciphers, "control/tlsserverciphers", 0) == -1)
@@ -2420,6 +2476,7 @@ void tls_init()
   if (ssl_timeoutaccept(timeout, ssl_rfd, ssl_wfd, myssl) <= 0) {
     /* neither cleartext nor any other response here is part of a standard */
     const char *err = ssl_error_str();
+    logit2("SSL error", err);
     tls_out("connection failed", err); ssl_free(myssl); die_read("tls connection failed");
   }
   ssl = myssl;
