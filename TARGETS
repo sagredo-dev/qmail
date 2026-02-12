@@ -60,6 +60,7 @@ qmail-upq
 qmail-showctl
 qmail-newu
 qmail-pw2u
+qmail-qfilter
 qmail-qread
 qmail-qstat
 qmail-tcpto
@@ -135,6 +136,7 @@ qmail-newu.8
 qmail-newu.0
 qmail-pw2u.8
 qmail-pw2u.0
+qmail-qfilter.0
 qmail-qread.0
 qmail-qstat.0
 qmail-tcpto.0

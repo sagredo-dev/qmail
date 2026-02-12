@@ -1,0 +1,98 @@
+.\" vim: tw=75
+.TH qmail-qfilter 8
+.SH NAME
+qmail-qfilter \- front end for qmail-queue that does filtering
+.SH SYNOPSIS
+.B qmail-qfilter
+.I filter
+[
+.I -- filter ...
+]
+.SH DESCRIPTION
+\fBqmail-qfilter(1)\fR allows indimail to execute message filters. It
+gets invoked by indimail programs using qmail-queue frontend when the
+\fBQMAILQUEUE\fR environment is set to \fBqmail-qfilter\fR or when passed
+as a command line argument having \fBqmail-qfilter\fR like below (which
+will have the message pass through \fBqmail-dkim\fR and
+\fBqmail-qfilter\fR).
+
+.EX
+QMAILQUEUE="bin/qmail-qfilter filter ..."
+.EE
+
+\fBqmail-qfilter\fR sends the message text through each of the filter
+commands named on the command line. Each filter is run separately, with
+standard input opened to the input email, and standard output opened to a
+new temporary file that will become the input to either the next filter, or
+\fBqmail-queue\fR. If the filter does not modify the message it passes
+unchanged to the next step.  It also makes the envelope available to each
+filter as file descriptor 3. File descriptor 4 is opened to a new temporary
+file for the modified envelope, allowing the filter to modify the envelope
+or the message. If the filter does not modify the envelope, the envelope
+remains unchanged for either the next filter or \fBqmail-queue\fR. This
+provides compatibility for existing filters that do not know about the
+envelope. \fBqmail-qfilter\fR also opens up file descriptor 5 to a
+temporary file. If this file is empty after all the filters have executed,
+its contents are read and used to specify a program to execute in place of
+\fBqmail-queue\fR. Each filter on the command line is separated by
+\fB--\fR.
+
+.SH "RETURN VALUES"
+Returns 51 (out of memory), 53 (write error), or 81 (internal error)
+if it can't create the temporary files or has problems executing the
+filters.
+
+Returns 79 (bad envelope data) if it can't read or parse the envelope
+data.
+
+\fBqmail-qfilter\fR returns exit code of filter, if the filter returns
+anything other than 0 or 99. If your filter exits 88, you can put your
+custom error string on standard error. This enables client like
+\fBqmail-smtpd\fR to report the error. The custom error string can be
+prefixed with \fBD\fR for permanent error and \fBZ\fR to indicate temporary
+error. If a filter returns 99, \fBqmail-qfilter\fR returns 0 immediately
+without running any other filters. If your filter returns 31, the mail will
+be permanently rejected. If your filter returns 71, the mail will be
+temporarily rejected.
+
+.SH ENVIRONMENT
+For compatibility with previous versions, \fBqmail-qfilter\fR sets
+\fBQMAILUSER\fR and \fBQMAILHOST\fR to the user and host portions of the
+envelope sender address, and unsets \fBQMAILNAME\fR. It also sets
+\fBQMAILRCPTS\fR to the list of envelope recipients, each followed by a
+newline.
+.P
+It also sets \fBENVSIZE\fR to the size of the envelope, \fBMSGSIZE\fR to
+the length of the message, and \fBNUMRCPTS\fR to the number of recipients.
+These values are updated before each filter is run.
+.P
+If \fBQQF_QMAILQUEUE\fR is set, that value is used in
+place of \fBqmail-queue\fR.
+
+.SH "SEE ALSO"
+qmail-queue(8)
+
+.SH NOTES
+\fB$QMAILQUEUE\fR is deliberately not used to override \fBqmail-queue\fR in
+order to avoid recursive loops with configurations that set
+\fB$QMAILQUEUE\fR.
+
+.SH WARNINGS
+If you are using \fBqmail-inject\fR -n as one of the filters, you may want
+to unset \fBMAILUSER\fR, \fBUSER\fR, and \fBLOGNAME\fR by using
+
+.EX
+.B env -u QMAILNAME -u MAILNAME -u NAME qmail-inject -n
+.EE
+
+as the command to invoke qmail-inject. Note that some the \fBenv\fR command
+with some OS's doesn't support the \fB-u\fR option.
+.P
+A message with an excessive number of recipients (more than 64K bytes of
+recipient data on Linux) will cause execution of the filter programs to
+fail, and for the message to be rejected.
+.P
+The same temporary file is reused for file descriptor 5 for each filter.
+Make sure each filter writes a trailing ASCII NUL byte following the
+program name, as multiple filters could otherwise overwrite the value in
+undesireable ways.

@@ -31,13 +31,6 @@ ETXTBSY;
 -4;
 #endif
 
-int error_isdir =
-#ifdef EISDIR
-EISDIR;
-#else
--4;
-#endif
-
 int error_io =
 #ifdef EIO
 EIO;
@@ -100,3 +93,102 @@ EACCES;
 #else
 -13;
 #endif
+
+int error_nodevice =
+#ifdef ENXIO
+ENXIO;
+#else
+-14;
+#endif
+
+int error_proto =
+#ifdef EPROTO
+EPROTO;
+#else
+-15;
+#endif
+
+int error_isdir =
+#ifdef EISDIR
+EISDIR;
+#else
+-16;
+#endif
+
+int error_connrefused =
+#ifdef ECONNREFUSED
+ECONNREFUSED;
+#else
+-17;
+#endif
+
+int error_hostdown =
+#ifdef EHOSTDOWN
+EHOSTDOWN;
+#else
+-18;
+#endif
+
+int error_netunreach =
+#ifdef ENETUNREACH
+ENETUNREACH;
+#else
+-19;
+#endif
+
+int error_hostunreach =
+#ifdef EHOSTUNREACH
+EHOSTUNREACH;
+#else
+-20;
+#endif
+
+int error_dquot =
+#ifdef EDQUOT
+EDQUOT;
+#else
+-21;
+#endif
+
+int error_notdir =
+#ifdef ENOTDIR
+ENOTDIR;
+#else
+-22;
+#endif
+
+int error_srch =
+#ifdef ESRCH
+ESRCH;
+#else
+-23;
+#endif
+
+int error_restart =
+#ifdef ERESTART
+ERESTART;
+#else
+-24;
+#endif
+
+int error_child =
+#ifdef ECHILD
+ECHILD;
+#else
+-25;
+#endif
+
+int error_ebadf =
+#ifdef EBADF
+EBADF;
+#else
+-26;
+#endif
+
+int error_invalid =
+#ifdef EINVAL
+EINVAL;
+#else
+-27;
+#endif
+

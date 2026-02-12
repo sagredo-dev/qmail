@@ -25,7 +25,7 @@ stage filter. Used together with sender lists, SURBLs have proven to be a highly
 to detect 95% of unsolicited messages.
 
 \fBsurblfilter\fR reads an rfc822 email on stdin, extracts URL and checks them against SURBL.
-\fBsurblfilter\fR can be used as a filter using \fBqmail-qfilter(1)\fR. It can also be used
+\fBsurblfilter\fR can be used as a filter using \fBqmail-qfilter(8)\fR. It can also be used
 as a qmail-queue(8) frontend by setting QMAILQUEUE environment variable to a wrapper
 QMAILHOME/bin/surblqueue. You can define \fBSURBLQUEUE\fR environment variable to make
 \fBsurblqueue\fR execute something other than \fBqmail-queue\fR(8).
