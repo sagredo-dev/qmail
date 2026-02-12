@@ -310,6 +310,17 @@ Should contain both the certificate and the private key. Certifying Authority
 (CA) and intermediate certificates can be added at the end of the file.
 
 .TP 5
+.I servercerts/<FQDN>/servercert.pem
+Domain-specific SSL certificates for servers that are reachable under
+different names when the client supports server name indication (SNI).
+<FQDN> is the fully-qualified domain name given by SNI. If SNI is not
+provided or no domain-specific certificate exists, the default
+.IR servercert.pem
+will be used.
+Should contain both the certificate and the private key. Certifying Authority
+(CA) and intermediate certificates can be added at the end of the file.
+
+.TP 5
 .I smtpgreeting
 SMTP greeting message.
 Default:
