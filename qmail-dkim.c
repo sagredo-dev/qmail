@@ -31,6 +31,7 @@
 #include "config.h"
 #endif
 #include "dkim.h"
+#include "custom_error.h"
 #include <openssl/evp.h>
 
 #define DKIM_MALLOC(n)     OPENSSL_malloc(n)
@@ -125,42 +126,6 @@ SignThisHeader(const char *szHeader)
 	if (strncasecmp((char *) szHeader, cptr, i) == 0)
 		return 0;
 	return 1;
-}
-
-void
-custom_error(char *program, char *type, char *message, char *extra, char *code)
-{
-	char           *c;
-	char            errbuf[256];
-	int             errfd = -1;
-	struct substdio sserr;
-
-	if (errfd == -1) {
-		if (!(c = env_get("ERROR_FD")))
-			errfd = CUSTOM_ERR_FD;
-		else
-			scan_int(c, &errfd);
-	}
-	substdio_fdbuf(&sserr, write, errfd, errbuf, sizeof(errbuf));
-	if (substdio_put(&sserr, type, 1) == -1 ||
-			substdio_puts(&sserr, program) == -1 ||
-			substdio_put(&sserr, ": ", 2) ||
-			substdio_puts(&sserr, message) == -1)
-		_exit(53);
-	if (extra && (substdio_put(&sserr, ": ", 2) == -1 || substdio_puts(&sserr, extra) == -1))
-		_exit(53);
-	if (code) {
-		if (substdio_put(&sserr, " (#", 3) == -1)
-			_exit(53);
-		c = (*type == 'D') ? "5" : "4";
-		if (substdio_put(&sserr, c, 1) == -1 ||
-				substdio_put(&sserr, code + 1, 4) == -1 ||
-				substdio_put(&sserr, ")", 1) == -1)
-			_exit(53);
-	}
-	if (substdio_flush(&sserr) == -1)
-		_exit(53);
-	_exit(88);
 }
 
 void

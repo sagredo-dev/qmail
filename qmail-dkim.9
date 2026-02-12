@@ -13,8 +13,8 @@ inserts an appropriate DKIM header (rfc4871, rfc6376) before it queues the
 message. To invoke \fBqmail-dkim\fR, set QMAILQUEUE to point to qmail-dkim
 in the environment when you send or receive email.
 
-\fBqmail-dkim\fR will call \fBqmail-multi\fR. To invoke an executable other
-than \fBqmail-multi\fR set DKIMQUEUE=bin/qmail-queue for example.
+\fBqmail-dkim\fR will call \fBqmail-queue\fR. To invoke an executable other
+than \fBqmail-queue\fR set \fBDKIMQUEUE\fR to the path to the executable.
 
 \fBqmail-dkim\fR supports RSA-SHA1, RSA-SHA256 and ED25519-SHA256 (rfc8463)
 encryption methods for signing and verification. By default RSA-SHA256 is

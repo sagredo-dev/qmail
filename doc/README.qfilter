@@ -1,0 +1,79 @@
+qmail-qfilter
+qmail-queue multi-filter front end
+Bruce Guenter <bruceg@em.ca>
+Version 2.1
+2005-08-12
+
+This program allows the body and/or envelope of a message to be filtered
+through a series of filters before being passed to the real qmail-queue
+program, and injected into the qmail queue.
+
+A mailing list has been set up to discuss this and other packages.
+To subscribe, send an email to:
+	bgware-subscribe@lists.untroubled.org
+A mailing list archive is available at:
+	http://lists.untroubled.org/?list=bgware
+
+Development versions of qmail-qfilter are available via Subversion at:
+	svn://bruce-guenter.dyndns.org/qmail-qfilter/trunk
+
+Requirements:
+
+- bglibs is required for system dependancies.
+
+- This program is designed to take advantage of my QMAILQUEUE patch,
+  which causes programs that would execute qmail-queue (such as
+  qmail-smtpd etc.) to execute an alternative program.
+
+How to install:
+
+- Check the definitions at the top of qmail-qfilter.c, especially the
+  value of TMPDIR.  This should be set to a temporary directory that
+  only the executor of qmail-qfilter has write access to.
+- Check the conf-* files for appropriate values for your compiler and
+  linker, and installation paths.
+- Run "make"
+- As root, run "make install"
+
+How to use, with the QMAILQUEUE patch applied to qmail:
+
+- Create a script containing an invocation of qmail-qfilter.  For
+  example, a script that uses qmail-inject as a front end to qmail-queue
+  would contain:
+	#!/bin/sh
+	exec /path/to/qmail-qfilter /var/qmail/bin/qmail-inject -n
+- Set the environment variable QMAILQUEUE to the location of this
+  script.  For example, in a SMTP rules files, put:
+	A.B.C.D:allow,RELAYCLIENT="",QMAILQUEUE="/usr/local/bin/qmail-qftest"
+  and rebuild the SMTP CDB file.
+- You're all set!  In our example, all messages sent from the IP A.B.C.D
+  will have their content filtered through qmail-inject, which will add
+  missing "From:", "Date:", and "Message-Id:" headers.
+
+How to use, without the QMAILQUEUE patch:
+- Change the definition of QMAIL_QUEUE in qmail-qfilter.c to a different
+  value, either by editing the source file or by modifying the DEFINES
+  line in the Makefile to read:
+	-DQMAIL_QUEUE=\"/var/qmail/bin/qmail-queue-old\"
+- Compile qmail-qfilter.
+- Rename qmail-queue to the new filename specified above.
+- Create a script to replace qmail-queue that contains an invocation of
+  qmail-qfilter, as described in the previous example.
+- You're all set!  All mail entering the queue will be filtered by your
+  filter.
+
+Notes on writing a filter program:
+- If you want to block an email, exit from the filter with code 31.
+  This will cause qmail-qfilter to exit with the same error code, and
+  qmail-smtpd (for example) to send an error code to the client.
+- If you want to silently drop an email, exit with code 99.
+- The filter script that executes qmail-queue MUST NOT be setuid, and
+  MUST BE readable.  Only the real qmail-queue binary needs to be
+  setuid.
+
+See the scripts in the "samples" directory for example scripts.
+
+This program is Copyright(C) 2001,2004-2005 Bruce Guenter, and may be
+copied according to the GNU GENERAL PUBLIC LICENSE (GPL) Version 2 or a
+later version.  A copy of this license is included with this package.
+This package comes with no warranty of any kind.
