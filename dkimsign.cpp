@@ -457,7 +457,7 @@ bool CDKIMSign::ParseFromAddress(void)
 			if (!(p = getenv("BOUNCEDOMAIN")))
 				p = getenv("DKIMDOMAIN");
 			if (p && *p) {
-				if (!(at = strchr(p, '@')))
+				if (!(at = strrchr(p, '@')))
 					at = p;
 				else
 					at++;
