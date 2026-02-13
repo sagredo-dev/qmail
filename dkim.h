@@ -77,14 +77,15 @@ extern          "C" {
 #define DKIM_SELECTOR_ALGORITHM_MISMATCH    -16 /* signature error: selector h= doesn't match signature a= */
 #define DKIM_STAT_INCOMPAT                  -17 /* signature error: incompatible v= */
 #define DKIM_UNSIGNED_FROM                  -18 /* signature error: not all message's From headers in signature */
-#define DKIM_OUT_OF_MEMORY                  -19 /* memory allocation failed */
-#define DKIM_INVALID_CONTEXT                -20 /* DKIMContext structure invalid for this operation */
-#define DKIM_NO_SENDER                      -21 /* signing error: Could not find From: or Sender: header in message */
-#define DKIM_BAD_PRIVATE_KEY                -22 /* signing error: Could not parse private key */
-#define DKIM_BUFFER_TOO_SMALL               -23 /* signing error: Buffer passed in is not large enough */
-#define DKIM_EVP_SIGN_FAILURE               -24 /* signing error: evp signing failure */
-#define DKIM_EVP_DIGEST_FAILURE             -25 /* signing error: evp digest failure */
-#define DKIM_MAX_ERROR                      -26 /* set this to 1 greater than the highest error code (but negative) */
+#define DKIM_BAD_IDENTITY                   -19 /*- bad/invalid i= tag */
+#define DKIM_OUT_OF_MEMORY                  -20 /* memory allocation failed */
+#define DKIM_INVALID_CONTEXT                -21 /* DKIMContext structure invalid for this operation */
+#define DKIM_NO_SENDER                      -22 /* signing error: Could not find From: or Sender: header in message */
+#define DKIM_BAD_PRIVATE_KEY                -23 /* signing error: Could not parse private key */
+#define DKIM_BUFFER_TOO_SMALL               -24 /* signing error: Buffer passed in is not large enough */
+#define DKIM_EVP_SIGN_FAILURE               -25 /* signing error: evp signing failure */
+#define DKIM_EVP_DIGEST_FAILURE             -26 /* signing error: evp digest failure */
+#define DKIM_MAX_ERROR                      -27 /* set this to 1 greater than the highest error code (but negative) */
 
 #define DKIM_SSP_UNKNOWN                      1 /*- some messages may be signed */
 #define DKIM_SSP_ALL                          2 /*- all messages are signed, 3rd party allowed */
@@ -175,6 +176,12 @@ int  DKIM_CALL  DKIMSignReplaceHash(DKIMContext *pSignContext, DKIMSignOptions *
 
 /*
  * $Log: dkim.h,v $
+ * Revision 1.15  2024-01-09 19:14:43+05:30  Cprogrammer
+ * re-arranged DKIM error codes
+ *
+ * Revision 1.14  2024-01-06 21:26:47+05:30  Cprogrammer
+ * added new error code DKIM_BAD_IDENTITY for invalid identity domain (i= tag)
+ *
  * Revision 1.13  2023-02-11 22:50:12+05:30  Cprogrammer
  * added DKIM_EVP_SIGN_FAILURE, DKIM_EVP_DIGEST_FAILURE definitions for EVP signing and digest failures
  *
