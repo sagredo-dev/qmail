@@ -2407,8 +2407,6 @@ static int tls_servername_cb(SSL *myssl, int *ad, void *arg)
   if (!servername[0]) return SSL_TLSEXT_ERR_NOACK; /* sanity checks */
   if (servername[str_chr(servername,'/')]) return SSL_TLSEXT_ERR_NOACK;
 
-  logit2("SNI provided", logclean(servername));
-
   if (!stralloc_copys(&servercert, "control/servercerts/")
     || !stralloc_cats(&servercert, servername)
     || !stralloc_cats(&servercert, "/servercert.pem")) die_nomem();
@@ -2416,6 +2414,8 @@ static int tls_servername_cb(SSL *myssl, int *ad, void *arg)
 
   if (stat(servercert.s, &st) != 0) /* no SNI-specific certificate */
     { alloc_free(servercert.s); return SSL_TLSEXT_ERR_NOACK; }
+
+  logit2("SNI provided", servername);
 
   ctx = tls_ctx(servercert.s);
   if (!ctx) { alloc_free(servercert.s); return SSL_TLSEXT_ERR_ALERT_FATAL; }
