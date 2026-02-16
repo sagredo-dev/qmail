@@ -45,12 +45,12 @@ See the corresponding man pages for further details.
 control	default	used by
 
 .I authsender	\fR(none)	\fRqmail-remote
-.I badhelo     \fR(none)       \fRqmail-smtpd
-.I badhelonorelay     \fR(none)       \fRqmail-smtpd
+.I badhelo	\fR(none)	\fRqmail-smtpd
+.I badhelonorelay	\fR(none)	\fRqmail-smtpd
 .I badmailfrom	\fR(none)	\fRqmail-smtpd
-.I badmailfromnorelay  \fR(none)       \fRqmail-smtpd
-.I badrcptto   \fR(none)       \fRqmail-smtpd
-.I badrcpttonorelay    \fR(none)       \fRqmail-smtpd
+.I badmailfromnorelay	\fR(none)	\fRqmail-smtpd
+.I badrcptto	\fR(none)	\fRqmail-smtpd
+.I badrcpttonorelay	\fR(none)	\fRqmail-smtpd
 .I bouncefrom	\fRMAILER-DAEMON	\fRqmail-send
 .I bouncehost	\fIme	\fRqmail-send
 .I brtlimit	\fR0	\fRqmail-smtpd
@@ -72,6 +72,7 @@ control	default	used by
 .I locals	\fIme	\fRqmail-send
 .I morercpthosts	\fR(none)	\fRqmail-smtpd
 .I notlshosts_auto	\fR(none)	\fRqmail-remote
+.I notlshosts/FQDN	\fR(none)	\fRqmail-remote
 .I outgoingip	\fR0.0.0.0	\fRqmail-remote
 .I percenthack	\fR(none)	\fRqmail-send
 .I plusdomain	\fIme	\fRqmail-inject
@@ -80,6 +81,7 @@ control	default	used by
 .I rcpthosts	\fR(none)	\fRqmail-smtpd
 .I rsa4096.pem	\fR(none)	\fRqmail-smtpd
 .I servercert.pem	\fR(none)	\fRqmail-smtpd
+.I servercerts/	\fR(none)	\fRqmail-smtpd
 .I smtpgreeting	\fIme	\fRqmail-smtpd
 .I smtproutes	\fR(none)	\fRqmail-remote
 .I spfbehavior	\fR0	\fRqmail-smtpd

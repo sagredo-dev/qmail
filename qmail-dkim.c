@@ -739,42 +739,42 @@ dkim_hdr(stralloc *s, int ret, char** status)
 		if (status)  if (!stralloc_cats(s, "good")) return (char *) 0;
 		if (!status) if (!stralloc_cats(s, "pass")) return (char *) 0;
 		return "X.7.0";
-	case DKIM_FINISHED_BODY:	/*- 1 process result: no more message body is needed */
+	case DKIM_FINISHED_BODY:	/*- 1 */ /*- B */
 		dkimStatus = "process result: no more message body is needed";
 		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
-	case DKIM_PARTIAL_SUCCESS:	/*- 2 verify result: at least one but not all signatures verified */
+	case DKIM_PARTIAL_SUCCESS:	/*- 2 */ /*- C */
 		dkimStatus = "verify result: at least one but not all signatures verified";
 		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
-	case DKIM_NEUTRAL:			/*- 3 verify result: no signatures verified but message is not suspicious */
+	case DKIM_NEUTRAL:		/*- 3 */ /*- D */
 		dkimStatus = "verify result: no signatures verified but message is not suspicious";
 		dkimResult = status? "no signature" : "policy";
 		code = "X.7.0";
 		break;
-	case DKIM_SUCCESS_BUT_EXTRA:/*- 4 signature result: signature verified but it did not include all of the body */
+	case DKIM_SUCCESS_BUT_EXTRA:	/*- 4 */ /*- E */
 		dkimStatus = "signature result: signature verified but it did not include all of the body";
 		dkimResult = status? "good" : "neutral";
 		code = "X.7.0";
 		break;
-	case DKIM_3PS_SIGNATURE:/*- 5 signature result: 3rd-party signature */
+	case DKIM_3PS_SIGNATURE:	/*- 5 */ /*- F */
 		dkimStatus = "signature result: 3rd-party signature";
 		dkimResult = status? "good" : "policy";
 		code = "X.7.0";
 		break;
-	case DKIM_FAIL:				/*- -1 */ /*- F */
+	case DKIM_FAIL:			/*- -1 */ /*- G */
 		dkimStatus = "DKIM Signature verification failed";
 		dkimResult = status? "bad" : "fail";
 		code = "X.7.0";
 		break;
-	case DKIM_BAD_SYNTAX:		/*- -2 */ /*- G */
+	case DKIM_BAD_SYNTAX:		/*- -2 */ /*- H */
 		dkimStatus = "signature error: DKIM-Signature could not parse or has bad tags/values";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_SIGNATURE_BAD:	/*- -3 */
+	case DKIM_SIGNATURE_BAD:	/*- -3 */ /*- I */
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		dkimStatus = "signature error: RSA/ED25519 verify failed";
 #else
@@ -783,7 +783,7 @@ dkim_hdr(stralloc *s, int ret, char** status)
 		dkimResult = status? "bad" : "fail";
 		code = "X.7.5";
 		break;
-	case DKIM_SIGNATURE_BAD_BUT_TESTING:
+	case DKIM_SIGNATURE_BAD_BUT_TESTING:/*- -4 */ /*- J */
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 		dkimStatus = "signature error: RSA/ED25519 verify failed but testing";
 #else
@@ -792,73 +792,78 @@ dkim_hdr(stralloc *s, int ret, char** status)
 		dkimResult = status? "non-participant" : "neutral";
 		code = "X.7.5";
 		break;
-	case DKIM_SIGNATURE_EXPIRED:
+	case DKIM_SIGNATURE_EXPIRED:	/*- -5 */ /*- K */
 		dkimStatus = "signature error: x= is old";
 		dkimResult = status? "revoked" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_SELECTOR_INVALID:
+	case DKIM_SELECTOR_INVALID:	/*- -6 */ /*- L */
 		dkimStatus = "signature error: selector doesn't parse or contains invalid values";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_SELECTOR_GRANULARITY_MISMATCH:
+	case DKIM_SELECTOR_GRANULARITY_MISMATCH:/*- -7 */ /*- M */
 		dkimStatus = "signature error: selector g= doesn't match i=";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_SELECTOR_KEY_REVOKED:
+	case DKIM_SELECTOR_KEY_REVOKED:	/*- -8 */ /*- N */
 		dkimStatus = "signature error: selector p= empty";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG:
+	case DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG:/*- -9 */ /*- O */
 		dkimStatus = "signature error: selector domain name too long to request";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.0";
 		break;
-	case DKIM_SELECTOR_DNS_TEMP_FAILURE:
+	case DKIM_SELECTOR_DNS_TEMP_FAILURE:/*- -10 */ /*- P */
 		dkimStatus = "signature error: temporary dns failure requesting selector";
 		dkimResult = status? "no key" : "temperror";
 		code = "X.7.0";
 		break;
-	case DKIM_SELECTOR_DNS_PERM_FAILURE:
+	case DKIM_SELECTOR_DNS_PERM_FAILURE:/*- -11 */ /*- Q */
 		dkimStatus = "signature error: permanent dns failure requesting selector";
 		dkimResult = status? "no key" : "permerror";
 		code = "X.7.0";
 		break;
-	case DKIM_SELECTOR_PUBLIC_KEY_INVALID:
+	case DKIM_SELECTOR_PUBLIC_KEY_INVALID:/*- -12 */ /*- R */
 		dkimStatus = "signature error: selector p= value invalid or wrong format";
 		dkimResult = status? "no key" : "permerror";
 		code = "X.7.5";
 		break;
-	case DKIM_NO_SIGNATURES:
+	case DKIM_NO_SIGNATURES:	/*- -13 */ /*- S */
 		dkimStatus = "no signatures";
 		dkimResult = status? "no signature" : "none";
 		code = "X.7.5";
 		break;
-	case DKIM_NO_VALID_SIGNATURES:
+	case DKIM_NO_VALID_SIGNATURES:	/*- -14 */ /*- T */
 		dkimStatus = "no valid signatures";
 		dkimResult = status? "no signature" : "none";
 		code = "X.7.5";
 		break;
-	case DKIM_BODY_HASH_MISMATCH:
+	case DKIM_BODY_HASH_MISMATCH:	/*- -15 */ /*- U */
 		dkimStatus = "signature verify error: message body does not hash to bh value";
 		dkimResult = status? "bad" : "fail";
 		code = "X.7.7";
 		break;
-	case DKIM_SELECTOR_ALGORITHM_MISMATCH:
+	case DKIM_SELECTOR_ALGORITHM_MISMATCH:/*- -16 */ /*- V */
 		dkimStatus = "signature error: selector h= doesn't match signature a=";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.7";
 		break;
-	case DKIM_STAT_INCOMPAT:
+	case DKIM_STAT_INCOMPAT:	/*- -17 */ /*- W */
 		dkimStatus = "signature error: incompatible v=";
 		dkimResult = status? "bad format" : "permerror";
 		code = "X.7.6";
 		break;
-	case DKIM_UNSIGNED_FROM:
+	case DKIM_UNSIGNED_FROM:	/*- -18 */ /*- X */
 		dkimStatus = "signature error: not all message's From headers in signature";
+		dkimResult = status? "bad format" : "policy";
+		code = "X.7.7";
+		break;
+	case DKIM_BAD_IDENTITY:		/*- -19 */ /*- Y */
+		dkimStatus = "signature error: invalid identity in signature";
 		dkimResult = status? "bad format" : "policy";
 		code = "X.7.7";
 		break;
@@ -974,71 +979,77 @@ writeHeaderNexit(int ret, int origRet, int resDKIMSSP, int resDKIMADSP, int useS
 		case DKIM_SUCCESS:			/*- 0 */ /*- A */
 			orig = "SUCCESS";
 			break;
-		case DKIM_FINISHED_BODY:	/*- 1 process result: no more message body is needed */
+		case DKIM_FINISHED_BODY:		/*- 1 */ /*- B */
 			orig = "FINISHED BODY";
 			break;
-		case DKIM_PARTIAL_SUCCESS:	/*- 2 verify result: at least one but not all signatures verified */
+		case DKIM_PARTIAL_SUCCESS:		/*- 2 */ /*- C */
 			orig = "PARTIAL SUCCESS";
 			break;
-		case DKIM_NEUTRAL:			/*- 3 verify result: no signatures verified but message is not suspicious */
+		case DKIM_NEUTRAL:			/*- 3 */ /*- D */
 			orig = "NEUTRAL";
 			break;
-		case DKIM_SUCCESS_BUT_EXTRA:/*- 4 signature result: signature verified but it did not include all of the body */
+		case DKIM_SUCCESS_BUT_EXTRA:		/*- 4 */ /*- E */
 			orig = "SUCCESS(BUT EXTRA)";
 			break;
-		case DKIM_FAIL:				/*- -1 */ /*- F */
+		case DKIM_3PS_SIGNATURE: 		/*- 5 */ /*- F */
+			orig = "3rd PARTY SIGNATURE";
+			break;
+		case DKIM_FAIL:				/*- -1 */ /*- G */
 			orig = "FAIL";
 			break;
-		case DKIM_BAD_SYNTAX:		/*- -2 */ /*- G */
+		case DKIM_BAD_SYNTAX:			/*- -2 */ /*- H */
 			orig = "BAD SYNTAX";
 			break;
-		case DKIM_SIGNATURE_BAD:	/*- -3 */
+		case DKIM_SIGNATURE_BAD:		/*- -3 */ /*- I */
 			orig = "SIGNATURE BAD";
 			break;
-		case DKIM_SIGNATURE_BAD_BUT_TESTING:
+		case DKIM_SIGNATURE_BAD_BUT_TESTING:	/*- -4 */ /*- J */
 			orig = "SIGNATURE BAD (TESTING)";
 			break;
-		case DKIM_SIGNATURE_EXPIRED:
+		case DKIM_SIGNATURE_EXPIRED:		/*- -5 */ /*- K */
 			orig = "SIGNATURE EXPIRED";
 			break;
-		case DKIM_SELECTOR_INVALID:
+		case DKIM_SELECTOR_INVALID:		/*- -6 */ /*- L */
 			orig = "SELECTOR INVALID";
 			break;
-		case DKIM_SELECTOR_GRANULARITY_MISMATCH:
+		case DKIM_SELECTOR_GRANULARITY_MISMATCH:/*- -7 */ /*- M */
 			orig = "SELECTOR GRANULARITY MISMATCH";
 			break;
-		case DKIM_SELECTOR_KEY_REVOKED:
+		case DKIM_SELECTOR_KEY_REVOKED:		/*- -8 */ /*- N */
 			orig = "SELECTOR KEY REVOKED";
 			break;
-		case DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG:
+		case DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG:/*- -9 */ /*- O */
 			orig = "DOMAIN NAME TOO LONG";
 			break;
-		case DKIM_SELECTOR_DNS_TEMP_FAILURE:
+		case DKIM_SELECTOR_DNS_TEMP_FAILURE:	/*- -10 */ /*- P */
 			orig = "DNS TEMP FAILURE";
 			break;
-		case DKIM_SELECTOR_DNS_PERM_FAILURE:
+		case DKIM_SELECTOR_DNS_PERM_FAILURE:	/*- -11 */ /*- Q */
 			orig = "DNS PERM FAILURE";
 			break;
-		case DKIM_SELECTOR_PUBLIC_KEY_INVALID:
+		case DKIM_SELECTOR_PUBLIC_KEY_INVALID:	/*- -12 */ /*- R */
 			orig = "PUBLIC KEY INVALID";
 			break;
-		case DKIM_NO_SIGNATURES:
+		case DKIM_NO_SIGNATURES:		/*- -13 */ /*- S */
 			orig = "NO SIGNATURES";
 			break;
-		case DKIM_NO_VALID_SIGNATURES:
+		case DKIM_NO_VALID_SIGNATURES:		/*- -14 */ /*- T */
 			orig = "NO VALID SIGNATURES";
 			break;
-		case DKIM_BODY_HASH_MISMATCH:
+		case DKIM_BODY_HASH_MISMATCH:		/*- -15 */ /*- U */
 			orig = "BODY HASH MISMATCH";
 			break;
-		case DKIM_SELECTOR_ALGORITHM_MISMATCH:
+		case DKIM_SELECTOR_ALGORITHM_MISMATCH:	/*- -16 */ /*- V */
 			orig = "ALGORITHM MISMATCH";
 			break;
-		case DKIM_STAT_INCOMPAT:
+		case DKIM_STAT_INCOMPAT:		/*- -17 */ /*- W */
 			orig = "STAT INCOMPAT";
 			break;
-		case DKIM_UNSIGNED_FROM:
+		case DKIM_UNSIGNED_FROM:		/*- -18 */ /*- X */
 			orig = "UNSIGNED FROM";
+			break;
+		case DKIM_BAD_IDENTITY:			/*- -19 */ /*- Y */
+			orig = "BAD IDENTITY";
 			break;
 		default:
 			orig = "Unkown error";
@@ -1452,7 +1463,7 @@ main(int argc, char *argv[])
 void
 getversion_qmail_dkim_c()
 {
-	static char    *x = "$Id: qmail-dkim.c,v 1.76 2024-01-10 23:01:23+05:30 Cprogrammer Exp mbhangui $";
+	static char    *x = "$Id: qmail-dkim.c,v 1.77 2024-01-10 23:01:23+05:30 Cprogrammer Exp mbhangui $";
 
 #ifdef HASDKIM
 	x = sccsidmakeargsh;
@@ -1466,12 +1477,18 @@ getversion_qmail_dkim_c()
 
 /*
  * $Log: qmail-dkim.c,v $
- * Revision 1.76  2024-01-10 23:01:23+05:30  Cprogrammer
+ * Revision 1.78  2024-01-10 23:01:23+05:30  Cprogrammer
  * reset sgoptind, sgoptpos for repeated calls to subgetopt
  *
- * Revision 1.75  2024-01-10 10:05:58+05:30  Cprogrammer
+ * Revision 1.77  2024-01-10 10:05:58+05:30  Cprogrammer
  * use bouncehost/me control file if BOUNCEDOMAIN is not set
  * set DKIMSIGN to private key from dkimkeys control file
+ *
+ * Revision 1.76  2024-01-09 19:18:44+05:30  Cprogrammer
+ * added DKIM_BAD_IDENTITY with letter Y
+ *
+ * Revision 1.75  2024-01-06 21:33:37+05:30  Cprogrammer
+ * use new error code DKIM_BAD_IDENTITY for invalid identity domain (i= tag)
  *
  * Revision 1.74  2023-11-20 11:03:04+05:30  Cprogrammer
  * Added env variable EXCLUDE_DKIMSIGN to exclude headers from DKIM signing
