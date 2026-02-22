@@ -355,12 +355,12 @@ ParseAddresses(string str, vector < string > &Addresses)
 			/*- look for and strip group name -*/
 			char           *colon = strchr(start, ':');
 			if (colon != NULL) {
-				char           *at = strchr(start, '@');
+				char           *at = strrchr(start, '@');
 				if (at == NULL || colon < at)
 					start = colon + 1;
 			}
 		}
-		if (*start != '\0' && strchr(start, '@') != NULL)
+		if (*start != '\0' && strrchr(start, '@') != NULL)
 			Addresses.push_back(start);
 		s = from;
 	}
@@ -645,9 +645,9 @@ CDKIMVerify::ProcessHeaders(void)
 			if ((sig.m_nHash == DKIM_HASH_SHA1 && !sel.AllowSHA1))
 #endif
 				sigStatus = sig.Status = DKIM_SELECTOR_ALGORITHM_MISMATCH;	/* causes signature to fail */
-			/*- check for same domain RFC5672 -*/
+			/*- check for same domain RFC6376 3.1.0 i=identity, 3.6.1 t=s -*/
 			if (sel.SameDomain && _stricmp(sig.Domain.c_str(), sig.IdentityDomain.c_str()) != 0)
-				sigStatus = sig.Status = DKIM_BAD_SYNTAX;
+				sigStatus = sig.Status = DKIM_BAD_IDENTITY;
 		}
 		if (sig.Status != DKIM_SUCCESS)
 			continue;
@@ -892,23 +892,24 @@ CDKIMVerify::ParseDKIMSignature(const string &sHeader, SignatureInfo &sig)
 		/*- quoted-printable decode the value -*/
 		DecodeQuotedPrintable(values[7]);
 		/*- must have a '@' separating the local part from the domain -*/
-		char           *at = strchr(values[7], '@');
+		char           *at = strrchr(values[7], '@');
 		if (at == NULL)
-			return DKIM_BAD_SYNTAX;
+			return DKIM_BAD_IDENTITY;
 		*at = '\0';
 		char           *ilocalpart = values[7];
 		char           *idomain = at + 1;
-		/*- i= domain must be the same as or a subdomain of the d= domain -*/
 		int idomainlen = strlen(idomain);
 		int ddomainlen = strlen(values[3]);
 
-		/*- todo: maybe create a new error code for invalid identity domain -*/
+		/*- i= domain must be the same as or a subdomain of the d= domain -*/
 		if (idomainlen < ddomainlen)
-			return DKIM_BAD_SYNTAX;
+			return DKIM_BAD_IDENTITY;
+
+		/*- not a subdomain RFC6376 6.1.1 */
 		if (_stricmp(idomain + idomainlen - ddomainlen, values[3]) != 0)
-			return DKIM_BAD_SYNTAX;
+			return DKIM_BAD_IDENTITY;
 		if (idomainlen > ddomainlen && idomain[idomainlen - ddomainlen - 1] != '.')
-			return DKIM_BAD_SYNTAX;
+			return DKIM_BAD_IDENTITY;
 		sig.IdentityLocalPart = ilocalpart;
 		sig.IdentityDomain = idomain;
 	}
@@ -1297,13 +1298,16 @@ CDKIMVerify::GetDomain(void)
 void
 getversion_dkimverify_cpp()
 {
-	static char    *x = (char *) "$Id: dkimverify.cpp,v 1.31 2023-02-12 10:37:15+05:30 Cprogrammer Exp mbhangui $";
+	static char    *x = (char *) "$Id: dkimverify.cpp,v 1.32 2024-01-06 21:27:45+05:30 Cprogrammer Exp mbhangui $";
 
 	x++;
 }
 
 /*
  * $Log: dkimverify.cpp,v $
+ * Revision 1.32  2024-01-06 21:27:45+05:30  Cprogrammer
+ * use DKIM_BAD_IDENTITY code for invalid identity (i= tag)
+ *
  * Revision 1.31  2023-02-12 10:37:15+05:30  Cprogrammer
  * fixed multi-signature verfication (rsa+ed25519)
  *
