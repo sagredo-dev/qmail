@@ -1,5 +1,13 @@
 # ChangeLog
 
+- unreleased
+  - SNI support (Tx Andreas Gerstlauer)
+    https://github.com/sagredo-dev/qmail/commit/01b51166a4a295231150309129d0a3a531019af8
+    https://github.com/sagredo-dev/qmail/commit/b7fbcb314ae2d9dad3505029d800a8532be78939
+  - Ported over DKIM_BAD_IDENTITY support from https://github.com/indimail/indimail-mta
+    (tx Manvendra Bhangui and Andreas Gerstlauer)
+    https://github.com/sagredo-dev/qmail/commit/1299b550f27c257fd5432fc88e1f9b1b8440873a
+
 - Feb 3, 2026
   - Bug fix for verifying multiple DKIM signatures (second one always
     failed due to a DNS lookup bug) tx Andreas Gerstlaurer.
