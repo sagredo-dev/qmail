@@ -252,6 +252,10 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   - More info [here](https://www.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 * [Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2)'s
   Authentication-Results: header support
+* Server Name Indication (SNI) support (Tx Andreas Gerstlauer)  
+  - Pull request [here](https://github.com/sagredo-dev/qmail/commit/01b51166a4a295231150309129d0a3a531019af8)
+    and [here](https://github.com/sagredo-dev/qmail/commit/b7fbcb314ae2d9dad3505029d800a8532be78939)
+
 
 Install
 -----
