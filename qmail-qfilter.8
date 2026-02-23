@@ -9,17 +9,8 @@ qmail-qfilter \- front end for qmail-queue that does filtering
 .I -- filter ...
 ]
 .SH DESCRIPTION
-\fBqmail-qfilter(1)\fR allows indimail to execute message filters. It
-gets invoked by indimail programs using qmail-queue frontend when the
-\fBQMAILQUEUE\fR environment is set to \fBqmail-qfilter\fR or when passed
-as a command line argument having \fBqmail-qfilter\fR like below (which
-will have the message pass through \fBqmail-dkim\fR and
-\fBqmail-qfilter\fR).
-
-.EX
-QMAILQUEUE="bin/qmail-qfilter filter ..."
-.EE
-
+\fBqmail-qfilter\fR acts as a \fBqmail-queue\fR frontend to execute message
+filters. It is invoked by setting the \fBQMAILQUEUE\fR environment variable
 \fBqmail-qfilter\fR sends the message text through each of the filter
 commands named on the command line. Each filter is run separately, with
 standard input opened to the input email, and standard output opened to a
