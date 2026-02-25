@@ -234,9 +234,18 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   - More info [here](https://www.sagredo.eu/en/qmail-notes-185/email-address-internationalization-for-qmail-mav-from-chkuser-modified-accordingly-308.html)
 * [Andreas Gerstlauer](https://github.com/sagredo-dev/qmail/commit/f913e6da84cbab29608fc5342f1c88d29a2c12e2)'s
   Authentication-Results: header support
-* Server Name Indication (SNI) support (Tx Andreas Gerstlauer)  
+* Andreas Gerstlauer's Server Name Indication (SNI) support  
+  Server Name Indication (SNI) is a TLS extension that enables a server to present different certificates based
+  on the hostname requested by the client during the TLS handshake.
   - Pull request [here](https://github.com/sagredo-dev/qmail/commit/01b51166a4a295231150309129d0a3a531019af8)
     and [here](https://github.com/sagredo-dev/qmail/commit/b7fbcb314ae2d9dad3505029d800a8532be78939)
+  - [More info](https://www.sagredo.eu/en/qmail-notes-185/server-name-indication-sni-for-qmail-and-dovecot-331.html)
+* Bruce Guenter's qmail-qfilter  
+  qmail-qfilter allows the body and/or envelope of a message to be filtered through a series of filters before
+  being passed to the real qmail-queue program, and injected into the qmail queue.
+  - https://untroubled.org/qmail-qfilter/
+  - Thanks to Manvendra Bhangui for porting qmail-qfilter to his Indimail and to Andreas Gerstlauer for porting
+    to my qmail. [Pull request](https://github.com/sagredo-dev/qmail/pull/38)
 
 Install
 -----
