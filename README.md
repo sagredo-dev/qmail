@@ -258,7 +258,7 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   - Pull request [here](https://github.com/sagredo-dev/qmail/commit/01b51166a4a295231150309129d0a3a531019af8)
     and [here](https://github.com/sagredo-dev/qmail/commit/b7fbcb314ae2d9dad3505029d800a8532be78939)
   - [More info](https://www.sagredo.eu/en/qmail-notes-185/server-name-indication-sni-for-qmail-and-dovecot-331.html)
-* Bruce Guenter's qmail-qfilter
+* Bruce Guenter's qmail-qfilter  
   qmail-qfilter allows the body and/or envelope of a message to be filtered through a series of filters before
   being passed to the real qmail-queue program, and injected into the qmail queue.
   - https://untroubled.org/qmail-qfilter/
