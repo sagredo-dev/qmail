@@ -19,8 +19,6 @@ Development versions of qmail-qfilter are available via Subversion at:
 
 Requirements:
 
-- bglibs is required for system dependancies.
-
 - This program is designed to take advantage of my QMAILQUEUE patch,
   which causes programs that would execute qmail-queue (such as
   qmail-smtpd etc.) to execute an alternative program.
