@@ -410,6 +410,10 @@ compile control.c readwrite.h open.h getln.h stralloc.h gen_alloc.h \
 substdio.h error.h control.h alloc.h scan.h
 	./compile control.c
 
+custom_error.o: \
+compile custom_error.c qmail.h custom_error.h
+	./compile custom_error.c
+
 date822fmt.o: \
 compile date822fmt.c datetime.h fmt.h date822fmt.h
 	./compile date822fmt.c
@@ -863,7 +867,7 @@ qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast config-all dnscname
 dnsptr dnsip dnsmxip dnsfq dnstxt hostname ipmeprint ipmetest qreceipt qreceipt qsmhook qbiff \
 forward preline condredirect bouncesaying except maildirmake \
 maildir2mbox maildirwatch qail elq pinq install \
-qmail-dkim dkim spawn-filter surblfilter \
+qmail-dkim dkim spawn-filter qmail-qfilter surblfilter \
 instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
 binm3 binm3+df srsfilter surblqueue dknewkey qmail-todo spfquery update_tmprsadh \
 helodnscheck
@@ -1026,7 +1030,7 @@ maildir2mbox.0 maildirwatch.0 qmail.0 qmail-limits.0 qmail-log.0 \
 qmail-control.0 qmail-header.0 qmail-users.0 dot-qmail.0 dknewkey.8 \
 qmail-command.0 tcp-environ.0 maildir.0 mbox.0 addresses.0 dkim.8 \
 envelopes.0 forgeries.0 qmail-dkim.0 spawn-filter.0 \
-surblfilter.0
+surblfilter.0 qmail-qfilter.0
 
 mbox.0: \
 mbox.5
@@ -1206,16 +1210,16 @@ qmail-control.9 conf-break conf-spawn
 
 qmail-dkim: \
 load qmail-dkim.o triggerpull.o fmtqfn.o now.o date822fmt.o \
-subgetopt.o makeargs.o datetime.a seek.a ndelay.a \
-dns_text.o open.a sig.a alloc.a substdio.a error.a \
-wildmat.o str.a case.a fs.a auto_qmail.o auto_split.o \
-parse_env.o auto_uids.o fd.a wait.a getDomainToken.o \
+subgetopt.o makeargs.o datetime.a seek.a ndelay.a dns_text.o \
+open.a sig.a alloc.a substdio.a error.a wildmat.o str.a \
+case.a fs.a auto_qmail.o auto_split.o parse_env.o custom_error.o \
+auto_uids.o fd.a wait.a getDomainToken.o \
 env.a getln.a control.o stralloc.a dns.lib libdkim.a
 	c++ -o qmail-dkim qmail-dkim.o triggerpull.o fmtqfn.o now.o \
 	subgetopt.o makeargs.o date822fmt.o datetime.a seek.a ndelay.a \
 	dns_text.o open.a sig.a substdio.a error.a auto_qmail.o \
 	wildmat.o auto_split.o auto_uids.o fd.a wait.a \
-	getDomainToken.o parse_env.o \
+	getDomainToken.o parse_env.o custom_error.o \
 	-lcrypto env.a control.o open.a getln.a stralloc.a alloc.a \
 	substdio.a str.a case.a libdkim.a fs.a `cat dns.lib`
 
@@ -1490,6 +1494,22 @@ sgetopt.h subgetopt.h control.h constmap.h stralloc.h gen_alloc.h \
 fmt.h str.h scan.h open.h error.h getln.h auto_break.h auto_qmail.h \
 auto_usera.h
 	./compile qmail-pw2u.c
+
+qmail-qfilter: \
+load qmail-qfilter.o control.o custom_error.o auto_qmail.o \
+getln.a env.a substdio.a str.a stralloc.a error.a alloc.a open.a \
+scan_ulong.o fmt_ulong.o wait.a
+	./load qmail-qfilter control.o custom_error.o auto_qmail.o \
+	getln.a env.a substdio.a str.a stralloc.a error.a alloc.a open.a \
+	scan_ulong.o fmt_ulong.o wait.a
+
+qmail-qfilter.o: \
+compile qmail-qfilter.c substdio.h env.h scan.h alloc.h str.h fmt.h \
+byte.h wait.h error.h custom_error.h
+	./compile qmail-qfilter.c
+
+qmail-qfilter.0: qmail-qfilter.8
+	nroff -man qmail-qfilter.8 > qmail-qfilter.0
 
 qmail-qmqpc: \
 load qmail-qmqpc.o slurpclose.o timeoutread.o timeoutwrite.o \
@@ -2303,6 +2323,7 @@ compile wait_nohang.c haswaitp.h
 wait_pid.o: \
 compile wait_pid.c error.h haswaitp.h
 	./compile wait_pid.c
+
 makeargs.o: compile makeargs.c alloc.h str.h alloc.h stralloc.h
 	./compile makeargs.c
 
