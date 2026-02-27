@@ -714,24 +714,36 @@ int mailfrom_cram()
 
 void smtp_auth()
 {
-  int i, j; 
+  int i, j;
 
   for (i = 0; i + 8 < smtptext.len; i += str_chr(smtptext.s+i,'\n')+1)
-    if (!str_diffn(smtptext.s+i+4,"AUTH",4)) {  
-      if (j = str_chr(smtptext.s+i+8,'C') > 0)
-        if (case_starts(smtptext.s+i+8+j,"CRAM"))
-          if (mailfrom_cram() >= 0) return;
-
-      if (j = str_chr(smtptext.s+i+8,'P') > 0)
-        if (case_starts(smtptext.s+i+8+j,"PLAIN")) 
-          if (mailfrom_plain() >= 0) return;
-
-      if (j = str_chr(smtptext.s+i+8,'L') > 0)
-        if (case_starts(smtptext.s+i+8+j,"LOGIN")) 
-          if (mailfrom_login() >= 0) return;
-
-      err_authprot();
-      mailfrom();
+      if (!str_diffn(smtptext.s+i+4,"AUTH",4)) {
+        int found = 0;
+        char *p = smtptext.s+i+8; /* points to first word after "AUTH " */
+        while (*p && *p != '\n') {
+          /* skip leading spaces */
+          while (*p == ' ') p++;
+            if (*p == '\n' || *p == '\0') break;
+            if (case_starts(p,"CRAM")) {
+              if (mailfrom_cram() >= 0) return;
+              found = 1; break;
+            }
+            if (case_starts(p,"PLAIN")) {
+              if (mailfrom_plain() >= 0) return;
+              if (j = str_chr(smtptext.s+i+8,'L') > 0)
+              found = 1; break;
+            }
+            if (case_starts(p,"LOGIN")) {
+              if (mailfrom_login() >= 0) return;
+              found = 1; break;
+            }
+            /* advance to next word */
+            while (*p && *p != ' ' && *p != '\n') p++;
+        }
+        if (!found) {
+          err_authprot();
+          mailfrom();
+        }
     }
 }
 
