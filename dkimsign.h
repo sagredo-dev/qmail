@@ -92,8 +92,6 @@ protected:
 	string          m_sReturnedSig;
 	bool            m_bReturnedSigAssembled;
 	string          m_sCopiedHeaders;
-    string          SigHdrs;
-    size_t          m_SigHdrs;
 };
 
 #endif	/*- DKIMSIGN_H */

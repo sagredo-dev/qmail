@@ -126,9 +126,6 @@ CDKIMSign::Init(DKIMSignOptions *pOptions)
 	m_nHash = pOptions->nHash;
 	m_bReturnedSigAssembled = false;
 	m_sCopiedHeaders.erase();
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-	SigHdrs.erase();
-#endif
 	return nRet;
 }
 
@@ -168,11 +165,15 @@ CDKIMSign::Hash(const char *szBuffer, int nBufLength, bool bHdr)
 	if (bHdr) { /* Generate signature: b=... */
 		if (m_nHash == DKIM_HASH_SHA1 || m_nHash == DKIM_HASH_SHA1_AND_SHA256)
 			EVP_SignUpdate(p1, szBuffer, nBufLength);
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+		if (m_nHash == DKIM_HASH_ED25519)
+			EVP_DigestUpdate(p2, szBuffer, nBufLength);
+		else
+			EVP_SignUpdate(p2, szBuffer, nBufLength);
+#else
 #ifdef HAVE_EVP_SHA256
 		EVP_SignUpdate(p2, szBuffer, nBufLength);
 #endif
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-		SigHdrs.append(szBuffer, nBufLength);
 #endif
 	} else { /* lets go for body hash values: bh=... */
 		if (m_nHash == DKIM_HASH_SHA1 || m_nHash == DKIM_HASH_SHA1_AND_SHA256)
@@ -827,7 +828,8 @@ CDKIMSign::ConstructSignature(char *szPrivKey, int nSigAlg)
 #endif
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	case DKIM_HASH_ED25519:
-		SigHdrs.append(sTemp.c_str(), sTemp.size());
+		if (!EVP_DigestUpdate(p2, sTemp.c_str(), sTemp.size()))
+			return DKIM_EVP_SIGN_FAILURE;
 		break;
 #endif
 	}
@@ -863,19 +865,19 @@ CDKIMSign::ConstructSignature(char *szPrivKey, int nSigAlg)
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 	case DKIM_HASH_ED25519:
 		size_t          sig_len;
-		unsigned char  *SignMsg;
 
+		if (!EVP_DigestFinal(p2, Hash, &nHashLen))
+			return DKIM_EVP_DIGEST_FAILURE;
 		if (!EVP_DigestSignInit(p5, NULL, NULL, NULL, pkey)) {
 			EVP_PKEY_free(pkey);
 			return DKIM_BAD_PRIVATE_KEY;
 		}
-		SignMsg = (unsigned char *) SigHdrs.c_str();
-		if (!EVP_DigestSign(p5, NULL, &sig_len, SignMsg, SigHdrs.length())) {
+		if (!EVP_DigestSign(p5, NULL, &sig_len, Hash, nHashLen)) {
 			EVP_PKEY_free(pkey);
 			return DKIM_BAD_PRIVATE_KEY;
 		}
 		sig = (unsigned char *) OPENSSL_malloc(sig_len);
-		nSignRet = EVP_DigestSign(p5, sig, &sig_len, SignMsg, SigHdrs.length());
+		nSignRet = EVP_DigestSign(p5, sig, &sig_len, Hash, nHashLen);
 		siglen = (unsigned int) sig_len;
 		break;
 #endif
