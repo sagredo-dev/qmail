@@ -43,9 +43,8 @@ extern "C" {
  * Much of the code related to ED25519 comes from
  * Erwin Hoffmann's s/qmail code
  */
-string          SigHdr;
 #endif
-static int     verbose;
+static int     verbose = true;
 
 SignatureInfo::SignatureInfo(bool s)
 {
@@ -398,6 +397,7 @@ CDKIMVerify::Init(DKIMVerifyOptions *pOptions)
 	m_SaveCanonicalizedData = pOptions->nSaveCanonicalizedData != 0;
 	m_AllowUnsignedFromHeaders = pOptions->nAllowUnsignedFromHeaders != 0;
 	verbose = pOptions->verbose;
+   verbose = true;
 	return nRet;
 }
 
@@ -472,7 +472,14 @@ CDKIMVerify::GetResults(int *sCount, int *sSize)
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
 			else 
 			if (EVP_PKEY_base_id(i->m_pSelector->PublicKey) == EVP_PKEY_ED25519) {
-				res = EVP_DigestVerifyInit(i->m_Msg_ctx, NULL, NULL, NULL,
+				unsigned char   md[EVP_MAX_MD_SIZE];
+				unsigned        len = 0;
+				res = EVP_DigestFinal(i->m_Hdr_ctx, md, &len);
+				if (res != 1)  {
+					while ((r = ERR_get_error()))
+						fprintf(stderr, "EVP_DigestFinal: %s\n", ERR_error_string(r, NULL));
+				} else
+					res = EVP_DigestVerifyInit(i->m_Msg_ctx, NULL, NULL, NULL,
 						i->m_pSelector->PublicKey);  /* late initialization */
 				if (res != 1) {
 					if (verbose == true) {
@@ -481,7 +488,7 @@ CDKIMVerify::GetResults(int *sCount, int *sSize)
 					}
 				} else {
 					res = EVP_DigestVerify(i->m_Msg_ctx, (unsigned char *)i->SignatureData.data(),
-							(size_t) i->SignatureData.length(), (unsigned char *) SigHdr.data(), SigHdr.length());
+							(size_t) i->SignatureData.length(), md, len);
 					if (res != 1 && verbose == true) {
 						while ((r = ERR_get_error()))
 							fprintf(stderr, "EVP_DigestVerify: %s\n", ERR_error_string(r, NULL));
@@ -494,7 +501,7 @@ CDKIMVerify::GetResults(int *sCount, int *sSize)
 			 * will always be the first signature after the mail
 			 * body
 			 */
-			SigHdr.erase(SigHdr.length() - sSignedSig.length(), SigHdr.length());
+//			SigHdr.erase(SigHdr.length() - sSignedSig.length(), SigHdr.length());
 #endif
 			if (res == 1) {
 				if (i->UnverifiedBodyCount == 0)
@@ -568,7 +575,6 @@ CDKIMVerify::GetResults(int *sCount, int *sSize)
 void
 SignatureInfo::Hash(const char *szBuffer, unsigned nBufLength, bool IsBody)
 {
-
 	if (IsBody && BodyLength != -1) {
 		VerifiedBodyCount += nBufLength;
 		if (VerifiedBodyCount > BodyLength) {
@@ -587,9 +593,13 @@ SignatureInfo::Hash(const char *szBuffer, unsigned nBufLength, bool IsBody)
 #endif
 	} else {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-		EVP_VerifyUpdate(m_Hdr_ctx, szBuffer, nBufLength);
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
-		SigHdr.append(szBuffer, nBufLength);
+		if (m_pSelector->method == DKIM_ENCRYPTION_ED25519)
+			EVP_VerifyUpdate(m_Hdr_ctx, szBuffer, nBufLength);
+		else
+			EVP_DigestUpdate(m_Hdr_ctx, szBuffer, nBufLength);
+#else
+		EVP_VerifyUpdate(m_Hdr_ctx, szBuffer, nBufLength);
 #endif
 #else
 		EVP_VerifyUpdate(&m_Hdr_ctx, szBuffer, nBufLength);
@@ -654,7 +664,14 @@ CDKIMVerify::ProcessHeaders(void)
 		/*- initialize the hashes -*/
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 		if (sig.m_nHash == DKIM_HASH_SHA256) {
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+			if (sel.method == DKIM_ENCRYPTION_ED25519)
+				EVP_DigestInit(sig.m_Hdr_ctx, EVP_sha256());
+			else
+				EVP_VerifyInit(sig.m_Hdr_ctx, EVP_sha256());
+#else
 			EVP_VerifyInit(sig.m_Hdr_ctx, EVP_sha256());
+#endif
 			EVP_DigestInit(sig.m_Bdy_ctx, EVP_sha256());
 		} else {
 			EVP_VerifyInit(sig.m_Hdr_ctx, EVP_sha1());
@@ -675,10 +692,6 @@ CDKIMVerify::ProcessHeaders(void)
 #endif
 #endif
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
-		if (sig.m_nHash == DKIM_HASH_SHA256)
-			SigHdr.assign("");
-#endif
 		/*- compute the hash of the header -*/
 		vector < list < string >::reverse_iterator > used;
 		for (vector < string >::iterator x = sig.SignedHeaders.begin(); x != sig.SignedHeaders.end(); ++x) {
