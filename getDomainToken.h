@@ -24,4 +24,6 @@ typedef enum {
 
 char           *getDomainToken(char *, stralloc *);
 
+char           *getDomainTokens(char *, stralloc *, int *, char **env);
+
 #endif

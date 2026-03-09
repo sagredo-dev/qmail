@@ -12,7 +12,8 @@ qmail-qfilter \- front end for qmail-queue that does filtering
 \fBqmail-qfilter\fR acts as a \fBqmail-queue\fR frontend to execute message
 filters. It is invoked by setting the \fBQMAILQUEUE\fR environment variable
 \fBqmail-qfilter\fR sends the message text through each of the filter
-commands named on the command line. Each filter is run separately, with
+commands named on the command line and in the \fIqfilters\fR control
+file (allowing finer control, see below). Each filter is run separately, with
 standard input opened to the input email, and standard output opened to a
 new temporary file that will become the input to either the next filter, or
 \fBqmail-queue\fR. If the filter does not modify the message it passes
@@ -46,6 +47,35 @@ without running any other filters. If your filter returns 31, the mail will
 be permanently rejected. If your filter returns 71, the mail will be
 temporarily rejected.
 
+.SH CONTROL FILES
+
+.TP 5
+.I qfilters
+This control file can be used to setup additional filters. Lines in this
+file have the following format:
+
+.EX
+\fBdomain:filter\fR
+  or
+\fBdomain:filter:envstr\fR
+.EE
+
+\fIdomain\fR refers to the envelope sender domain. It can be an exact match,
+wildcard or a regular expression (if QREGEX environment variable is defined).
+If there are multiple lines that match \fIdomain\fR, all matching filters
+will be applied.
+
+\fIfilter\fR is the filter command to run (passed through /bin/sh).
+
+\fIenvstr\fR mentioned above is a string of comma-separated environment
+variable additions or removals.
+
+Example entry:
+
+.EX
+*:QMAILHOME/bin/surbfilter:CACHELIFTIME=,SURBL_DEBUG_FN=/dev/null
+.EE
+
 .SH ENVIRONMENT
 For compatibility with previous versions, \fBqmail-qfilter\fR sets
 \fBQMAILUSER\fR and \fBQMAILHOST\fR to the user and host portions of the
@@ -61,7 +91,8 @@ If \fBQQF_QMAILQUEUE\fR is set, that value is used in
 place of \fBqmail-queue\fR.
 
 .SH "SEE ALSO"
-qmail-queue(8)
+qmail-queue(8),
+spawn-filter(8)
 
 .SH NOTES
 \fB$QMAILQUEUE\fR is deliberately not used to override \fBqmail-queue\fR in

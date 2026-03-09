@@ -40,12 +40,21 @@ dtype           delivery;
 char           *
 getDomainToken(char *domain, stralloc *sa)
 {
+	return getDomainTokens(domain, sa, NULL, NULL);
+}
+
+char           *
+getDomainTokens(char *domain, stralloc *sa, int *pos, char **env)
+{
 	regex_t         qreg;
 	int             len, n, retval;
 	char           *ptr, *p1, *p2;
 
-	for (len = 0, ptr = sa->s;len < sa->len;) {
+	len = pos? *pos : 0;
+	ptr = (len && sa->s)? &sa->s[len] : sa->s;
+	while (len < sa->len) {
 		len += ((n = str_len(ptr)) + 1);
+		if (pos) *pos = len;
 		for (p1 = ptr;*p1 && *p1 != ':';p1++);
 		if (*p1 == ':') {
 			*p1 = 0;
@@ -60,8 +69,9 @@ getDomainToken(char *domain, stralloc *sa)
 			}
 			if (*p2 == ':') {
 				*p2 = 0;
-				parse_env(p2 + 1);
-			}
+				if (env) *env = p2 + 1; else parse_env(p2 + 1);
+			} else
+				if (env) *env = NULL;
 			/*- build the regex */
 			if ((retval = str_diff(ptr, domain))) {
 				if (env_get("QREGEX")) {

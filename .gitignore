@@ -62,6 +62,7 @@ qmail-upq
 qmail-showctl
 qmail-newu
 qmail-pw2u
+qmail-qfilter
 qmail-qread
 qmail-qstat
 qmail-tcpto
@@ -141,6 +142,8 @@ qmail-newu.8
 qmail-newu.0
 qmail-pw2u.8
 qmail-pw2u.0
+qmail-qfilter.0
+qmail-qfilter.8
 qmail-qread.0
 qmail-qstat.0
 qmail-tcpto.0
@@ -210,5 +213,3 @@ conf-policy.temp
 unittest_stralloc
 qtmp.h
 helodnscheck
-qmail-qfilter
-qmail-qfilter.0
