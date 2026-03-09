@@ -1486,10 +1486,10 @@ auto_usera.h
 qmail-qfilter: \
 load qmail-qfilter.o control.o custom_error.o auto_qmail.o \
 getln.a env.a substdio.a str.a stralloc.a error.a alloc.a open.a \
-scan_ulong.o fmt_ulong.o wait.a
+scan_ulong.o fmt_ulong.o wait.a parse_env.o wildmat.o getDomainToken.o
 	./load qmail-qfilter control.o custom_error.o auto_qmail.o \
 	getln.a env.a substdio.a str.a stralloc.a error.a alloc.a open.a \
-	scan_ulong.o fmt_ulong.o wait.a
+	scan_ulong.o fmt_ulong.o wait.a parse_env.o wildmat.o getDomainToken.o
 
 qmail-qfilter.o: \
 compile qmail-qfilter.c substdio.h env.h scan.h alloc.h str.h fmt.h \
@@ -1498,6 +1498,12 @@ byte.h wait.h error.h custom_error.h
 
 qmail-qfilter.0: qmail-qfilter.8
 	nroff -man qmail-qfilter.8 > qmail-qfilter.0
+
+qmail-qfilter.8: \
+qmail-qfilter.9
+	cat qmail-qfilter.9 \
+	| sed s}QMAILHOME}"`head -n 1 conf-qmail`"}g \
+	> qmail-qfilter.8
 
 qmail-qmqpc: \
 load qmail-qmqpc.o slurpclose.o timeoutread.o timeoutwrite.o \

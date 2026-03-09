@@ -32,8 +32,11 @@
 #include "fmt.h"
 #include "byte.h"
 #include "wait.h"
+#include "control.h"
 #include "error.h"
 #include "custom_error.h"
+#include "parse_env.h"
+#include "getDomainToken.h"
 
 #ifndef TMPDIR
 #define TMPDIR "/tmp"
@@ -219,6 +222,7 @@ copy_fd(int fdin, int fdout, size_t *var)
 
 struct command {
 	char          **argv;
+	char          *env;
 	struct command *next;
 };
 typedef struct command command;
@@ -241,7 +245,9 @@ parse_args(int argc, char *argv[])
 			_exit(QQ_INTERNAL);
 		argv[end] = 0;
 		cmd = (command *) alloc(sizeof (command));
+		if (!cmd) _exit(QQ_OOM);
 		cmd->argv = argv;
+		cmd->env = 0;
 		cmd->next = 0;
 		if (tail)
 			tail->next = cmd;
@@ -251,6 +257,47 @@ parse_args(int argc, char *argv[])
 		++end;
 		argv += end;
 		argc -= end;
+	}
+	return head;
+}
+
+/*
+ * Read matching filter commands from control/qfilters
+ */
+command        *
+parse_control(command* head)
+{
+	command        *tail;
+	char           *domain;
+	char           *filter;
+	char           *env;
+	int            ret;
+	int            pos = 0;
+	static stralloc filterdefs = { 0 };
+
+	for (tail = head; tail && tail->next; tail = tail->next) ;
+
+	if ((ret = control_readfile(&filterdefs, "control/qfilters", 0)) == -1)
+		custom_error("qmail-qfilters", "Z", "unable to read qfilters", 0, "X.3.0");
+	if (!ret) return head;
+	if (!(domain = env_get("QMAILHOST"))) domain = "";
+	while (filter = getDomainTokens(domain, &filterdefs, &pos, &env)) {
+		command        *cmd;
+		cmd = (command *) alloc(sizeof (command));
+		if (!cmd) _exit(QQ_OOM);
+		cmd->argv = (char**) alloc(4 * sizeof(char*));
+		if (!cmd->argv) _exit(QQ_OOM);
+		cmd->argv[0] = "/bin/sh";
+		cmd->argv[1] = "-c";
+		cmd->argv[2] = filter;
+		cmd->argv[3] = 0;
+		cmd->env = env;
+		cmd->next = 0;
+		if (tail)
+			tail->next = cmd;
+		else
+			head = cmd;
+		tail = cmd;
 	}
 	return head;
 }
@@ -325,6 +372,7 @@ run_filters(const command *first)
 			case -1:
 				_exit(121);
 			case 0:
+				if (c->env) parse_env(c->env);
 				execvp(c->argv[0], c->argv);
 				_exit(QQ_INTERNAL);
 		}
@@ -365,19 +413,21 @@ run_filters(const command *first)
 int
 main(int argc, char *argv[])
 {
-	const command  *filters;
+	command  *filters;
 	const char *qqq;
 
 	filters = parse_args(argc - 1, argv + 1);
 
 	if ((qqq = getenv("QQF_QMAILQUEUE")) != 0)
 		qqargv[0] = qqq;
-   
+
 	copy_fd(0, 0, &msg_len);
 	copy_fd(1, ENVIN, &env_len);
 	parse_envelope();
 	move_fd(mktmpfile(), QQFD);
    
+	filters = parse_control(filters);
+
 	run_filters(filters);
    
 	read_qqfd();
