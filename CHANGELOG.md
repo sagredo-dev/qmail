@@ -1,8 +1,6 @@
 # ChangeLog
 
-- unreleased
-<<<<<<< HEAD
-=======
+- Apr 2, 2026
   - qmail-remote: authentication on remote servers can select the auth method even
     when the first method advertized by the remote server is not available locally.  
     ([tx Pierluigi](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))
