@@ -1,4 +1,12 @@
+#ifdef TLS
+#include <ctype.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <limits.h>
 #include <pwd.h>
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -395,28 +403,101 @@ void blast()
 #ifdef TLS
 char *partner_fqdn = 0;
 
+/*
+ * Validate a fully qualified domain name (FQDN)
+ * Rules enforced:
+ * - Total length: 1–255 characters
+ * - Labels separated by '.'
+ * - Each label: 1–63 characters
+ * - Allowed chars: [A-Za-z0-9-]
+ * - Labels must not start or end with '-'
+ * - FQDN must not start or end with '.'
+ */
+int is_valid_fqdn(const char *s) {
+  size_t len = strlen(s);
+  int label_len = 0;
+
+  // Check total length
+  if (len == 0 || len > 255) return 0;
+
+  // Must not start or end with '.'
+  if (s[0] == '.' || s[len-1] == '.') return 0;
+
+  for (size_t i = 0; i < len; i++) {
+    char c = s[i];
+
+    if (c == '.') {
+      // Reject empty labels or labels longer than 63 chars
+      if (label_len == 0 || label_len > 63) return 0;
+      label_len = 0;
+      continue;
+    }
+
+    // Allow only alphanumeric characters and hyphen
+    if (!isalnum((unsigned char)c) && c != '-') return 0;
+
+    // Label must not start with '-'
+    if (label_len == 0 && c == '-') return 0;
+
+    label_len++;
+  }
+
+  // Validate last label
+  if (label_len == 0 || label_len > 63) return 0;
+
+  // FQDN must not end with '-'
+  if (s[len-1] == '-') return 0;
+
+  return 1;
+}
+
+/*
+ * Create a file in control/notlshosts/<partner_fqdn>
+ */
+int create_notlshost_file(const char *pw_dir, const char *partner_fqdn) {
+  char path[PATH_MAX];
+  char fqdn_buf[256];
+  int fd;
+
+  // Check length before copying
+  if (strlen(partner_fqdn) >= sizeof(fqdn_buf)) return -1;
+
+  // Copy to local buffer
+  strcpy(fqdn_buf, partner_fqdn);
+
+  // Validate FQDN
+  if (!is_valid_fqdn(fqdn_buf)) return -1;
+
+  // Normalize to lowercase
+  for (char *p = fqdn_buf; *p; p++)
+    *p = tolower((unsigned char)*p);
+
+  // Build the full path
+  if (snprintf(path, sizeof(path),
+       "%s/control/notlshosts/%s",
+       pw_dir, fqdn_buf) >= sizeof(path))
+    return -1;
+
+  // Create the file
+  fd = open(path, O_WRONLY | O_CREAT, 0644);
+  if (fd >= 0) close(fd);
+
+  return 0;
+}
+
 # define TLS_QUIT quit(ssl ? "; connected to " : "; connecting to ", "")
 void tls_quit(const char *s1, const char *s2)
 {
   /*
-     touch control/notlshosts/<fqdn> if control/notlshosts_auto contains any
-     number greater than 0 in order to skip the TLS connection for remote
-     servers with an obsolete TLS version.
-     Thanks Alexandre Fonceca
+     Create control/notlshosts/<partner_fqdn> if control/notlshosts_auto
+     contains any number greater than 0 in order to skip the TLS
+     connection for remote servers with an obsolete TLS version.
+     Thanks Alexandre Fonceca for the original code.
+     Thanks to Diep Pham for spotting the vulnerability.
    */
-  unsigned long i = 0;
-  if (control_readint(&i,"control/notlshosts_auto") && i) {
-    struct passwd *info = getpwuid(getuid()); // get qmail dir
-    FILE *fp;
-    char acfcommand[1200];
-    sprintf(acfcommand, "/bin/touch %s/control/notlshosts/'%s'", info->pw_dir, partner_fqdn);
-    fp = popen(acfcommand, "r");
-    if (fp == NULL) {
-      out("Failed to run touch command ");
-      exit(1);
-    }
-    pclose(fp);
-  }
+  struct passwd *info = getpwuid(getuid()); // get qmail dir
+  create_notlshost_file(info->pw_dir, partner_fqdn);
+
   /* end skip TLS patch */
   out((char *)s1); if (s2) { out(": "); out((char *)s2); } TLS_QUIT;
 }
