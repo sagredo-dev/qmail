@@ -28,8 +28,9 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * Frederik Vermeulen's qmail-tls patch v. 20231230  
   implements SSL or TLS encrypted and authenticated SMTP.  
   The key is now 4096 bit long and the cert will be owned by vpopmail:vchkpw  
-  Patched to dinamically touch control/notlshosts/\<fqdn\> if control/notlshosts_auto contains any
-  number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS version (tx Alexandre Fonceca).  
+  Patched to dinamically create _control/notlshosts/\<fqdn\>_ if control/notlshosts_auto contains any
+  number greater than 0 in order to skip the TLS connection for remote servers with an obsolete TLS 
+  version (tx Alexandre Fonceca for the original code and to Diep Pham for spotting a vulnerability).  
   The file update_tmprsadh was modified to chown all .pem files to vpopmail.  
   http://inoa.net/qmail-tls/
 * Marcel Telka's force-tls patch v. 2016.05.15  
@@ -265,11 +266,11 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
   - Thanks to Manvendra Bhangui for porting qmail-qfilter to his Indimail and to Andreas Gerstlauer for porting
     to my qmail. [Pull request](https://github.com/sagredo-dev/qmail/pull/38)
 
-* qmail-remote auth method select
-  - authentication on remote servers by qmail-remote can select the auth method even
-    when the first method advertized by the remote server is not locally available.  
-    ([tx Pierluigi](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))
-
+* Pierluigi's qmail-remote auth method select  
+  authentication on remote servers by qmail-remote can select the auth method even
+  when the first method advertized by the remote server is not locally available.  
+  ([More info here](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))  
+  ([PR here](https://github.com/sagredo-dev/qmail/pull/39))
 
 Install
 -----
