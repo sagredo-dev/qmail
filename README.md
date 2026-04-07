@@ -269,8 +269,8 @@ This distribution of `qmail` puts together `netqmail-1.06` with the following pa
 * Pierluigi's qmail-remote auth method select  
   authentication on remote servers by qmail-remote can select the auth method even
   when the first method advertized by the remote server is not locally available.  
-  ([More info here](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))  
-  ([PR here](https://github.com/sagredo-dev/qmail/pull/39))
+  - [More info here](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058)
+  - [Pull Request here](https://github.com/sagredo-dev/qmail/pull/39)
 
 Install
 -----
