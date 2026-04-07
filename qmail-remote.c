@@ -4,7 +4,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <limits.h>
 #include <pwd.h>
 #endif
 #include <sys/types.h>
@@ -454,10 +453,11 @@ int is_valid_fqdn(const char *s) {
 /*
  * Create a file in control/notlshosts/<partner_fqdn>
  */
-int create_notlshost_file(const char *pw_dir, const char *partner_fqdn) {
-  char path[PATH_MAX];
+int create_notlshost_file(const char *partner_fqdn) {
+  char path[1024];
   char fqdn_buf[256];
   int fd;
+  struct passwd *info = getpwuid(getuid()); // get qmail dir
 
   // Check length before copying
   if (strlen(partner_fqdn) >= sizeof(fqdn_buf)) return -1;
@@ -475,7 +475,7 @@ int create_notlshost_file(const char *pw_dir, const char *partner_fqdn) {
   // Build the full path
   if (snprintf(path, sizeof(path),
        "%s/control/notlshosts/%s",
-       pw_dir, fqdn_buf) >= sizeof(path))
+       info->pw_dir, fqdn_buf) >= sizeof(path))
     return -1;
 
   // Create the file
@@ -495,8 +495,7 @@ void tls_quit(const char *s1, const char *s2)
      Thanks Alexandre Fonceca for the original code.
      Thanks to Diep Pham for spotting the vulnerability.
    */
-  struct passwd *info = getpwuid(getuid()); // get qmail dir
-  create_notlshost_file(info->pw_dir, partner_fqdn);
+  create_notlshost_file(partner_fqdn);
 
   /* end skip TLS patch */
   out((char *)s1); if (s2) { out(": "); out((char *)s2); } TLS_QUIT;
