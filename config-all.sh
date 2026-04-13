@@ -446,9 +446,9 @@ cp scripts/rcptcheck-overlimit QMAIL/bin
 if check_file "QMAIL/control/relaylimits"; then
   echo ":1000" > QMAIL/control/relaylimits
 fi
-if check_file "/etc/cron.daily/rcptcheck-overlimit.cron.daily"; then
+if check_file "/etc/cron.daily/rcptcheck-overlimit"; then
   echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
-  cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily
+  cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
 fi
 
 ############ svtools
