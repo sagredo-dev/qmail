@@ -232,7 +232,7 @@ void smtp_greet(char *code)
 }
 void smtp_help(char *arg)
 {
-  out("214 Roberto's qmail notes home page: https://www.sagredo.eu\r\n");
+  out("214 Roberto's qmail notes home page: https://notes.sagredo.eu\r\n");
 }
 void smtp_quit(char *arg)
 {
