@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Jun 6, 2026
+  - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
+
 - Apr 7, 2026
   - (security) Fixed a command injection vulnerability in qmail-remote by removing unsafe shell usage and
     properly validating and handling remote FQDN input when updating notlshosts. Tx Diep Pham for the advice.
