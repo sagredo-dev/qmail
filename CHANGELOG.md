@@ -1,9 +1,19 @@
 # ChangeLog
 
-- unreleased
+=======
+- Jun 6, 2026
+  - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
+
+- Apr 7, 2026
+  - (security) Fixed a command injection vulnerability in qmail-remote by removing unsafe shell usage and
+    properly validating and handling remote FQDN input when updating notlshosts. Tx Diep Pham for the advice.
+
+- Apr 2, 2026
   - qmail-remote: authentication on remote servers can select the auth method even
     when the first method advertized by the remote server is not available locally.  
     ([tx Pierluigi](https://notes.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))
+  - Fixed DKIM ed25519-sha256 signing and verification to conform to RFC8463 (Andreas Gerstlauer)
+  - Updated qmail-qfilter to support filters defined in control/qfilters (Andreas Gerstlauer)
 
 - Feb 25, 2026
   - SNI support (Tx Andreas Gerstlauer)
