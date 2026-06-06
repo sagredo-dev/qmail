@@ -120,7 +120,7 @@ ParseTagValueList(char *tagvaluelist, const char *wanted[], char *values[])
 		char           *tag = s;
 		do {
 			s++;
-		} while (isalnum(*s) || *s == '-');
+		} while (isalnum(*s) || *s == '_');
 		char           *endtag = s;
 		/*- skip whitespace before equals -*/
 		while (isswsp(*s))
