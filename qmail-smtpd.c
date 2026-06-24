@@ -2405,7 +2405,7 @@ static int tls_servername_cb(SSL *myssl, int *ad, void *arg)
   servername = SSL_get_servername(myssl, TLSEXT_NAMETYPE_host_name);
   if (!servername) return SSL_TLSEXT_ERR_OK; /* no SNI, use default cert */
   if (!servername[0]) return SSL_TLSEXT_ERR_NOACK; /* sanity checks */
-  if (servername[str_chr(servername,'/')]) return SSL_TLSEXT_ERR_NOACK;
+  if (servername[str_chr((char*)servername,'/')]) return SSL_TLSEXT_ERR_NOACK;
 
   if (!stralloc_copys(&servercert, "control/servercerts/")
     || !stralloc_cats(&servercert, servername)
