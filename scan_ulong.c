@@ -10,7 +10,7 @@ unsigned int scan_ulong(char *s, unsigned long *u)
   *u = result; return pos;
 }
 
-unsigned int scan_int(char *s, int *i)
+unsigned int scan_int(const char *s, int *i)
 {
 	unsigned int pos;
 	int result;

@@ -16,10 +16,10 @@ typedef struct substdio {
 extern void substdio_fdbuf(substdio *, ssize_t (*)(int, const void *, size_t), int, const char *, int);
 
 extern int substdio_flush(substdio *);
-extern int substdio_put(substdio *, char *, int);
+extern int substdio_put(substdio *, const char *, int);
 extern int substdio_bput(substdio *, char *, int);
 extern int substdio_putflush(substdio *, char *, int);
-extern int substdio_puts(substdio *, char *);
+extern int substdio_puts(substdio *, const char *);
 extern int substdio_bputs(substdio *, char *);
 extern int substdio_putsflush(substdio *, char *);
 

@@ -3,7 +3,7 @@
 #include "byte.h"
 #include "error.h"
 
-static int allwrite(ssize_t (*op)(int, const void *, size_t), int fd, char *buf, int len)
+static int allwrite(ssize_t (*op)(int, const void *, size_t), int fd, const char *buf, int len)
 {
   int w;
 
@@ -44,7 +44,7 @@ int substdio_bput(substdio *s, char *buf, int len)
   return 0;
 }
 
-int substdio_put(substdio *s, char *buf, int len)
+int substdio_put(substdio *s, const char *buf, int len)
 {
   int n;
 
@@ -77,7 +77,7 @@ int substdio_bputs(substdio *s, char *buf)
   return substdio_bput(s,buf,str_len(buf));
 }
 
-int substdio_puts(substdio *s, char *buf)
+int substdio_puts(substdio *s, const char *buf)
 {
   return substdio_put(s,buf,str_len(buf));
 }

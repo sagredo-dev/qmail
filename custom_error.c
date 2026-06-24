@@ -20,7 +20,7 @@ custom_error(const char *program, const char *type, const char *message, const c
 		errfd = CUSTOM_ERR_FD;
 	else
 		scan_int(c, &errfd);
-	substdio_fdbuf(&sserr, (ssize_t (*)(int,  char *, size_t)) write, errfd, errbuf, sizeof(errbuf));
+        substdio_fdbuf(&sserr, write, errfd, errbuf, sizeof(errbuf));
 	if (substdio_put(&sserr, type, 1) == -1 ||
 			substdio_puts(&sserr, program) == -1 ||
 			substdio_put(&sserr, ": ", 2) ||
