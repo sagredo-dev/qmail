@@ -64,9 +64,7 @@ void closepipes() {
   }
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   int c, cc;
 

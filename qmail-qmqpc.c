@@ -34,14 +34,14 @@ void die_format() { _exit(91); }
 int lasterror = 55;
 int qmqpfd;
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   r = timeoutread(60,qmqpfd,buf,len);
   if (r <= 0) die_conn();
   return r;
 }
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
   r = timeoutwrite(60,qmqpfd,buf,len);
@@ -98,8 +98,7 @@ void getmess()
   }
 }
 
-void doit(server)
-char *server;
+void doit(char *server)
 {
   struct ip_address ip;
   struct ip_address outip;

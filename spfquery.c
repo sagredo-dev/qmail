@@ -7,7 +7,7 @@
 #include "exit.h"
 #include "dns.h"
 
-void die(e,s) int e; char *s; { substdio_putsflush(subfderr,s); _exit(e); }
+void die(int e, char *s) { substdio_putsflush(subfderr,s); _exit(e); }
 void die_usage() { die(100,"fatal: invalid usage\nusage: spfquery <sender-ip> <sender-helo/ehlo> <envelope-from> [<local rules>] [<best guess rules>]\n"); }
 void die_nomem() { die(111,"fatal: out of memory\n"); }
 
@@ -20,9 +20,7 @@ stralloc spflocal = {0};
 stralloc spfguess = {0};
 stralloc spfexp = {0};
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
 	stralloc sa = {0};
 	int r;
@@ -55,7 +53,7 @@ char **argv;
 	if (spfexp.len && !stralloc_0(&spfexp)) die_nomem();
 
 	dns_init(0);
-	r = spfcheck();
+	r = spfcheck(remoteip); // was spfcheck();
 	if (r == SPF_NOMEM) die_nomem();
 
 	substdio_puts(subfdout,"result=");
@@ -78,7 +76,7 @@ char **argv;
 	substdio_putsflush(subfdout,"\n");
 
 	substdio_puts(subfdout,"Received-SPF: ");
-	if (!spfinfo(&sa)) die_nomem();
+	if (!spfinfo(&sa,0)) die_nomem();
 	substdio_put(subfdout,sa.s,sa.len);
 	substdio_putsflush(subfdout,"\n");
 

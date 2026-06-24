@@ -9,15 +9,12 @@ extern unsigned int scan_8long(char *s, unsigned long *u);
 char buf1[256];
 substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
 
-void puts2(s)
-char *s;
+void puts2(char *s)
 {
   if (substdio_puts(&ss1,s) == -1) _exit(111);
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   char *name;
   char *value;

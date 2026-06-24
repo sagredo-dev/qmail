@@ -51,7 +51,7 @@
 extern void flush();
 extern void out (char *s);
 extern int  addrallowed();
-extern unsigned int byte_rchr();
+extern unsigned int byte_rchr(char *, unsigned int, int);
 extern int vmaildir_readquota(const char *dir,  const char *quota);
 
 extern char *remotehost;

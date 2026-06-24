@@ -8,9 +8,7 @@
 
 stralloc sa = {0};
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  if (!argv[1]) _exit(100);
 

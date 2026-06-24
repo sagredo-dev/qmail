@@ -824,15 +824,20 @@ compile ipalloc.c alloc.h gen_allocdefs.h ip.h ipalloc.h \
 gen_alloc.h
 	./compile ipalloc.c
 
+ipalloc_address.o: \
+compile ipalloc_address.c alloc.h gen_allocdefs.h ip.h ipalloc_address.h \
+gen_alloc.h
+	./compile ipalloc_address.c
+
 ipme.o: \
-compile ipme.c hassalen.h byte.h ip.h ipalloc.h strsalloc.h ip.h gen_alloc.h \
-stralloc.h gen_alloc.h ipme.h ip.h ipalloc.h strsalloc.h readwrite.h
+compile ipme.c hassalen.h byte.h ip.h ipalloc.h ipalloc_address.h strsalloc.h \
+stralloc.h gen_alloc.h ipme.h readwrite.h
 	./compile ipme.c
 
 ipmeprint: \
-load ipmeprint.o ipme.o ip.o ipalloc.o auto_qmail.o open.a getln.a \
+load ipmeprint.o ipme.o ipalloc_address.o ip.o ipalloc.o auto_qmail.o open.a getln.a \
 strsalloc.o stralloc.a alloc.a substdio.a error.a str.a fs.a socket.lib
-	./load ipmeprint ipme.o ip.o ipalloc.o auto_qmail.o open.a getln.a \
+	./load ipmeprint ipme.o ipalloc_address.o ip.o ipalloc.o auto_qmail.o open.a getln.a \
 	strsalloc.o stralloc.a alloc.a substdio.a error.a str.a fs.a \
 	`cat socket.lib`
 
@@ -842,9 +847,9 @@ ipalloc.h strsalloc.h ip.h gen_alloc.h exit.h auto_qmail.h
 	./compile ipmeprint.c
 
 ipmetest: \
-load ipmetest.o ipme.o ip.o ipalloc.o auto_qmail.o open.a getln.a stralloc.a alloc.a substdio.a \
+load ipmetest.o ipme.o ipalloc_address.o ip.o ipalloc.o auto_qmail.o open.a getln.a stralloc.a alloc.a substdio.a \
 error.a str.a fs.a env.a socket.lib
-	./load ipmetest ipme.o ip.o ipalloc.o auto_qmail.o open.a getln.a stralloc.a alloc.a \
+	./load ipmetest ipme.o ipalloc_address.o ip.o ipalloc.o auto_qmail.o open.a getln.a stralloc.a alloc.a \
 	substdio.a error.a env.a str.a fs.a `cat socket.lib`
 
 ipmetest.o: \
@@ -1606,7 +1611,7 @@ compile eai.c
 
 qmail-remote: \
 load qmail-remote.o control.o constmap.o timeoutread.o timeoutwrite.o \
-timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o strsalloc.o ipme.o quote.o \
+timeoutconn.o tcpto.o now.o dns.o ip.o ipalloc.o strsalloc.o ipme.o ipalloc_address.o quote.o \
 ndelay.a case.a sig.a open.a lock.a seek.a getln.a stralloc.a alloc.a \
 substdio.a error.a str.a fs.a auto_qmail.o \
 base64.o md5c.o hmac_md5.o utf8.o eai.o \
@@ -1614,7 +1619,7 @@ dns.lib socket.lib
 	./load qmail-remote control.o constmap.o timeoutread.o \
 	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
 	tls.o ssl_timeoutio.o -lssl -lcrypto \
-	ipalloc.o strsalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
+	ipalloc.o strsalloc.o ipme.o ipalloc_address.o quote.o ndelay.a case.a sig.a open.a \
 	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
 	base64.o md5c.o hmac_md5.o utf8.o eai.o \
 	str.a fs.a auto_qmail.o `cat dns.lib` `cat socket.lib` -lidn2
@@ -1712,14 +1717,14 @@ byte.h env.h exit.h wait.h fork.h fd.h fmt.h getln.h
 qmail-smtpd: \
 load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
 strerr.a wildmat.o qregex.o \
-timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o constmap.o \
+timeoutwrite.o ip.o ipme.o ipalloc_address.o ipalloc.o strsalloc.o control.o constmap.o \
 received.o date822fmt.o now.o qmail.o spf.o dns.o cdb.a fd.a wait.a \
 datetime.a getln.a open.a sig.a case.a env.a stralloc.a alloc.a substdio.a \
 error.a str.a fs.a auto_qmail.o base64.o socket.lib dns.lib lock.a policy.o \
 qmail-spp.o $(SMTPD_CHKUSER_OBJ)
 	./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
 	strerr.a wildmat.o qregex.o \
-	timeoutwrite.o ip.o ipme.o ipalloc.o strsalloc.o control.o \
+	timeoutwrite.o ip.o ipme.o ipalloc_address.o ipalloc.o strsalloc.o control.o \
 	tls.o ssl_timeoutio.o ndelay.a -lssl -lcrypto \
 	constmap.o received.o date822fmt.o now.o qmail.o spf.o cdb.a \
 	fd.a wait.a datetime.a getln.a open.a sig.a case.a env.a stralloc.a qmail-spp.o \
@@ -2024,9 +2029,9 @@ strsalloc.h str.h fmt.h scan.h byte.h now.h case.h
 	./compile spf.c
 
 spfquery: \
-load spfquery.o spf.o ip.o getln.o getln2.o open_read.o ipme.o ipalloc.o strsalloc.o \
+load spfquery.o spf.o ip.o getln.o getln2.o open_read.o ipme.o ipalloc_address.o ipalloc.o strsalloc.o \
 now.o dns.o datetime.a stralloc.a alloc.a str.a substdio.a error.a fs.a case.a dns.lib
-	./load spfquery spf.o ip.o getln.o getln2.o open_read.o ipme.o ipalloc.o strsalloc.o \
+	./load spfquery spf.o ip.o getln.o getln2.o open_read.o ipme.o ipalloc_address.o ipalloc.o strsalloc.o \
 	now.o dns.o datetime.a stralloc.a alloc.a str.a substdio.a \
 	case.a error.a fs.a `cat dns.lib` `cat socket.lib`
 
@@ -2471,7 +2476,8 @@ libdkim.a: $(DKIMOBJS) dkimverify.o dkimsign.o makelib time_t_size.h
 .cpp.o:
 	c++ -g -I. -DHAVE_EVP_SHA256 $(CFLAGS) $(INCL) -c $<
 
-cert cert-req: Makefile-cert @$(MAKE) -sf $< $@
+cert cert-req: Makefile-cert
+	@$(MAKE) -sf $< $@
 
 Makefile-cert: \
 conf-qmail conf-users conf-groups Makefile-cert.mk

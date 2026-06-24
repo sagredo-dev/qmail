@@ -2,9 +2,7 @@
 #include "alloc.h"
 #include "case.h"
 
-static constmap_hash hash(s,len)
-char *s;
-int len;
+static constmap_hash hash(char *s, int len)
 {
   unsigned char ch;
   constmap_hash h;
@@ -18,10 +16,7 @@ int len;
   return h;
 }
 
-char *constmap(cm,s,len)
-struct constmap *cm;
-char *s;
-int len;
+char *constmap(struct constmap *cm, char *s, int len)
 {
   constmap_hash h;
   int pos;
@@ -37,11 +32,7 @@ int len;
   return 0;
 }
 
-int constmap_init(cm,s,len,flagcolon)
-struct constmap *cm;
-char *s;
-int len;
-int flagcolon;
+int constmap_init(struct constmap *cm, char *s, int len, int flagcolon)
 {
   int i;
   int j;
@@ -92,23 +83,22 @@ int flagcolon;
               }
             return 1;
 	  }
-	  alloc_free(cm->hash);
+	  alloc_free((char *)cm->hash);
 	}
-        alloc_free(cm->inputlen);
+        alloc_free((char *)cm->inputlen);
       }
-      alloc_free(cm->input);
+      alloc_free((char *)cm->input);
     }
-    alloc_free(cm->first);
+    alloc_free((char *)cm->first);
   }
   return 0;
 }
 
-void constmap_free(cm)
-struct constmap *cm;
+void constmap_free(struct constmap *cm)
 {
-  alloc_free(cm->next);
-  alloc_free(cm->hash);
-  alloc_free(cm->inputlen);
-  alloc_free(cm->input);
-  alloc_free(cm->first);
+  alloc_free((char *)cm->next);
+  alloc_free((char *)cm->hash);
+  alloc_free((char *)cm->inputlen);
+  alloc_free((char *)cm->input);
+  alloc_free((char *)cm->first);
 }

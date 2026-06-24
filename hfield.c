@@ -33,10 +33,7 @@ static char *(hname[]) = {
 , 0
 };
 
-static int hmatch(s,len,t)
-char *s;
-int len;
-char *t;
+static int hmatch(char *s, int len, char *t)
 {
  int i;
  char ch;
@@ -60,9 +57,7 @@ char *t;
   }
 }
 
-int hfield_known(s,len)
-char *s;
-int len;
+int hfield_known(char *s, int len)
 {
  int i;
  char *t;
@@ -73,9 +68,7 @@ int len;
  return 0;
 }
 
-int hfield_valid(s,len)
-char *s;
-int len;
+int hfield_valid(char *s, int len)
 {
  int i;
  int j;
@@ -103,9 +96,7 @@ int len;
  return 1;
 }
 
-unsigned int hfield_skipname(s,len)
-char *s;
-int len;
+unsigned int hfield_skipname(char *s, int len)
 {
  int i;
  char ch;

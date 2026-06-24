@@ -55,20 +55,20 @@ int flagrh;
 int flagqueue;
 struct qmail qqt;
 
-void put(s,len) char *s; int len;
+void put(char *s, int len)
 { if (flagqueue) qmail_put(&qqt,s,len); else substdio_put(subfdout,s,len); }
-void puts2(s) char *s; { put(s,str_len(s)); }
+void puts2(char *s) { put(s,str_len(s)); }
 
 void perm() { _exit(100); }
 void temp() { _exit(111); }
 void die_nomem() {
  substdio_putsflush(subfderr,"qmail-inject: fatal: out of memory\n"); temp(); }
 void die_srs() {
- substdio_puts("qmail-inject: fatal: ");
+ substdio_puts(subfderr,"qmail-inject: fatal: ");
  substdio_puts(subfderr,srs_error.s);
  substdio_putsflush(subfderr,"\n");
  perm(); }
-void die_invalid(sa) stralloc *sa; {
+void die_invalid(stralloc *sa) {
  substdio_putsflush(subfderr,"qmail-inject: fatal: invalid header field: ");
  substdio_putflush(subfderr,sa->s,sa->len); perm(); }
 void die_qqt() {
@@ -78,7 +78,7 @@ void die_chdir() {
 void die_read() {
  if (errno == error_nomem) die_nomem();
  substdio_putsflush(subfderr,"qmail-inject: fatal: read error\n"); temp(); }
-void doordie(sa,r) stralloc *sa; int r; {
+void doordie(stralloc *sa, int r) {
  if (r == 1) return; if (r == -1) die_nomem();
  substdio_putsflush(subfderr,"qmail-inject: fatal: unable to parse this line:\n");
  substdio_putflush(subfderr,sa->s,sa->len); perm(); }
@@ -162,8 +162,7 @@ void exitnicely()
  _exit(0);
 }
 
-void savedh_append(h)
-stralloc *h;
+void savedh_append(stralloc *h)
 {
  if (!saa_readyplus(&savedh,1)) die_nomem();
  savedh.sa[savedh.len] = sauninit;
@@ -186,8 +185,7 @@ token822_alloc defaulthost = {0};
 stralloc plusdomainbuf = {0};
 token822_alloc plusdomain = {0};
 
-void rwroute(addr)
-token822_alloc *addr;
+void rwroute(token822_alloc *addr)
 {
  if (addr->t[addr->len - 1].type == TOKEN822_AT)
    while (addr->len)
@@ -195,8 +193,7 @@ token822_alloc *addr;
        return;
 }
 
-void rwextraat(addr)
-token822_alloc *addr;
+void rwextraat(token822_alloc *addr)
 {
  int i;
  if (addr->t[0].type == TOKEN822_AT)
@@ -207,8 +204,7 @@ token822_alloc *addr;
   }
 }
 
-void rwextradot(addr)
-token822_alloc *addr;
+void rwextradot(token822_alloc *addr)
 {
  int i;
  if (addr->t[0].type == TOKEN822_DOT)
@@ -219,8 +215,7 @@ token822_alloc *addr;
   }
 }
 
-void rwnoat(addr)
-token822_alloc *addr;
+void rwnoat(token822_alloc *addr)
 {
  int i;
  int shift;
@@ -237,8 +232,7 @@ token822_alloc *addr;
    addr->t[i] = defaulthost.t[shift - 1 - i];
 }
 
-void rwnodot(addr)
-token822_alloc *addr;
+void rwnodot(token822_alloc *addr)
 {
  int i;
  int shift;
@@ -265,17 +259,16 @@ token822_alloc *addr;
    addr->t[i] = defaultdomain.t[shift - 1 - i];
 }
 
-void rwplus(addr)
-token822_alloc *addr;
+void rwplus(token822_alloc *addr)
 {
  int i;
  int shift;
 
  if (addr->t[0].type != TOKEN822_ATOM) return;
- if (!addr->t[0].slen) return;
- if (addr->t[0].s[addr->t[0].slen - 1] != '+') return;
+ if (!addr->t[0].addr.len) return;
+ if (addr->t[0].addr.s[addr->t[0].addr.len - 1] != '+') return;
 
- --addr->t[0].slen; /* remove + */
+ --addr->t[0].addr.len; /* remove + */
 
  shift = plusdomain.len;
  if (!token822_readyplus(addr,shift)) die_nomem();
@@ -286,18 +279,17 @@ token822_alloc *addr;
    addr->t[i] = plusdomain.t[shift - 1 - i];
 }
 
-void rwgeneric(addr)
-token822_alloc *addr;
+void rwgeneric(token822_alloc *addr)
 {
  if (!addr->len) return; /* don't rewrite <> */
- if (addr->len == 1 && str_equal(addr->t[0].s,"<>")) {
+ if (addr->len == 1 && str_equal(addr->t[0].addr.s,"<>")) {
  addr->len = 0;
  return;
  }
  if (addr->len >= 2)
    if (addr->t[1].type == TOKEN822_AT)
      if (addr->t[0].type == TOKEN822_LITERAL)
-       if (!addr->t[0].slen) /* don't rewrite <foo@[]> */
+       if (!addr->t[0].addr.len) /* don't rewrite <foo@[]> */
 	 return;
  rwroute(addr);
  if (!addr->len) return; /* <@foo:> -> <> */
@@ -310,8 +302,7 @@ token822_alloc *addr;
  rwnodot(addr);
 }
 
-int setreturn(addr)
-token822_alloc *addr;
+int setreturn(token822_alloc *addr)
 {
  if (!sender.s)
   {
@@ -324,24 +315,20 @@ token822_alloc *addr;
  return 1;
 }
 
-int rwreturn(addr)
-token822_alloc *addr;
+int rwreturn(token822_alloc *addr)
 {
  rwgeneric(addr);
  setreturn(addr);
  return 1;
 }
 
-int rwsender(addr)
-token822_alloc *addr;
+int rwsender(token822_alloc *addr)
 {
  rwgeneric(addr);
  return 1;
 }
 
-void rwappend(addr,xl)
-token822_alloc *addr;
-saa *xl;
+void rwappend(token822_alloc *addr, saa *xl)
 {
  token822_reverse(addr);
  if (!saa_readyplus(xl,1)) die_nomem();
@@ -351,11 +338,11 @@ saa *xl;
  token822_reverse(addr);
 }
 
-int rwhrr(addr) token822_alloc *addr;
+int rwhrr(token822_alloc *addr)
 { rwgeneric(addr); rwappend(addr,&hrrlist); return 1; }
-int rwhr(addr) token822_alloc *addr;
+int rwhr(token822_alloc *addr)
 { rwgeneric(addr); rwappend(addr,&hrlist); return 1; }
-int rwtocc(addr) token822_alloc *addr;
+int rwtocc(token822_alloc *addr)
 { rwgeneric(addr); rwappend(addr,&hrlist); rwappend(addr,&tocclist); return 1; }
 
 int htypeseen[H_NUM];
@@ -364,11 +351,10 @@ token822_alloc hfin = {0};
 token822_alloc hfrewrite = {0};
 token822_alloc hfaddr = {0};
 
-void doheaderfield(h)
-stralloc *h;
+void doheaderfield(stralloc *h)
 {
   int htype;
-  int (*rw)() = 0;
+  int (*rw)(token822_alloc *) = 0;
  
   htype = hfield_known(h->s,h->len);
   if (flagdeletefrom) if (htype == H_FROM) return;
@@ -383,17 +369,17 @@ stralloc *h;
  
   switch(htype) {
     case H_TO: case H_CC:
-      rw = rwtocc; break;
+      rw = (int (*)(token822_alloc *))rwtocc; break;
     case H_BCC: case H_APPARENTLYTO:
-      rw = rwhr; break;
+      rw = (int (*)(token822_alloc *))rwhr; break;
     case H_R_TO: case H_R_CC: case H_R_BCC:
-      rw = rwhrr; break;
+      rw = (int (*)(token822_alloc *))rwhrr; break;
     case H_RETURNPATH:
-      rw = rwreturn; break;
+      rw = (int (*)(token822_alloc *))rwreturn; break;
     case H_SENDER: case H_FROM: case H_REPLYTO:
     case H_RETURNRECEIPTTO: case H_ERRORSTO:
     case H_R_SENDER: case H_R_FROM: case H_R_REPLYTO:
-      rw = rwsender; break;
+      rw = (int (*)(token822_alloc *))rwsender; break;
   }
 
   if (rw) {
@@ -410,8 +396,7 @@ stralloc *h;
   savedh_append(h);
 }
 
-void dobody(h)
-stralloc *h;
+void dobody(stralloc *h)
 {
  put(h->s,h->len);
 }
@@ -419,8 +404,7 @@ stralloc *h;
 stralloc torecip = {0};
 token822_alloc tr = {0};
 
-void dorecip(s)
-char *s;
+void dorecip(char *s)
 {
  if (!quote2(&torecip,s)) die_nomem();
  switch(token822_parse(&tr,&torecip,&hfbuf))
@@ -446,34 +430,30 @@ void defaultfrommake()
  fullname = env_get("QMAILNAME");
  if (!fullname) fullname = env_get("MAILNAME");
  if (!fullname) fullname = env_get("NAME");
- if (!token822_ready(&df,20)) die_nomem();
+ if (!token822_ready(&df, 20)) die_nomem();
  df.len = 0;
  df.t[df.len].type = TOKEN822_ATOM;
- df.t[df.len].s = "From";
- df.t[df.len].slen = 4;
+ stralloc_copys(&df.t[df.len].addr, "From");
  ++df.len;
  df.t[df.len].type = TOKEN822_COLON;
  ++df.len;
  if (fullname && !flagnamecomment)
   {
    df.t[df.len].type = TOKEN822_QUOTE;
-   df.t[df.len].s = fullname;
-   df.t[df.len].slen = str_len(fullname);
+   stralloc_copys(&df.t[df.len].addr, fullname);
    ++df.len;
    df.t[df.len].type = TOKEN822_LEFT;
    ++df.len;
   }
  df.t[df.len].type = mailusertokentype;
- df.t[df.len].s = mailuser;
- df.t[df.len].slen = str_len(mailuser);
+ stralloc_copys(&df.t[df.len].addr, mailuser);
  ++df.len;
  if (mailhost)
   {
    df.t[df.len].type = TOKEN822_AT;
    ++df.len;
    df.t[df.len].type = TOKEN822_ATOM;
-   df.t[df.len].s = mailhost;
-   df.t[df.len].slen = str_len(mailhost);
+   stralloc_copys(&df.t[df.len].addr, mailhost);
    ++df.len;
   }
  if (fullname && !flagnamecomment)
@@ -484,13 +464,12 @@ void defaultfrommake()
  if (fullname && flagnamecomment)
   {
    df.t[df.len].type = TOKEN822_COMMENT;
-   df.t[df.len].s = fullname;
-   df.t[df.len].slen = str_len(fullname);
+   if (!stralloc_copys(&df.t[df.len].addr, fullname)) die_nomem();
    ++df.len;
   }
  if (token822_unparse(&defaultfrom,&df,LINELEN) != 1) die_nomem();
  doordie(&defaultfrom,token822_parse(&df,&defaultfrom,&hfbuf));
- doordie(&defaultfrom,token822_addrlist(&hfrewrite,&hfaddr,&df,rwsender));
+ doordie(&defaultfrom,token822_addrlist(&hfrewrite,&hfaddr,&df,(int (*)(token822_alloc *))rwsender));
  if (token822_unparse(&defaultfrom,&hfrewrite,LINELEN) != 1) die_nomem();
 }
 
@@ -514,28 +493,25 @@ void dodefaultreturnpath()
  if (!token822_ready(&drp,10)) die_nomem();
  drp.len = 0;
  drp.t[drp.len].type = TOKEN822_ATOM;
- drp.t[drp.len].s = "Return-Path";
- drp.t[drp.len].slen = 11;
+ stralloc_copys(&drp.t[drp.len].addr, "Return-Path");
  ++drp.len;
  drp.t[drp.len].type = TOKEN822_COLON;
  ++drp.len;
  drp.t[drp.len].type = TOKEN822_QUOTE;
- drp.t[drp.len].s = hackedruser.s;
- drp.t[drp.len].slen = hackedruser.len;
+ if (!stralloc_copy(&drp.t[drp.len].addr, &hackedruser)) die_nomem();
  ++drp.len;
  if (mailrhost)
   {
    drp.t[drp.len].type = TOKEN822_AT;
    ++drp.len;
    drp.t[drp.len].type = TOKEN822_ATOM;
-   drp.t[drp.len].s = mailrhost;
-   drp.t[drp.len].slen = str_len(mailrhost);
+   stralloc_copyb(&drp.t[drp.len].addr, mailrhost, str_len(mailrhost));
    ++drp.len;
   }
  if (token822_unparse(&defaultreturnpath,&drp,LINELEN) != 1) die_nomem();
  doordie(&defaultreturnpath,token822_parse(&drp,&defaultreturnpath,&hfbuf));
  doordie(&defaultreturnpath
-   ,token822_addrlist(&hfrewrite,&hfaddr,&drp,rwreturn));
+   ,token822_addrlist(&hfrewrite,&hfaddr,&drp,(int (*)(token822_alloc *))rwreturn));
  if (token822_unparse(&defaultreturnpath,&hfrewrite,LINELEN) != 1) die_nomem();
 }
 
@@ -707,9 +683,7 @@ void getcontrols()
 #define RECIP_HEADER 3
 #define RECIP_AH 4
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  int i;
  int opt;
@@ -792,7 +766,7 @@ char **argv;
 
  flagrh = (recipstrategy != RECIP_ARGS);
 
- if (headerbody(subfdin,doheaderfield,finishheader,dobody) == -1)
+ if (headerbody(subfdin,(void (*)(stralloc *))doheaderfield,finishheader,(void (*)(stralloc *))dobody) == -1)
    die_read();
  exitnicely();
 }

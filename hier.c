@@ -10,10 +10,10 @@
 
 char buf[100 + FMT_ULONG];
 
-void dsplit(base,uid,mode)
-char *base; /* must be under 100 bytes */
-int uid;
-int mode;
+void dsplit(
+char *base, /* must be under 100 bytes */
+int uid,
+int mode)
 {
   char *x;
   unsigned long i;

@@ -1,20 +1,19 @@
 #include "readwrite.h"
 #include "open.h"
-#include "getln.h"
 #include "stralloc.h"
 #include "substdio.h"
 #include "error.h"
 #include "control.h"
 #include "alloc.h"
 #include "scan.h"
+#include "getln.h"
 
 static char inbuf[64];
 static stralloc line = {0};
 static stralloc me = {0};
 static int meok = 0;
 
-static void striptrailingwhitespace(sa)
-stralloc *sa;
+static void striptrailingwhitespace(stralloc *sa)
 {
  while (sa->len > 0)
    switch(sa->s[sa->len - 1])
@@ -35,11 +34,7 @@ int control_init()
  return r;
 }
 
-int control_rldef(sa,fn,flagme,def)
-stralloc *sa;
-char *fn;
-int flagme;
-char *def;
+int control_rldef(stralloc *sa, char *fn, int flagme, char *def)
 {
  int r;
  r = control_readline(sa,fn);
@@ -49,9 +44,7 @@ char *def;
  return r;
 }
 
-int control_readline(sa,fn)
-stralloc *sa;
-char *fn;
+int control_readline(stralloc *sa, char *fn)
 {
  substdio ss;
  int fd;
@@ -59,8 +52,8 @@ char *fn;
 
  fd = open_read(fn);
  if (fd == -1) { if (errno == error_noent) return 0; return -1; }
- 
- substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t))read,fd,inbuf,sizeof(inbuf));
 
  if (getln(&ss,sa,&match,'\n') == -1) { close(fd); return -1; }
 
@@ -69,9 +62,7 @@ char *fn;
  return 1;
 }
 
-int control_readint(i,fn)
-int *i;
-char *fn;
+int control_readint(int *i, char *fn)
 {
  unsigned long u;
  switch(control_readline(&line,fn))
@@ -86,9 +77,7 @@ char *fn;
 }
 
 int
-control_readulong(i, fn)
-	unsigned long  *i;
-	char           *fn;
+control_readulong(unsigned long  *i, char *fn)
 {
 	unsigned long   u;
 
@@ -115,10 +104,7 @@ control_readulong(i, fn)
  * skip
  */
 int
-control_readnativefile(sa, fn, mode)
-      stralloc       *sa;
-      char           *fn;
-      int             mode;
+control_readnativefile(stralloc *sa, char *fn, int mode)
 {
       substdio        ss;
       int             fd, match;
@@ -131,7 +117,7 @@ control_readnativefile(sa, fn, mode)
                       return(0);
               return -1;
       }
-      substdio_fdbuf(&ss, read, fd, inbuf, sizeof(inbuf));
+      substdio_fdbuf(&ss, (ssize_t (*)(int,const void*,size_t))read, fd, inbuf, sizeof(inbuf));
       for (;;)
       {
               if (getln(&ss, &line, &match, '\n') == -1)
@@ -161,10 +147,7 @@ control_readnativefile(sa, fn, mode)
       return -1;
 }
 
-int control_readfile(sa,fn,flagme)
-stralloc *sa;
-char *fn;
-int flagme;
+int control_readfile(stralloc *sa, char *fn, int flagme)
 {
  substdio ss;
  int fd;
@@ -188,7 +171,7 @@ int flagme;
    return -1;
   }
 
- substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t))read,fd,inbuf,sizeof(inbuf));
 
  for (;;)
   {

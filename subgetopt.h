@@ -13,7 +13,7 @@
 
 #define SUBGETOPTDONE -1
 
-extern int subgetopt();
+extern int sgopt(int, char **, char *);
 extern char *subgetoptarg;
 extern int subgetoptind;
 extern int subgetoptpos;

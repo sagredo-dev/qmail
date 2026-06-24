@@ -1,7 +1,10 @@
 #ifndef GETLN_H
 #define GETLN_H
 
-extern int getln();
-extern int getln2();
+#include "substdio.h"
+#include "stralloc.h"
+
+extern int getln(substdio *, stralloc *, int *, int);
+extern int getln2(substdio *, stralloc *, /*@out@*/char **, /*@out@*/unsigned int *, int);
 
 #endif

@@ -2,10 +2,8 @@
 #include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/nameser.h>
-#include <resolv.h>
 #include <errno.h>
-extern int res_query();
-extern int res_search();
+#include <resolv.h>
 #include "ip.h"
 #include "ipalloc.h"
 #include "strsalloc.h"
@@ -16,7 +14,7 @@ extern int res_search();
 #include "dns.h"
 #include "case.h"
 
-static unsigned short getshort(c) unsigned char *c;
+static unsigned short getshort(unsigned char *c)
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 
 static struct { unsigned char *buf; } response;
@@ -34,11 +32,9 @@ unsigned short pref;
 
 static stralloc glue = {0};
 
-static int (*lookup)() = res_query;
+static int (*lookup)(const char *, int, int, unsigned char *, int) = res_query;
 
-static int resolve(domain,type)
-stralloc *domain;
-int type;
+static int resolve(stralloc *domain, int type)
 {
  int n;
  int i;
@@ -56,7 +52,7 @@ int type;
      (responselen > 0 && (((HEADER *)response.buf)->tc)))
   {
    if (responsebuflen < 65536) {
-    if (alloc_re(&response.buf, responsebuflen, 65536)) responsebuflen = 65536;
+    if (alloc_re((char **)&response.buf, responsebuflen, 65536)) responsebuflen = 65536;
     else return DNS_MEM;
    }
     saveresoptions = _res.options;
@@ -86,8 +82,7 @@ int type;
  return 0;
 }
 
-static int findname(wanttype)
-int wanttype;
+static int findname(int wanttype)
 {
  unsigned short rrtype;
  unsigned short rrdlen;
@@ -120,8 +115,7 @@ int wanttype;
  return 0;
 }
 
-static int findip(wanttype)
-int wanttype;
+static int findip(int wanttype)
 {
  unsigned short rrtype;
  unsigned short rrdlen;
@@ -156,8 +150,7 @@ int wanttype;
  return 0;
 }
 
-static int findmx(wanttype)
-int wanttype;
+static int findmx(int wanttype)
 {
  unsigned short rrtype;
  unsigned short rrdlen;
@@ -193,8 +186,7 @@ int wanttype;
  return 0;
 }
 
-static int findtxt(wanttype)
-int wanttype;
+static int findtxt(int wanttype)
 {
  unsigned short rrtype;
  unsigned short rrdlen;
@@ -236,15 +228,13 @@ int wanttype;
  return 0;
 }
 
-void dns_init(flagsearch)
-int flagsearch;
+void dns_init(int flagsearch)
 {
  res_init();
  if (flagsearch) lookup = res_search;
 }
 
-int dns_cname(sa)
-stralloc *sa;
+int dns_cname(stralloc *sa)
 {
  int r;
  int loop;
@@ -276,9 +266,7 @@ stralloc *sa;
 
 #define FMT_IAA 40
 
-static int iaafmt(s,ip)
-char *s;
-struct ip_address *ip;
+static int iaafmt(char *s, struct ip_address *ip)
 {
  unsigned int i;
  unsigned int len;
@@ -294,9 +282,7 @@ struct ip_address *ip;
  return len;
 }
 
-static int dns_ptrplus(ssa,ip)
-strsalloc *ssa;
-struct ip_address *ip;
+static int dns_ptrplus(strsalloc *ssa, struct ip_address *ip)
 {
  stralloc sa = {0};
  int r;
@@ -325,9 +311,7 @@ struct ip_address *ip;
  return DNS_HARD;
 }
 
-int dns_ptr(ssa,ip)
-strsalloc *ssa;
-struct ip_address *ip;
+int dns_ptr(strsalloc *ssa, struct ip_address *ip)
 {
  int r;
  int j;
@@ -345,10 +329,7 @@ struct ip_address *ip;
 }
 
 
-static int dns_ipplus(ia,sa,pref)
-ipalloc *ia;
-stralloc *sa;
-int pref;
+static int dns_ipplus(ipalloc *ia, stralloc *sa, int pref)
 {
  int r;
  struct ip_mx ix = {0};
@@ -390,19 +371,14 @@ int pref;
  return 0;
 }
 
-int dns_ip(ia,sa)
-ipalloc *ia;
-stralloc *sa;
+int dns_ip(ipalloc *ia, stralloc *sa)
 {
  if (!ipalloc_readyplus(ia,0)) return DNS_MEM;
  ia->len = 0;
  return dns_ipplus(ia,sa,0);
 }
 
-int dns_mxip(ia,sa,random)
-ipalloc *ia;
-stralloc *sa;
-unsigned long random;
+int dns_mxip(ipalloc *ia, stralloc *sa, unsigned long random)
 {
  int r;
  struct mx { stralloc sa; unsigned short p; } *mx;
@@ -441,7 +417,7 @@ unsigned long random;
 
  while ((r = findmx(T_MX)) != 2)
   {
-   if (r == DNS_SOFT) { alloc_free(mx); return DNS_SOFT; }
+   if (r == DNS_SOFT) { alloc_free((char *)mx); return DNS_SOFT; }
    if (r == 1)
     {
      mx[nummx].p = pref;
@@ -449,7 +425,7 @@ unsigned long random;
      if (!stralloc_copys(&mx[nummx].sa,name))
       {
        while (nummx > 0) alloc_free(mx[--nummx].sa.s);
-       alloc_free(mx); return DNS_MEM;
+       alloc_free((char *)mx); return DNS_MEM;
       }
      ++nummx;
     }
@@ -488,14 +464,12 @@ unsigned long random;
    mx[i] = mx[--nummx];
   }
 
- alloc_free(mx);
+ alloc_free((char *)mx);
  return flagsoft;
 }
 
 
-static int dns_txtplus(ssa,sa)
-strsalloc *ssa;
-stralloc *sa;
+static int dns_txtplus(strsalloc *ssa, stralloc *sa)
 {
  int r;
 
@@ -519,9 +493,7 @@ stralloc *sa;
  return DNS_HARD;
 }
 
-int dns_txt(ssa,sa)
-strsalloc *ssa;
-stralloc *sa;
+int dns_txt(strsalloc *ssa, stralloc *sa)
 {
  int r;
  int j;

@@ -95,7 +95,7 @@ static const char *protocol = "SMTP";
 char *remoteip4;
 /* end spf ipv6 fix */
 
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
 #ifdef TLS
@@ -124,7 +124,7 @@ void qlogreceived(char *result, char *reason, char *detail, char *statuscode) { 
 void logit(const char* message);
 void logit2(const char* message, const char* reason);
 void flush() { substdio_flush(&ssout); }
-void out(s) char *s; { substdio_puts(&ssout,s); }
+void out(char *s) { substdio_puts(&ssout,s); }
 
 void die_read(char *reason) { logit2("read failed", reason); flush(); _exit(1); }
 void die_alarm() { qlogenvelope("rejected","alarmtimeout","","451"); out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
@@ -163,13 +163,17 @@ void err_nogateway()
   out(" (#5.7.1)\r\n");
 }
 #endif
-void err_unimpl(arg) char *arg; { out("502 unimplemented (#5.5.1)\r\n"); }
-void err_unrecog() { out("500 unrecognised (#5.5.2)\r\n"); }
+void err_unimpl(char *arg) { out("502 unimplemented (#5.5.1)\r\n"); }
+void err_unrecog(char *arg)
+{
+  (void)arg;
+  out("500 unrecognised (#5.5.2)\r\n");
+}
 void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
 void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); }
 void err_wantrcpt() { out("503 RCPT first (#5.5.1)\r\n"); }
-void err_noop(arg) char *arg; { out("250 ok\r\n"); }
-void err_vrfy(arg) char *arg; { out("252 send some mail, i'll try my best\r\n"); }
+void err_noop(char *arg) { out("250 ok\r\n"); }
+void err_vrfy(char *arg) { out("252 send some mail, i'll try my best\r\n"); }
 void err_qqt() { qlogenvelope("rejected","qqtfailure","","451"); out("451 qqt failure (#4.3.0)\r\n"); }
 
 int err_child() { out("454 oops, problem with child and I can't auth (#4.3.0)\r\n"); return -1; }
@@ -178,10 +182,16 @@ int err_pipe() { out("454 oops, unable to open pipe and I can't auth (#4.3.0)\r\
 int err_write() { out("454 oops, unable to write pipe and I can't auth (#4.3.0)\r\n"); return -1; }
 void err_authd() { out("503 you're already authenticated (#5.5.0)\r\n"); }
 void err_authmail() { out("503 no auth during mail transaction (#5.5.0)\r\n"); }
-int err_noauth() { out("504 auth type unimplemented (#5.5.1)\r\n"); return -1; }
+int err_noauth(char *arg) { out("504 auth type unimplemented (#5.5.1)\r\n"); return -1; }
 int err_authabrt() { out("501 auth exchange canceled (#5.0.0)\r\n"); return -1; }
 int err_input() { out("501 malformed auth input (#5.5.4)\r\n"); return -1; }
-void err_authfail() { qlogenvelope("rejected","authfailed","","535"); out("535 authentication failed (#5.7.1)\r\n"); }
+void err_authfail(char *user, char *text)
+{
+  (void)user;
+  (void)text;
+  qlogenvelope("rejected","authfailed","","535");
+  out("535 authentication failed (#5.7.1)\r\n");
+}
 void err_authinvalid() { qlogenvelope("rejected","authinvalid","","504"); out("504 auth type invalid (#5.5.1)\r\n"); }
 void err_submission() { qlogenvelope("rejected","authrequired","","530"); out("530 Authorization required (#5.7.1) \r\n"); }
 void err_vrt() { qlogenvelope("rejected","validrcptto","","553"); out("553 sorry, this recipient is not in my validrcptto list (#5.7.1)\r\n"); }
@@ -215,16 +225,16 @@ stralloc spflocal = {0};
 stralloc spfguess = {0};
 stralloc spfexp = {0};
 
-void smtp_greet(code) char *code;
+void smtp_greet(char *code)
 {
   substdio_puts(&ssout,code);
   substdio_put(&ssout,greeting.s,greeting.len);
 }
-void smtp_help(arg) char *arg;
+void smtp_help(char *arg)
 {
   out("214 Roberto's qmail notes home page: https://www.sagredo.eu\r\n");
 }
-void smtp_quit(arg) char *arg;
+void smtp_quit(char *arg)
 {
   smtp_greet("221 "); out("\r\n"); flush(); _exit(0);
 }
@@ -260,7 +270,7 @@ substdio ssauth = SUBSTDIO_FDBUF(safewrite,3,ssauthbuf,sizeof(ssauthbuf));
 stralloc helohost = {0};
 char *fakehelo; /* pointer into helohost, or 0 */
 
-void dohelo(arg) char *arg; {
+void dohelo(char *arg) {
   if (!stralloc_copys(&helohost,arg)) die_nomem(); 
   if (!stralloc_0(&helohost)) die_nomem(); 
   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
@@ -286,6 +296,7 @@ char *ip_env;
 static stralloc ip_reverse;
 int rbldecision = 0; /* 0 undecided, 1 accept, 2 reject (451), 3 bounce (553) */
 static stralloc rbltext = {0}; /* defined if rbldecision is 2 or 3 */
+ipalloc ia = {0};
 static stralloc rblmessage = {0};
 static stralloc rblserver = {0};
 
@@ -556,8 +567,7 @@ void setup()
 
 stralloc addr = {0}; /* will be 0-terminated, if addrparse returns 1 */
 
-int addrparse(arg)
-char *arg;
+int addrparse(char *arg)
 {
   int i;
   char ch;
@@ -630,7 +640,7 @@ int bmfcheck()
   return 0;
 }
 */
-int bmcheck(which) int which;
+int bmcheck(int which)
 {
   int i = 0;
   int j = 0;
@@ -687,10 +697,7 @@ int bmcheck(which) int which;
 /* qregex: end */
 
 /* validrcptto.cdb: start */
-void vrtlog(l,a,b)
-char *l;
-const char *a;
-const char *b;
+void vrtlog(char *l, const char *a, const char *b)
 {
 /*  if (l <= vrtlog_do)
     strerr_warn6(title.s,"validrcptto [",remoteip,"] ",a,b,0);*/
@@ -821,7 +828,7 @@ void rbl(char *base)
   rblhosterror = 0; /* set in case of dns errors */
 
   if (altreply) { /* if text response is defined in control file, query A records */
-    if (dns_ip(&rbltext,&rblhost) == -1) {
+    if (dns_ip(&ia, &rblhost) == -1) {
       flagmustnotbounce = 1;
       rblhosterror = 1;
       if (flagrblfailclosed) {
@@ -1040,7 +1047,7 @@ int addrvalid()
   if (wait_pid(&wstat,pid) == -1) die_rcpt2();
   if (wait_crashed(wstat)) die_rcpt2();
 
-  substdio_fdbuf(&ss,read,pierr[0],ssbuf,sizeof(ssbuf));
+  substdio_fdbuf(&ss,(ssize_t (*)(int, const void *, size_t))read,pierr[0],ssbuf,sizeof(ssbuf));
   while ( substdio_bget(&ss,&ch,1) && len < (sizeof(ssbuf)-3) )
     rcptcheck_err[len++] = ch;
   close(pierr[0]);
@@ -1118,12 +1125,12 @@ void logit2(const char* message, const char* reason)
   if (!stralloc_catb(&log_buf, " helo ", 6)) die_nomem();
   safeloglen(helohost.s, helohost.len);
   if (!stralloc_catb(&log_buf, "\n", 1)) die_nomem();
-  substdio_putflush(&sserr, log_buf);
+  substdio_putflush(&sserr, log_buf.s, log_buf.len);
 }
 
 /* end logging patch */
 
-int mailfrom_size(arg) char *arg;
+int mailfrom_size(char *arg)
 {
   long r;
   unsigned long sizebytes = 0;
@@ -1134,9 +1141,7 @@ int mailfrom_size(arg) char *arg;
   return 0;
 }
 
-void mailfrom_auth(arg,len)
-char *arg;
-int len;
+void mailfrom_auth(char *arg, int len)
 {
   if (!stralloc_copys(&fuser,"")) die_nomem();
   if (case_starts(arg,"<>")) { if (!stralloc_cats(&fuser,"unknown")) die_nomem(); }
@@ -1158,7 +1163,7 @@ int len;
   }
 }
 
-void mailfrom_parms(arg) char *arg;
+void mailfrom_parms(char *arg)
 {
   int i;
   int len;
@@ -1181,7 +1186,7 @@ void mailfrom_parms(arg) char *arg;
     }
 }
 
-void smtp_helo(arg) char *arg;
+void smtp_helo(char *arg)
 {
   envelopepos = 1;
   if(!(spp_val = spp_helo(arg))) return;
@@ -1194,7 +1199,7 @@ void smtp_helo(arg) char *arg;
   }
 }
 /* ESMTP extensions are published here */
-void smtp_ehlo(arg) char *arg;
+void smtp_ehlo(char *arg)
 {
   char size[FMT_ULONG];
 #ifdef TLS
@@ -1227,7 +1232,7 @@ void smtp_ehlo(arg) char *arg;
   }
 }
 
-void smtp_rset(arg) char *arg;
+void smtp_rset(char *arg)
 {
   spp_rset();
   seenmail = 0; /* seenauth = 0; RFC 5321: retain authentication */
@@ -1239,7 +1244,7 @@ void smtp_rset(arg) char *arg;
   out("250 flushed\r\n");
 }
 
-void smtp_mail(arg) char *arg;
+void smtp_mail(char *arg)
 {
   int r;
 
@@ -1377,7 +1382,7 @@ void err_spf() {
 int flagdnsbl = 0;
 stralloc dnsblhost = {0};
 
-void smtp_rcpt(arg) char *arg; {
+void smtp_rcpt(char *arg) {
   int flagrcptmatch = 0; /* 0 undefined, 1 validrcptto, 2 chkuser, 3 chkuserrelay, 4 rcptcheck */
 /* added by empf patch */
   int ret = 0;
@@ -1713,7 +1718,7 @@ void smtp_rcpt(arg) char *arg; {
  */
 }
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   flush();
@@ -1737,8 +1742,7 @@ void flush_io() { ssin.p = 0; flush(); }
 struct qmail qqt;
 unsigned int bytestooverflow = 0;
 
-void put(ch)
-char *ch;
+void put(char *ch)
 {
   if (bytestooverflow)
     if (!--bytestooverflow)
@@ -1746,8 +1750,7 @@ char *ch;
   qmail_put(&qqt,ch,1);
 }
 
-void blast(hops)
-int *hops;
+void blast(int *hops)
 {
   char ch;
   int state;
@@ -1923,7 +1926,7 @@ int dnsblcheck()
 /* rbl:end */
 
 char accept_buf[FMT_ULONG];
-void acceptmessage(qp) unsigned long qp;
+void acceptmessage(unsigned long qp)
 {
   datetime_sec when;
   when = now();
@@ -1936,7 +1939,7 @@ void acceptmessage(qp) unsigned long qp;
   out("\r\n");
 }
 
-void smtp_data(arg) char *arg; {
+void smtp_data(char *arg) {
   int hops;
   unsigned long qp;
   char *qqx;
@@ -1961,7 +1964,7 @@ void smtp_data(arg) char *arg; {
     protocol = utf8proto.s;
   }
 
-  received(&qqt,protocol,local,remoteip,remotehost,remoteinfo,fakehelo);
+  received(&qqt,(char *)protocol,local,remoteip,remotehost,remoteinfo,fakehelo);
   spfreceived();
   qmail_put(&qqt,sppheaders.s,sppheaders.len); /* set in qmail-spp.c */
   spp_rset();
@@ -2054,7 +2057,7 @@ int authenticate(void)
   return 0; /* yes */
 }
 
-int auth_login(arg) char *arg;
+int auth_login(char *arg)
 {
   int r;
 
@@ -2078,7 +2081,7 @@ int auth_login(arg) char *arg;
   return authenticate();
 }
 
-int auth_plain(arg) char *arg;
+int auth_plain(char *arg)
 {
   int r, id = 0;
 
@@ -2102,7 +2105,7 @@ int auth_plain(arg) char *arg;
   return authenticate();
 }
 
-int auth_cram()
+int auth_cram(char *arg)
 {
   int i, r;
   char *s;
@@ -2142,7 +2145,7 @@ int auth_cram()
 
 struct authcmd {
   char *text;
-  int (*fun)();
+  int (*fun)(char *arg);
 } authcmds[] = {
   { "login",auth_login }
 , { "plain",auth_plain }
@@ -2150,8 +2153,7 @@ struct authcmd {
 , { 0,err_noauth }
 };
 
-void smtp_auth(arg)
-char *arg;
+void smtp_auth(char *arg)
 {
   int i;
   char *cmd = arg;
@@ -2229,7 +2231,7 @@ const char *ssl_verify_err = 0;
 
 void smtp_tls(char *arg)
 {
-  if (ssl || disabletls) err_unimpl();
+  if (ssl || disabletls) err_unimpl(NULL);
   else if (*arg) {out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n"); logit("reject (Syntax error, no parameters allowed)");}
   else tls_init();
 }
@@ -2242,12 +2244,12 @@ void tls_nogateway()
   /* there may be cases when relayclient is set */
   if (!ssl || relayclient) return;
   out("; no valid cert for gatewaying");
-  if (ssl_verify_err) { out(": "); out(ssl_verify_err); }
+  if (ssl_verify_err) { out(": "); out((char *) ssl_verify_err); }
 }
 void tls_out(const char *s1, const char *s2)
 {
-  out("454 TLS "); out(s1);
-  if (s2) { out(": "); out(s2); }
+  out("454 TLS "); out((char *)s1);
+  if (s2) { out(": "); out((char *)s2); }
   out(" (#4.3.0)\r\n"); flush();
 }
 void tls_err(const char *s) { tls_out(s, ssl_error()); if (smtps) die_read("tls error"); }
@@ -2461,8 +2463,8 @@ struct commands smtpcommands[] = {
 /* qsmtpdlog: start */
 void outqlog(const char *s, unsigned int n) {
   while (n > 0) {
-    if (smtputf8) substdio_put(&sslog,s,1);
-    else substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? s : "_",1);
+    if (smtputf8) substdio_put(&sslog,(char *)s,1);
+    else substdio_put(&sslog,((*s > 32) && (*s <= 126)) ? (char *)s : "_",1);
     --n;
     ++s;
   }
@@ -2476,10 +2478,10 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
   int i, r;
   stralloc lst = {0};
   int isenvelope = 0;
-  
+
   stralloc_copys(&lst,head);
   if (stralloc_starts(&lst,"qlogenvelope")) isenvelope = 1;
-  substdio_puts(&sslog, head);
+  substdio_puts(&sslog, (char *)head);
   substdio_puts(&sslog, ":");
 
   substdio_puts(&sslog, " result="); if (result) outsqlog(result);
@@ -2548,9 +2550,7 @@ void qsmtpdlog(const char *head, const char *result, const char *reason, const c
 }
 /* qsmtpdlog: end */
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   int n, m;
   childargs = argv + 1;
@@ -2600,6 +2600,6 @@ char **argv;
     smtp_greet("220 ");
     out(" ESMTP\r\n");
   }
-  if (commands(&ssin,&smtpcommands) == 0) die_read("commands error");
+  if (commands(&ssin,smtpcommands) == 0) die_read("commands error");
   die_nomem();
 }

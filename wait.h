@@ -1,8 +1,8 @@
 #ifndef WAIT_H
 #define WAIT_H
 
-extern int wait_pid();
-extern int wait_nohang();
+extern int wait_pid(int *, int);
+extern int wait_nohang(int *);
 extern int wait_stop();
 extern int wait_stopnohang();
 
