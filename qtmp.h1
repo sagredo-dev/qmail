@@ -1,3 +1,5 @@
+#include "substdio.h"
+
 #ifndef QTMP_H
 #define QTMP_H
 
