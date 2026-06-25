@@ -85,7 +85,7 @@ void die_srs() {
 char fntmptph[80 + FMT_ULONG * 2];
 char fnnewtph[80 + FMT_ULONG * 2];
 void tryunlinktmp() { unlink(fntmptph); }
-void sigalrm(int) { tryunlinktmp(); _exit(3); }
+void sigalrm(int sig) { tryunlinktmp(); _exit(3); }
 
 void maildir_child(char *dir)
 {
