@@ -1,6 +1,6 @@
 # Don't edit Makefile! Use conf-* for configuration.
 
-# freeBSD users should leave empty the very 1st line of conf-lib
+# FreeBSD and OpenBSD users should leave empty the very 1st line of conf-lib
 LIBRESOLV=$$(head -n 1 conf-lib)
 
 VPOPMAIL_DIR=$$(getent passwd $$(head -n 9 conf-users | tail -1) | cut -d: -f6)
