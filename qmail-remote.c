@@ -297,12 +297,12 @@ void quit(char *prepend, char *append)
 {
 #ifdef TLS
   /* shouldn't talk to the client unless in an appropriate state */
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
   OSSL_HANDSHAKE_STATE state = ssl ? SSL_get_state(ssl) : TLS_ST_BEFORE;
-  if (state & TLS_ST_OK || (!smtps && state & TLS_ST_BEFORE))
+  if (state == TLS_ST_OK || (!smtps && state == TLS_ST_BEFORE))
 #else
-  int state = ssl ? ssl->state : SSL_ST_BEFORE;
-  if (state & SSL_ST_OK || (!smtps && state & SSL_ST_BEFORE))
+  int state = ssl ? SSL_get_state(ssl) : SSL_ST_BEFORE;
+  if ((state & SSL_ST_OK) || (!smtps && (state & SSL_ST_BEFORE)))
 #endif
 #endif
   substdio_putsflush(&smtpto,"QUIT\r\n");
