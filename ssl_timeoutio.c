@@ -5,7 +5,31 @@
 #include "now.h"
 #include "ssl_timeoutio.h"
 
-int ssl_timeoutio(int (*fun)(),
+// Wrappers to adapt several functions to ssl_timeoutio signature
+static int ssl_accept_wrapper(SSL *ssl, char *buf, int len) {
+    (void)buf;   // unused
+    (void)len;   // unused
+    return SSL_accept(ssl);
+}
+static int ssl_connect_wrapper(SSL *ssl, char *buf, int len)
+{
+    (void)buf;
+    (void)len;
+    return SSL_connect(ssl);
+}
+static int ssl_do_handshake_wrapper(SSL *ssl, char *buf, int len) {
+    (void)buf;   // unused
+    (void)len;   // unused
+    return SSL_do_handshake(ssl);
+}
+static int ssl_read_wrapper(SSL *ssl, char *buf, int len) {
+    return SSL_read(ssl, (void *)buf, len);
+}
+static int ssl_write_wrapper(SSL *ssl, char *buf, int len) {
+    return SSL_write(ssl, (void *)buf, len);
+}
+
+int ssl_timeoutio(int (*fun)(SSL *, char *, int),
   int t, int rfd, int wfd, SSL *ssl, char *buf, int len)
 {
   int n;
@@ -15,7 +39,7 @@ int ssl_timeoutio(int (*fun)(),
     fd_set fds;
     struct timeval tv;
 
-    const int r = buf ? fun(ssl, buf, len) : fun(ssl);
+    const int r = buf ? fun(ssl, buf, len) : fun(ssl, NULL, 0);
     if (r > 0) return r;
 
     t = end - now();
@@ -47,7 +71,7 @@ int ssl_timeoutaccept(int t, int rfd, int wfd, SSL *ssl)
 
   /* if connection is established, keep NDELAY */
   if (ndelay_on(rfd) == -1 || ndelay_on(wfd) == -1) return -1;
-  r = ssl_timeoutio(SSL_accept, t, rfd, wfd, ssl, NULL, 0);
+  r = ssl_timeoutio(ssl_accept_wrapper, t, rfd, wfd, ssl, NULL, 0);
 
   if (r <= 0) { ndelay_off(rfd); ndelay_off(wfd); }
   else SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
@@ -61,7 +85,7 @@ int ssl_timeoutconn(int t, int rfd, int wfd, SSL *ssl)
 
   /* if connection is established, keep NDELAY */
   if (ndelay_on(rfd) == -1 || ndelay_on(wfd) == -1) return -1;
-  r = ssl_timeoutio(SSL_connect, t, rfd, wfd, ssl, NULL, 0);
+  r = ssl_timeoutio(ssl_connect_wrapper, t, rfd, wfd, ssl, NULL, 0);
 
   if (r <= 0) { ndelay_off(rfd); ndelay_off(wfd); }
   else SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE);
@@ -88,7 +112,7 @@ int ssl_timeoutrehandshake(int t, int rfd, int wfd, SSL *ssl)
   char buf[1]; /* dummy read buffer */
   struct timeval tv;
   fd_set fds;
-  r = ssl_timeoutio(SSL_do_handshake, t, rfd, wfd, ssl, NULL, 0);
+  r = ssl_timeoutio(ssl_do_handshake_wrapper, t, rfd, wfd, ssl, NULL, 0);
   if (r <=0) return r;
 #if OPENSSL_VERSION_NUMBER >= 0x10101000L
   if (SSL_version(ssl) >= TLS1_3_VERSION) return r;
@@ -108,19 +132,19 @@ int ssl_timeoutrehandshake(int t, int rfd, int wfd, SSL *ssl)
   /* this is for the server only */
   ssl->state = SSL_ST_ACCEPT;
 #endif
-  return ssl_timeoutio(SSL_do_handshake, t, rfd, wfd, ssl, NULL, 0);
+  return ssl_timeoutio(ssl_do_handshake_wrapper, t, rfd, wfd, ssl, NULL, 0);
 }
 
 int ssl_timeoutread(int t, int rfd, int wfd, SSL *ssl, char *buf, int len)
 {
   if (!buf) return 0;
   if (SSL_pending(ssl)) return SSL_read(ssl, buf, len);
-  return ssl_timeoutio(SSL_read, t, rfd, wfd, ssl, buf, len);
+  return ssl_timeoutio(ssl_read_wrapper, t, rfd, wfd, ssl, buf, len);
 }
 
 int ssl_timeoutwrite(int t, int rfd, int wfd, SSL *ssl, char *buf, int len)
 {
   if (!buf) return 0;
-  return ssl_timeoutio(SSL_write, t, rfd, wfd, ssl, buf, len);
+  return ssl_timeoutio(ssl_write_wrapper, t, rfd, wfd, ssl, buf, len);
 }
 #endif

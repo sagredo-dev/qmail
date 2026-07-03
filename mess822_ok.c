@@ -10,9 +10,7 @@
 #include "mess822.h"
 #include "byte.h"
 
-int
-mess822_ok(sa)
-	stralloc       *sa;
+int mess822_ok(stralloc *sa)
 {
 	int             i;
 	int             len;

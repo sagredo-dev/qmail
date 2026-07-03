@@ -34,7 +34,7 @@ void die_usage() {
 void die_read() {
  if (errno == error_nomem) die_nomem();
  substdio_putsflush(subfderr,"qreceipt: fatal: read error\n"); die_temp(); }
-void doordie(sa,r) stralloc *sa; int r; {
+void doordie(stralloc *sa, int r) {
  if (r == 1) return; if (r == -1) die_nomem();
  substdio_putsflush(subfderr,"qreceipt: fatal: unable to parse this: ");
  substdio_putflush(subfderr,sa->s,sa->len); die(); }
@@ -47,7 +47,7 @@ char *returnpath;
 stralloc messageid = {0};
 stralloc sanotice = {0};
 
-int rwnotice(addr) token822_alloc *addr; { token822_reverse(addr);
+int rwnotice(token822_alloc *addr) { token822_reverse(addr);
  if (token822_unquote(&sanotice,addr) != 1) die_nomem();
  if (sanotice.len == str_len(target))
    if (!str_diffn(sanotice.s,target,sanotice.len))
@@ -103,8 +103,7 @@ token822_alloc hfin = {0};
 token822_alloc hfrewrite = {0};
 token822_alloc hfaddr = {0};
 
-void doheaderfield(h)
-stralloc *h;
+void doheaderfield(stralloc *h)
 {
  switch(hfield_known(h->s,h->len))
   {
@@ -118,11 +117,9 @@ stralloc *h;
   }
 }
 
-void dobody(h) stralloc *h; { ; }
+void dobody(stralloc *h) { ; }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  sig_pipeignore();
  if (!(target = argv[1])) die_usage();

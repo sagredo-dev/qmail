@@ -15,21 +15,16 @@
 static char line[999];
 static int t;
 
-static int mywrite(fd,buf,len) int fd; char *buf; int len;
+static int mywrite(int fd, char *buf, int len)
 {
   return timeoutwrite(t,fd,buf,len);
 }
-static int myread(fd,buf,len) int fd; char *buf; int len;
+static int myread(int fd, char *buf, int len)
 {
   return timeoutread(t,fd,buf,len);
 }
 
-char *remoteinfo_get(ipr,rp,ipl,lp,timeout)
-struct ip_address *ipr;
-unsigned long rp;
-struct ip_address *ipl;
-unsigned long lp;
-int timeout;
+char *remoteinfo_get(struct ip_address *ipr, unsigned long rp, struct ip_address *ipl, unsigned long lp, int timeout)
 {
   char *x;
   int s;
@@ -41,10 +36,10 @@ int timeout;
   char ch;
 
   t = timeout;
- 
+
   s = socket(AF_INET,SOCK_STREAM,0);
   if (s == -1) return 0;
- 
+
 /*  byte_zero(&sin,sizeof(sin));
   sin.sin_family = AF_INET;
   byte_copy(&sin.sin_addr,4,ipl);
@@ -52,17 +47,17 @@ int timeout;
   if (bind(s,(struct sockaddr *) &sin,sizeof(sin)) == -1) { close(s); return 0; } */
   if (timeoutconn(s,ipr,ipl,113,timeout) == -1) { close(s); return 0; }
   fcntl(s,F_SETFL,fcntl(s,F_GETFL,0) & ~O_NDELAY);
- 
+
   len = 0;
   len += fmt_ulong(line + len,rp);
   len += fmt_str(line + len," , ");
   len += fmt_ulong(line + len,lp);
   len += fmt_str(line + len,"\r\n");
- 
-  substdio_fdbuf(&ss,mywrite,s,buf,sizeof buf);
+
+  substdio_fdbuf(&ss,(ssize_t (*)(int, const void *, size_t))mywrite,s,buf,sizeof buf);
   if (substdio_putflush(&ss,line,len) == -1) { close(s); return 0; }
- 
-  substdio_fdbuf(&ss,myread,s,buf,sizeof buf);
+
+  substdio_fdbuf(&ss,(ssize_t (*)(int, const void *, size_t))myread,s,buf,sizeof buf);
   x = line;
   numcolons = 0;
   for (;;) {

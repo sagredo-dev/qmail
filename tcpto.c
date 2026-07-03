@@ -32,7 +32,7 @@ static int getbuf()
  return r;
 }
 
-int tcpto(ip) struct ip_address *ip;
+int tcpto(struct ip_address *ip)
 {
  int n;
  int i;
@@ -68,7 +68,7 @@ int tcpto(ip) struct ip_address *ip;
  return 0;
 }
 
-void tcpto_err(ip,flagerr) struct ip_address *ip; int flagerr;
+void tcpto_err(struct ip_address *ip, int flagerr)
 {
  int n;
  int i;

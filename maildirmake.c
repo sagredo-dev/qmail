@@ -5,9 +5,7 @@
 
 #define FATAL "maildirmake: fatal: "
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   umask(077);
   if (!argv[1])

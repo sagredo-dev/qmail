@@ -15,9 +15,7 @@ char temp[IPFMT + FMT_ULONG];
 stralloc sa = {0};
 ipalloc ia = {0};
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  int j;
  unsigned long r;

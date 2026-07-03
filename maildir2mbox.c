@@ -75,7 +75,7 @@ int main()
  if (fdnewmbox == -1)
    strerr_die4sys(111,FATAL,"unable to create ",mboxtmp,": ");
 
- substdio_fdbuf(&ssin,read,fdoldmbox,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,fdoldmbox,inbuf,sizeof(inbuf));
  substdio_fdbuf(&ssout,write,fdnewmbox,outbuf,sizeof(outbuf));
 
  switch(substdio_copy(&ssout,&ssin))
@@ -92,11 +92,11 @@ int main()
    fd = open_read(filenames.s + pe.id);
    if (fd == -1)
      strerr_die4sys(111,FATAL,"unable to read $MAILDIR/",filenames.s + pe.id,": ");
-   substdio_fdbuf(&ssin,read,fd,inbuf,sizeof(inbuf));
+   substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,fd,inbuf,sizeof(inbuf));
 
    if (getln(&ssin,&line,&match,'\n') != 0)
      strerr_die4sys(111,FATAL,"unable to read $MAILDIR/",filenames.s + pe.id,": ");
-   
+
    if (!stralloc_copys(&ufline,"From XXX ")) die_nomem();
    if (match)
      if (stralloc_starts(&line,"Return-Path: <"))

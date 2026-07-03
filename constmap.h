@@ -13,8 +13,8 @@ struct constmap {
   int *inputlen;
 } ;
 
-extern int constmap_init();
-extern void constmap_free();
-extern char *constmap();
+extern int constmap_init(struct constmap *, char *, int, int);
+extern void constmap_free(struct constmap *);
+extern char *constmap(struct constmap *, char *, int);
 
 #endif

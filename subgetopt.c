@@ -25,10 +25,7 @@ char *optarg = 0;
 int optproblem = 0;
 int optdone = SUBGETOPTDONE;
 
-int sgopt(argc,argv,opts)
-int argc;
-char **argv;
-char *opts;
+int sgopt(int argc, char **argv, char *opts)
 {
   int c;
   char *s;

@@ -24,7 +24,7 @@ dk_strdup(const char *s)
   return new;
 }
 
-static unsigned short getshort(c) unsigned char *c;
+static unsigned short getshort(unsigned char *c)
 { unsigned short u; u = c[0]; return (u << 8) + c[1]; }
 
 static struct
@@ -36,7 +36,7 @@ static int      responselen;
 static unsigned char *responseend;
 static unsigned char *responsepos;
 static u_long   saveresoptions;
-static int      (*lookup) () = res_query;
+static int      (*lookup) (const char *, int, int, unsigned char *, int) = res_query;
 static int      numanswers;
 static char     name[MAXDNAME];
 static stralloc glue = {0};

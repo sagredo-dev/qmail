@@ -10,9 +10,7 @@ stralloc newfield_date = {0};
 /* "Message-ID: <19950926044653.12345.qmail@silverton.berkeley.edu>\n" */
 stralloc newfield_msgid = {0};
 
-static unsigned int datefmt(s,when)
-char *s;
-datetime_sec when;
+static unsigned int datefmt(char *s, datetime_sec when)
 {
  unsigned int i;
  unsigned int len;
@@ -24,11 +22,7 @@ datetime_sec when;
  return len;
 }
 
-static unsigned int msgidfmt(s,idhost,idhostlen,when)
-char *s;
-char *idhost;
-int idhostlen;
-datetime_sec when;
+static unsigned int msgidfmt(char *s, char *idhost, int idhostlen, datetime_sec when)
 {
  unsigned int i;
  unsigned int len;
@@ -50,18 +44,14 @@ datetime_sec when;
  return len;
 }
 
-int newfield_datemake(when)
-datetime_sec when;
+int newfield_datemake(datetime_sec when)
 {
  if (!stralloc_ready(&newfield_date,datefmt(FMT_LEN,when))) return 0;
  newfield_date.len = datefmt(newfield_date.s,when);
  return 1;
 }
 
-int newfield_msgidmake(idhost,idhostlen,when)
-char *idhost;
-int idhostlen;
-datetime_sec when;
+int newfield_msgidmake(char *idhost, int idhostlen, datetime_sec when)
 {
  if (!stralloc_ready(&newfield_msgid,msgidfmt(FMT_LEN,idhost,idhostlen,when))) return 0;
  newfield_msgid.len = msgidfmt(newfield_msgid.s,idhost,idhostlen,when);

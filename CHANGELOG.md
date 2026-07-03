@@ -1,8 +1,10 @@
 # ChangeLog
 
-- Jun 6, 2026
+- unreleased
   - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
     (tx Steffen Nurpmeso)
+  - Extensive modernization work for compatibility with C23 and recent GCC/clang releases, including fixes for
+    function prototypes, callback signatures, type safety, allocation helpers, and OpenSSL APIs.
 
 - Apr 7, 2026
   - (security) Fixed a command injection vulnerability in qmail-remote by removing unsafe shell usage and
@@ -16,14 +18,15 @@
   - Updated qmail-qfilter to support filters defined in control/qfilters (Andreas Gerstlauer)
 
 - Feb 25, 2026
+  - qmail-remote: authentication on remote servers can select the auth method even
+    when the first method advertized by the remote server is not available locally.  
+    ([tx Pierluigi](https://www.sagredo.eu/qmail-notes-185/smtp-auth-qmail-tls-forcetls-patch-for-qmail-84.html#comment5058))
   - SNI support (Tx Andreas Gerstlauer)
     https://github.com/sagredo-dev/qmail/commit/01b51166a4a295231150309129d0a3a531019af8
     https://github.com/sagredo-dev/qmail/commit/b7fbcb314ae2d9dad3505029d800a8532be78939
   - Ported over DKIM_BAD_IDENTITY support from https://github.com/indimail/indimail-mta
     (tx Manvendra Bhangui and Andreas Gerstlauer)
     https://github.com/sagredo-dev/qmail/commit/1299b550f27c257fd5432fc88e1f9b1b8440873a
-  - Added Bruce Guenter's qmail-qfilter. Ported over Indimail by Manvendra Bhangui and to my
-    qmail by Andreas Gerstlauer [Pull request](https://github.com/sagredo-dev/qmail/pull/38)
 
 - Feb 3, 2026
   - Bug fix for verifying multiple DKIM signatures (second one always

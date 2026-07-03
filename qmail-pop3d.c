@@ -25,7 +25,7 @@
 
 void die() { _exit(0); }
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   r = timeoutread(1200,fd,buf,len);
@@ -33,7 +33,7 @@ ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
   return r;
 }
 
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
   r = timeoutwrite(1200,fd,buf,len);
@@ -47,7 +47,7 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 char ssinbuf[128];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-void put(buf,len) char *buf; int len;
+void put(char *buf, int len)
 {
   substdio_put(&ssout,buf,len);
 }
@@ -55,7 +55,7 @@ void flush()
 {
   substdio_flush(&ssout);
 }
-void err(s) char *s;
+void err(char *s)
 {
   substdio_puts(&ssout,"-ERR ");
   substdio_puts(&ssout,s);
@@ -68,7 +68,7 @@ void die_nomaildir() { err("this user has no $HOME/Maildir"); die(); }
 void die_scan() { err("unable to scan $HOME/Maildir"); die(); }
 
 void err_syntax() { err("syntax error"); }
-void err_unimpl(arg) char *arg; { err("unimplemented"); }
+void err_unimpl(char *arg) { err("unimplemented"); }
 void err_deleted() { err("already deleted"); }
 void err_nozero() { err("messages are counted from 1"); }
 void err_toobig() { err("not that many messages"); }
@@ -77,7 +77,7 @@ void err_nounlink() { err("unable to unlink all deleted messages"); }
 
 void okay() { substdio_puts(&ssout,"+OK \r\n"); flush(); }
 
-void printfn(fn) char *fn;
+void printfn(char *fn)
 {
   fn += 4;
   put(fn,str_chr(fn,':'));
@@ -86,9 +86,7 @@ void printfn(fn) char *fn;
 char strnum[FMT_ULONG];
 stralloc line = {0};
 
-void blast(ssfrom,limit)
-substdio *ssfrom;
-unsigned long limit;
+void blast(substdio *ssfrom, unsigned long limit)
 {
   int match;
   int inheaders = 1;
@@ -148,7 +146,7 @@ void getlist()
   }
 }
 
-void pop3_stat(arg) char *arg;
+void pop3_stat(char *arg)
 {
   int i;
   unsigned long total;
@@ -163,7 +161,7 @@ void pop3_stat(arg) char *arg;
   flush();
 }
 
-void pop3_rset(arg) char *arg;
+void pop3_rset(char *arg)
 {
   int i;
   for (i = 0;i < numm;++i) m[i].flagdeleted = 0;
@@ -171,7 +169,7 @@ void pop3_rset(arg) char *arg;
   okay();
 }
 
-void pop3_last(arg) char *arg;
+void pop3_last(char *arg)
 {
   substdio_puts(&ssout,"+OK ");
   put(strnum,fmt_uint(strnum,last));
@@ -179,7 +177,7 @@ void pop3_last(arg) char *arg;
   flush();
 }
 
-void pop3_quit(arg) char *arg;
+void pop3_quit(char *arg)
 {
   int i;
   char quotabuf[QUOTABUFSIZE];
@@ -236,7 +234,7 @@ void pop3_quit(arg) char *arg;
   die();
 }
 
-int msgno(arg) char *arg;
+int msgno(char *arg)
 {
   unsigned long u;
   if (!scan_ulong(arg,&u)) { err_syntax(); return -1; }
@@ -247,7 +245,7 @@ int msgno(arg) char *arg;
   return u;
 }
 
-void pop3_dele(arg) char *arg;
+void pop3_dele(char *arg)
 {
   int i;
   i = msgno(arg);
@@ -257,9 +255,7 @@ void pop3_dele(arg) char *arg;
   okay();
 }
 
-void list(i,flaguidl)
-int i;
-int flaguidl;
+void list(int i, int flaguidl)
 {
   put(strnum,fmt_uint(strnum,i + 1));
   substdio_puts(&ssout," ");
@@ -268,7 +264,7 @@ int flaguidl;
   substdio_puts(&ssout,"\r\n");
 }
 
-void dolisting(arg,flaguidl) char *arg; int flaguidl;
+void dolisting(char *arg, int flaguidl)
 {
   unsigned int i;
   if (*arg) {
@@ -287,12 +283,12 @@ void dolisting(arg,flaguidl) char *arg; int flaguidl;
   flush();
 }
 
-void pop3_uidl(arg) char *arg; { dolisting(arg,1); }
-void pop3_list(arg) char *arg; { dolisting(arg,0); }
+void pop3_uidl(char *arg) { dolisting(arg,1); }
+void pop3_list(char *arg) { dolisting(arg,0); }
 
 substdio ssmsg; char ssmsgbuf[1024];
 
-void pop3_top(arg) char *arg;
+void pop3_top(char *arg)
 {
   int i;
   unsigned long limit;
@@ -308,7 +304,7 @@ void pop3_top(arg) char *arg;
   fd = open_read(m[i].fn);
   if (fd == -1) { err_nosuch(); return; }
   okay();
-  substdio_fdbuf(&ssmsg,read,fd,ssmsgbuf,sizeof(ssmsgbuf));
+  substdio_fdbuf(&ssmsg,(ssize_t (*)(int,  const void *, size_t))read,fd,ssmsgbuf,sizeof(ssmsgbuf));
   blast(&ssmsg,limit);
   close(fd);
 }
@@ -323,15 +319,13 @@ struct commands pop3commands[] = {
 , { "rset", pop3_rset, 0 }
 , { "last", pop3_last, 0 }
 , { "top", pop3_top, 0 }
-, { "noop", okay, 0 }
+, { "noop", (void (*)(char *))okay, 0 }
 , { 0, err_unimpl, 0 }
 } ;
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
-  sig_alarmcatch(die);
+  sig_alarmcatch((void (*)(int))die);
   sig_pipeignore();
  
   if (!argv[1]) die_nomaildir();

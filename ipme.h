@@ -3,10 +3,12 @@
 
 #include "ip.h"
 #include "ipalloc.h"
+#include "ipalloc_address.h"
 
-extern ipalloc ipme, ipme_mask, notipme, notipme_mask;
+extern ipalloc ipme, notipme;
+extern ipalloc_address ipme_mask, notipme_mask;
 
 extern int ipme_init();
-extern int ipme_is();
+extern int ipme_is(struct ip_address *);
 
 #endif

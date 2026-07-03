@@ -1,7 +1,7 @@
 #ifndef DATE822FMT_H
 #define DATE822FMT_H
 
-extern unsigned int date822fmt();
+extern unsigned int date822fmt(char *, struct datetime *);
 #define DATE822FMT 60
 
 #endif

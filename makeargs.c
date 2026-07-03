@@ -128,10 +128,22 @@ makeargs(char *cmmd)
 	return (argv);
 }
 
-void
-free_makeargs(char **argv)
+/*
+ * Free the argv array returned by makeargs().
+ * Only the array itself is freed, not the strings inside,
+ * because some point to the static buffer sptr.s.
+ * The pointer in the caller is set to NULL to prevent double free.
+ */
+void free_makeargs(char **argv)
 {
-	alloc_free(argv);
+  if (!argv) return;
+
+	/* Free the array of pointers */
+	alloc_free((char *)argv);
+
+  /* Prevent accidental double free by nullifying the caller pointer */
+	*argv = NULL;
+
 	return;
 }
 

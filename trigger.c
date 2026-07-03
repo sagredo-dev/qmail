@@ -23,9 +23,7 @@ void trigger_set()
 #endif
 }
 
-void trigger_selprep(nfds,rfds)
-int *nfds;
-fd_set *rfds;
+void trigger_selprep(int *nfds, fd_set *rfds)
 {
  if (fd != -1)
   {
@@ -34,8 +32,7 @@ fd_set *rfds;
   }
 }
 
-int trigger_pulled(rfds)
-fd_set *rfds;
+int trigger_pulled(fd_set *rfds)
 {
  if (fd != -1) if (FD_ISSET(fd,rfds)) return 1;
  return 0;
