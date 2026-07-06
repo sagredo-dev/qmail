@@ -21,9 +21,65 @@ void token822_reverse(token822_alloc *ta)
   }
 }
 
-GEN_ALLOC_readyplus(token822_alloc, struct token822, t, len, a, i, n, x, 30, token822_readyplus)
-GEN_ALLOC_ready(token822_alloc, struct token822, t, len, a, i, n, x, 30, token822_ready)
 GEN_ALLOC_append(token822_alloc, struct token822, t, len, a, i, n, x, 30, token822_readyplus, token822_append)
+
+/*
+ * token822 contains embedded stralloc objects.
+ * Every newly allocated token must have addr initialized to
+ * { NULL, 0, 0 }, otherwise stralloc_ready() may attempt to
+ * realloc/free an uninitialized pointer.
+ */
+int token822_ready(token822_alloc *x, unsigned int n)
+{
+    unsigned int olda;
+    unsigned int i;
+
+    if (x->t) {
+        olda = x->a;
+
+        if (n <= olda)
+            return 1;
+
+        x->a = 30 + n + (n >> 3);
+
+        if (!alloc_re((char **)&x->t,
+                      olda * sizeof(struct token822),
+                      x->a * sizeof(struct token822))) {
+            x->a = olda;
+            return 0;
+        }
+
+        for (i = olda; i < x->a; ++i) {
+            x->t[i].addr.s = 0;
+            x->t[i].addr.len = 0;
+            x->t[i].addr.a = 0;
+            x->t[i].type = 0;
+        }
+
+        return 1;
+    }
+
+    x->len = 0;
+    x->a = n;
+
+    x->t = (struct token822 *) alloc(n * sizeof(struct token822));
+    if (!x->t)
+        return 0;
+
+    for (i = 0; i < n; ++i) {
+        x->t[i].addr.s = 0;
+        x->t[i].addr.len = 0;
+        x->t[i].addr.a = 0;
+        x->t[i].type = 0;
+    }
+
+    return 1;
+}
+
+int token822_readyplus(token822_alloc *x, unsigned int n)
+{
+    return token822_ready(x, x->len + n);
+}
 
 static int needspace(int t1, int t2)
 {
