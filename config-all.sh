@@ -153,7 +153,7 @@ fi
 # srs_secrets
 if check_file "QMAIL/control/srs_secrets"; then
   echo "Putting a random string into control/srs_secrets..."
-  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 13; echo) > QMAIL/control/srs_secrets
+  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | dd bs=13 count=1 2>/dev/null; echo) > QMAIL/control/srs_secrets
   chmod 644 QMAIL/control/srs_secrets
 fi
 
