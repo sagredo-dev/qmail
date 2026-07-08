@@ -153,7 +153,7 @@ fi
 # srs_secrets
 if check_file "QMAIL/control/srs_secrets"; then
   echo "Putting a random string into control/srs_secrets..."
-  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 13; echo) > QMAIL/control/srs_secrets
+  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | dd bs=13 count=1 2>/dev/null; echo) > QMAIL/control/srs_secrets
   chmod 644 QMAIL/control/srs_secrets
 fi
 
@@ -280,10 +280,8 @@ mkdir -p $LOGDIR/qmail
 chown -R qmaill:nofiles $LOGDIR/qmail
 # get the group with id=0 (root/wheel)
 rootgrp=$(awk -F: '$3==0 {print $1; exit}' /etc/group)
-grp=""
 if [ -n "$rootgrp" ]; then
-  grp="-g $rootgrp"
-  chgrp $grp $LOGDIR/qmail
+  chgrp $rootgrp $LOGDIR/qmail
 fi
 chmod -R og-wrx $LOGDIR/qmail
 chmod g+rx $LOGDIR/qmail
