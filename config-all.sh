@@ -1,4 +1,4 @@
-# Configure/install the following as per notes.sagredo.eu guide:
+[# Configure/install the following as per notes.sagredo.eu guide:
 # - control files: me, defaultdomain, defaulthost, plusdomain, rcpthosts, spfbehavior, softlimit,
 #   bouncefrom, bouncehost, databytes, queuelifetime, maxrcpt, brtlimit, defaultdelivery,
 #   tlsserverciphers.
@@ -362,23 +362,26 @@ fi
 
 ########### moreipme
 if check_file "QMAIL/control/moreipme"; then
-  IPCOMMAND=$(command -v ip) || exit 0
-  OUT=QMAIL/control/moreipme
-  : > "$OUT"   # svuota il file
-  # IPv4
-  ip -o -4 addr show scope global |
-  awk '{print $4}' | cut -d/ -f1 |
-  while read -r ip4; do
-    echo "Adding $ip4 to $OUT..."
-    printf '%s\n' "$ip4" >> "$OUT"
-  done
-  # IPv6
-  ip -o -6 addr show scope global |
-  awk '{print $4}' | cut -d/ -f1 |
-  while read -r ip6; do
-    echo "Adding $ip6 to $OUT..."
-    printf '%s\n' "$ip6" >> "$OUT"
-  done
+  IPCOMMAND=$(command -v ip)
+
+  if [ -n "$IPCOMMAND" ]; then
+    OUT=QMAIL/control/moreipme
+    : > "$OUT"   # svuota il file
+    # IPv4
+    ip -o -4 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip4; do
+      echo "Adding $ip4 to $OUT..."
+      printf '%s\n' "$ip4" >> "$OUT"
+    done
+    # IPv6
+    ip -o -6 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip6; do
+      echo "Adding $ip6 to $OUT..."
+      printf '%s\n' "$ip6" >> "$OUT"
+    done
+  fi
 fi
 
 ########### smtpplugins
@@ -460,7 +463,7 @@ if [ -d /etc/cron.daily ]; then
     cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
   fi
 else
-  echo "/etc/cron.daily not found. Please install scripts/rcptcheck-overlimit.cron.daily manually."
+  echo "    /etc/cron.daily not found. Please install scripts/rcptcheck-overlimit.cron.daily manually."
 fi
 
 ############ svtools
@@ -514,7 +517,9 @@ if [ "$RESPONSE" = 'y' ] || [ "$RESPONSE" = 'Y' ]; then
 else
   echo 'Skipping the RSA DH key file creation'
 fi
-chown vpopmail:vchkpw QMAIL/control/*.pem
+if [ -e QMAIL/control/servercert.pem ]; then
+  chown vpopmail:vchkpw QMAIL/control/*.pem
+fi
 
 echo
 echo "Be sure to have a valid MX record in your DNS, to configure the reverse DNS for '${FQDN}'"
