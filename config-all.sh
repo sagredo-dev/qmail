@@ -295,16 +295,20 @@ ln -sf $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
 ln -sf $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### set PATH and MANPATH
-if check_file "/etc/profile.d/qmail.sh"; then
-  echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
-  cat > /etc/profile.d/qmail.sh <<- EOF
+if [ ! -d /etc/profile.d ]; then
+  if check_file "/etc/profile.d/qmail.sh"; then
+    echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
+    cat > /etc/profile.d/qmail.sh <<- EOF
 	#!/bin/sh
 	PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
 	export PATH
 	MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man
 	export MANPATH
 EOF
-  chmod +x /etc/profile.d/qmail.sh
+    chmod +x /etc/profile.d/qmail.sh
+  fi
+else
+  echo "    /etc/profile.d not found. Please install PATH and MANPATH manually."
 fi
 
 ########### qmailctl
@@ -314,15 +318,16 @@ cp $SRCDIR/scripts/qmailctl QMAIL/bin
 ln -sf QMAIL/bin/qmailctl $BINDIR/qmailctl
 
 ########### cronjobs
-if check_file "/etc/cron.d/qmail"; then
-  echo "Installing cronjobs in /etc/cron.d/qmail..."
-  # slackware OS does not allow the user declared in /etc/cron.d cronjobs
-  if [ -e /etc/slackware-version ]; then
-    CRONUSER=""
-  else
-    CRONUSER="root"
-  fi
-  cat > /etc/cron.d/qmail <<- EOF
+if [ ! -d /etc/cron.d ]; then
+  if check_file "/etc/cron.d/qmail"; then
+    echo "Installing cronjobs in /etc/cron.d/qmail..."
+    # slackware OS does not allow the user declared in /etc/cron.d cronjobs
+    if [ -e /etc/slackware-version ]; then
+      CRONUSER=""
+    else
+      CRONUSER="root"
+    fi
+    cat > /etc/cron.d/qmail <<- EOF
 	# convert-multilog
 	59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
 	# qmail log
@@ -337,6 +342,11 @@ if check_file "/etc/cron.d/qmail"; then
 	# surbl cache purge
 	2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
 EOF
+  fi
+else
+  echo "    /etc/cron.d not found. Please install the cronjobs manually."
+  echo "    Have a look here:"
+  echo "    https://notes.sagredo.eu/en/qmail-notes-185/configuring-qmail-83.html#cronjobs"
 fi
 
 ########### RBL
@@ -444,9 +454,13 @@ cp scripts/rcptcheck-overlimit QMAIL/bin
 if check_file "QMAIL/control/relaylimits"; then
   echo ":1000" > QMAIL/control/relaylimits
 fi
-if check_file "/etc/cron.daily/rcptcheck-overlimit"; then
-  echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
-  cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
+if [ -d /etc/cron.daily ]; then
+  if check_file "/etc/cron.daily/rcptcheck-overlimit"; then
+    echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
+    cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
+  fi
+else
+  echo "/etc/cron.daily not found. Please install scripts/rcptcheck-overlimit.cron.daily manually."
 fi
 
 ############ svtools
