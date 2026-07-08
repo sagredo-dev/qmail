@@ -295,7 +295,7 @@ ln -sf $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
 ln -sf $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### set PATH and MANPATH
-if [ ! -d /etc/profile.d ]; then
+if [ -d /etc/profile.d ]; then
   if check_file "/etc/profile.d/qmail.sh"; then
     echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
     cat > /etc/profile.d/qmail.sh <<- EOF
@@ -318,7 +318,7 @@ cp $SRCDIR/scripts/qmailctl QMAIL/bin
 ln -sf QMAIL/bin/qmailctl $BINDIR/qmailctl
 
 ########### cronjobs
-if [ ! -d /etc/cron.d ]; then
+if [ -d /etc/cron.d ]; then
   if check_file "/etc/cron.d/qmail"; then
     echo "Installing cronjobs in /etc/cron.d/qmail..."
     # slackware OS does not allow the user declared in /etc/cron.d cronjobs
