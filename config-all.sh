@@ -136,6 +136,7 @@ fi
 # locals must exist, let's touch it
 if check_file "QMAIL/control/locals"; then
   echo "Touching control/locals..."
+  touch QMAIL/control/locals
   chmod 644 QMAIL/control/locals
 fi
 
