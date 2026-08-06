@@ -49,7 +49,15 @@ my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-send';
 #####
 # Enter here the system command which returns qmail PID. The following
 # should work on most Unixes:
-my ($pidcmd) = 'pidof qmail-send';
+my ($pidcmd);
+
+if (-x "/bin/pidof" || -x "/usr/bin/pidof") {
+    $pidcmd = "pidof qmail-send";
+} elsif (-x "/bin/pgrep" || -x "/usr/bin/pgrep") {
+    $pidcmd = "pgrep -x qmail-send";
+} else {
+    die "Neither pidof nor pgrep found\n";
+}
 
 ####################  USER CONFIGURATION END  ####################
 
@@ -913,9 +921,8 @@ sub Stats {
 # Retrieve pid of qmail-send
 sub qmailPid {
     my $qmpid = `$pidcmd`;
-    chomp ($qmpid);
-    $qmpid =~ s/\s*//g;
-    if ($qmpid =~ /^\d+$/) { return $qmpid; }
+
+    return $1 if $qmpid =~ /(\d+)/;
     return 0;
 }
 
