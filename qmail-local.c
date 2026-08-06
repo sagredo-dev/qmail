@@ -300,15 +300,17 @@ void mailforward(char **recips)
    qmail_put(&qqt,messline.s,messline.len);
   }
  while (match);
- 
- switch(srsforward(ueo.s)) {
-   case -3: die_srs(); break;
-   case -2: temp_nomem(); break;
-   case -1: die_control(); break;
-   case 0: break;
-   case 1: if (!stralloc_copy(&ueo,&srs_result)) temp_nomem(); break;
- } 
- 
+
+if (str_diff(ueo.s,"") && str_diff(ueo.s,"#@[]")) {
+  switch(srsforward(ueo.s)) {
+    case -3: die_srs(); break;
+    case -2: temp_nomem(); break;
+    case -1: die_control(); break;
+    case 0: break;
+    case 1: if (!stralloc_copy(&ueo,&srs_result)) temp_nomem(); break;
+  }
+}
+
  qmail_from(&qqt,ueo.s);
  while (*recips) qmail_to(&qqt,*recips++);
  qqx = qmail_close(&qqt);
