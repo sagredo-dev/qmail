@@ -133,6 +133,12 @@ if check_file "QMAIL/control/plusdomain"; then
   ) )
 fi
 
+# locals must exist, let's touch it
+if check_file "QMAIL/control/locals"; then
+  echo "Touching control/locals..."
+  chmod 644 QMAIL/control/locals
+fi
+
 # rcpthosts
 if check_file "QMAIL/control/rcpthosts"; then
   echo "Putting '$FQDN' into control/rcpthosts..."
