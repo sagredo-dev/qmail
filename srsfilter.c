@@ -39,7 +39,7 @@ void printheader() {
   if (!stralloc_copys(&line,"")) die_nomem();
 }
 
-ssize_t mywrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t mywrite(int fd, char *buf, int len)
 {
   int i;
   if (flagbody) {
@@ -80,9 +80,7 @@ substdio ssout = SUBSTDIO_FDBUF(mywrite,-1,outbuf,sizeof outbuf);
 
 char num[FMT_ULONG];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   char *ext2;
   char *host;

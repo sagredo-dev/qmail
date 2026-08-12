@@ -7,9 +7,7 @@ static char *montab[12] = {
 "Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"
 };
 
-unsigned int date822fmt(s,dt)
-char *s;
-struct datetime *dt;
+unsigned int date822fmt(char *s, struct datetime *dt)
 {
   unsigned int i;
   unsigned int len;

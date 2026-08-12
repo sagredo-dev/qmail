@@ -2,8 +2,7 @@
 #include "sig.h"
 #include "hassgprm.h"
 
-void sig_block(sig)
-int sig;
+void sig_block(int sig)
 {
 #ifdef HASSIGPROCMASK
   sigset_t ss;
@@ -15,8 +14,7 @@ int sig;
 #endif
 }
 
-void sig_unblock(sig)
-int sig;
+void sig_unblock(int sig)
 {
 #ifdef HASSIGPROCMASK
   sigset_t ss;

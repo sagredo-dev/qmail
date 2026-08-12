@@ -9,10 +9,7 @@ static char *b64alpha =
 
 /* returns 0 ok, 1 illegal, -1 problem */
 
-int b64decode(in,l,out)
-const unsigned char *in;
-int l;
-stralloc *out; /* not null terminated */
+int b64decode(const unsigned char *in, int l, stralloc *out /* not null terminated */)
 {
   int p = 0;
   int n;
@@ -87,9 +84,7 @@ stralloc *out; /* not null terminated */
   return 0;
 }
 
-int b64encode(in,out)
-stralloc *in;
-stralloc *out; /* not null terminated */
+int b64encode(stralloc *in, stralloc *out /* not null terminated */)
 {
   unsigned char a, b, c;
   int i;

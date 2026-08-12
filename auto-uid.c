@@ -10,15 +10,12 @@
 char buf1[256];
 substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
 
-void outs(s) /* was named puts, but Solaris pwd.h includes stdio.h. dorks. */
-char *s;
+void outs(char *s) /* was named puts, but Solaris pwd.h includes stdio.h. dorks. */
 {
   if (substdio_puts(&ss1,s) == -1) _exit(111);
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   char *name;
   char *value;

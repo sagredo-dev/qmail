@@ -9,12 +9,10 @@
  * Span the complement of string s2.
  */
 size_t
-str_cspn(s1, s2)
-	const char *s1;
-	register const char *s2;
+str_cspn(const char *s1, const char *s2)
 {
-	register const char *p, *spanp;
-	register char c, sc;
+	const char *p, *spanp;
+	char c, sc;
 
 	/*
 	 * Stop as soon as we find any character from s2.  Note that there

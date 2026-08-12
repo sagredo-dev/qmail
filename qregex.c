@@ -218,9 +218,7 @@ regex_match(stralloc * addr, int mapfile, stralloc *map)
 	return (match);
 }
 
-void
-setdotChar(c)
-	char            c;
+void setdotChar(char c)
 {
 	dotChar = c;
 	return;

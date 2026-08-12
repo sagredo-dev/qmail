@@ -11,8 +11,7 @@ static char *montab[12] = {
 
 static char result[30];
 
-char *myctime(t)
-datetime_sec t;
+char *myctime(datetime_sec t)
 {
  struct datetime dt;
  unsigned int len;

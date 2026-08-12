@@ -24,8 +24,7 @@ int maildir_chdir()
  return 0;
 }
 
-void maildir_clean(tmpname)
-stralloc *tmpname;
+void maildir_clean(stralloc *tmpname)
 {
  DIR *dir;
  direntry *d;
@@ -50,11 +49,7 @@ stralloc *tmpname;
  closedir(dir);
 }
 
-static int append(pq,filenames,subdir,time)
-prioq *pq;
-stralloc *filenames;
-char *subdir;
-datetime_sec time;
+static int append(prioq *pq, stralloc *filenames, char *subdir, datetime_sec time)
 {
  DIR *dir;
  direntry *d;
@@ -88,11 +83,7 @@ datetime_sec time;
  return 0;
 }
 
-int maildir_scan(pq,filenames,flagnew,flagcur)
-prioq *pq;
-stralloc *filenames;
-int flagnew;
-int flagcur;
+int maildir_scan(prioq *pq, stralloc *filenames, int flagnew, int flagcur)
 {
  struct prioq_elt pe;
  datetime_sec time;

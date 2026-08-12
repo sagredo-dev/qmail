@@ -25,9 +25,7 @@ int rcpthosts_init()
 
 static stralloc host = {0};
 
-int rcpthosts(buf,len)
-char *buf;
-int len;
+int rcpthosts(char *buf, int len)
 {
   int j;
 

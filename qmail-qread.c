@@ -18,9 +18,9 @@
 
 readsubdir rs;
 
-void die(n) int n; { substdio_flush(subfdout); _exit(n); }
+void die(int n) { substdio_flush(subfdout); _exit(n); }
 
-void warn(s1,s2) char *s1; char *s2;
+void warn(char *s1, char *s2)
 {
  char *x;
  x = error_str(errno);
@@ -33,9 +33,9 @@ void warn(s1,s2) char *s1; char *s2;
 
 void die_nomem() { substdio_puts(subfdout,"fatal: out of memory\n"); die(111); }
 void die_chdir() { warn("fatal: unable to chdir",""); die(111); }
-void die_opendir(fn) char *fn; { warn("fatal: unable to opendir ",fn); die(111); }
+void die_opendir(char *fn) { warn("fatal: unable to opendir ",fn); die(111); }
 
-void err(id) unsigned long id;
+void err(unsigned long id)
 {
  char foo[FMT_ULONG];
  foo[fmt_ulong(foo,id)] = 0;
@@ -56,8 +56,7 @@ datetime_sec qtime;
 int flagbounce;
 unsigned long size;
 
-unsigned int fmtstats(s)
-char *s;
+unsigned int fmtstats(char *s)
 {
  struct datetime dt;
  unsigned int len;
@@ -83,7 +82,7 @@ char *s;
 
 stralloc stats = {0};
 
-void out(s,n) char *s; unsigned int n;
+void out(char *s, unsigned int n)
 {
  while (n > 0)
   {
@@ -92,8 +91,8 @@ void out(s,n) char *s; unsigned int n;
    ++s;
   }
 }
-void outs(s) char *s; { out(s,str_len(s)); }
-void outok(s) char *s; { substdio_puts(subfdout,s); }
+void outs(char *s) { out(s,str_len(s)); }
+void outok(char *s) { substdio_puts(subfdout,s); }
 
 void putstats()
 {
@@ -133,7 +132,7 @@ int main()
 
      fd = open_read(fninfo);
      if (fd == -1) { err(id); continue; }
-     substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ss,(ssize_t (*)(int,  const void *, size_t))read,fd,inbuf,sizeof(inbuf));
      if (getln(&ss,&sender,&match,0) == -1) die_nomem();
      if (fstat(fd,&st) == -1) { close(fd); err(id); continue; }
      close(fd);

@@ -81,10 +81,10 @@ static void hdr_fail() { received = "fail (%{xr}: %{xs} does not designate %{i} 
 static void hdr_unknown() { received = "permerror (%{xr}: domain at %{d} does not designate permitted sender hosts)"; };
 static void hdr_neutral() { received = "neutral (%{xr}: %{i} is neither permitted nor denied by %{xs})"; };
 static void hdr_none() { received = "none (%{xr}: domain at %{d} does not designate permitted sender hosts)"; };
-static void hdr_unknown_msg(e) char *e; { stralloc_copys(&errormsg, e); received = "permerror (%{xr}: %{xe})"; };
-static void hdr_ext(e) char *e; { stralloc_copys(&errormsg, e); received = "permerror %{xe} (%{xr}: %{xs} uses mechanism not recognized by this client)"; };
+static void hdr_unknown_msg(char *e) { stralloc_copys(&errormsg, e); received = "permerror (%{xr}: %{xe})"; };
+static void hdr_ext(char *e) { stralloc_copys(&errormsg, e); received = "permerror %{xe} (%{xr}: %{xs} uses mechanism not recognized by this client)"; };
 static void hdr_syntax() { received = "permerror (%{xr}: parse error in %{xs})"; };
-static void hdr_error(e) char *e; { stralloc_copys(&errormsg, e); received = "temperror (%{xr}: error in processing during lookup of %{d}: %{xe})"; };
+static void hdr_error(char *e) { stralloc_copys(&errormsg, e); received = "temperror (%{xr}: error in processing during lookup of %{d}: %{xe})"; };
 static void hdr_dns() { hdr_error("DNS problem"); }
 static void hdr_id_helo() { identity = " client-ip=%{i}; helo=%{h};"; authprop = " smtp.helo=%{h}"; }
 static void hdr_id_mailfrom() { identity = " client-ip=%{i}; envelope-from=%{s};"; authprop = " smtp.mailfrom=%{s}"; }
@@ -161,7 +161,6 @@ int spfget(stralloc *spf, stralloc *domain)
 
 	for (j = 0;j < ssa.len;++j)
 		alloc_free(ssa.sa[j].s);
-	alloc_free(ssa.sa);
 	return r;
 }
 
@@ -385,7 +384,8 @@ static int spf_a(char *spec, char *mask)
 	if (ipmask < 0) return SPF_SYNTAX;
 
 	if (!stralloc_copys(&sa, spec)) return SPF_NOMEM;
-	if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	//if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM; -Wincompatible-pointer-types fix
+	if (!ipalloc_readyplus(&ia, 0)) return SPF_NOMEM;
 
 	switch(dns_ip(&ia, &sa)) {
 		case DNS_MEM: return SPF_NOMEM;
@@ -401,7 +401,7 @@ static int spf_a(char *spec, char *mask)
 	}
 
 	alloc_free(sa.s);
-	alloc_free(ia.ix);
+	alloc_free((char *)ia.ix);
 	return r;
 }
 
@@ -417,7 +417,8 @@ static int spf_mx(char *spec, char *mask)
 	if (ipmask < 0) return SPF_SYNTAX;
 
 	if (!stralloc_copys(&sa, spec)) return SPF_NOMEM;
-	if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	//if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	if (!ipalloc_readyplus(&ia, 0)) return SPF_NOMEM;
 
 	switch(dns_mxip(&ia, &sa, random)) {
 		case DNS_MEM: return SPF_NOMEM;
@@ -433,7 +434,7 @@ static int spf_mx(char *spec, char *mask)
 	}
 
 	alloc_free(sa.s);
-	alloc_free(ia.ix);
+	alloc_free((char *)ia.ix);
 	return r;
 }
 
@@ -462,8 +463,11 @@ static int spf_ptr(char *spec, char *mask)
 
 	/* ok, either it's the first test or it's a very weird setup */
 
-	if (!stralloc_readyplus(&ssa, 0)) return SPF_NOMEM;
-	if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	//if (!stralloc_readyplus(&ssa, 0)) return SPF_NOMEM;
+	//if (!ipalloc_readyplus(&ssa, 0)) return SPF_NOMEM;
+	if (!ipalloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	//if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	if (!ipalloc_readyplus(&ia, 0)) return SPF_NOMEM;
 
 	switch(dns_ptr(&ssa, &ip)) {
 		case DNS_MEM: return SPF_NOMEM;
@@ -500,8 +504,8 @@ static int spf_ptr(char *spec, char *mask)
 	for(j = 0;j < ssa.len;++j)
 		alloc_free(ssa.sa[j].s);
 
-	alloc_free(ssa.sa);
-	alloc_free(ia.ix);
+	alloc_free((char *)ssa.sa);
+	alloc_free((char *)ia.ix);
 
 	if (!sender_fqdn.len)
 		if (!stralloc_copys(&sender_fqdn, "unknown")) return SPF_NOMEM;
@@ -529,7 +533,8 @@ static int spf_exists(char *spec, char *mask)
 	int r;
 
 	if (!stralloc_copys(&sa, spec)) return SPF_NOMEM;
-	if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	//if (!stralloc_readyplus(&ia, 0)) return SPF_NOMEM;
+	if (!ipalloc_readyplus(&ia, 0)) return SPF_NOMEM;
 
 	switch(dns_ip(&ia, &sa)) {
 		case DNS_MEM: return SPF_NOMEM;
@@ -539,7 +544,7 @@ static int spf_exists(char *spec, char *mask)
 	}
 
 	alloc_free(sa.s);
-	alloc_free(ia.ix);
+	alloc_free((char *)ia.ix);
 	return r;
 }
 
@@ -872,15 +877,12 @@ int spfcheck(char *remoteip)
 	return r;
 }
 
-int spfexplanation(sa)
-stralloc *sa;
+int spfexplanation(stralloc *sa)
 {
 	return spfexpand(sa, explanation.s, expdomain.s);
 }
 
-int spfinfo(sa, auth)
-stralloc *sa;
-int auth;
+int spfinfo(stralloc *sa, int auth)
 {
 	stralloc tmp = {0};
 	if (!stralloc_copys(&tmp, received)) return 0;

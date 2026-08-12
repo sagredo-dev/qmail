@@ -4,8 +4,7 @@
 #include "dns.h"
 #include "dnsdoe.h"
 
-void dnsdoe(r)
-int r;
+void dnsdoe(int r)
 {
  switch (r)
   {

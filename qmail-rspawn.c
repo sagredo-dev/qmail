@@ -8,20 +8,14 @@
 #include "error.h"
 #include "tcpto.h"
 
-void initialize(argc,argv)
-int argc;
-char **argv;
+void initialize(int argc, char **argv)
 {
  tcpto_clean();
 }
 
 int truncreport = 0;
 
-void report(ss,wstat,s,len)
-substdio *ss;
-int wstat;
-char *s;
-int len;
+void report(substdio *ss, int wstat, char *s, int len)
 {
  int j;
  int k;
@@ -79,9 +73,7 @@ int len;
     }
 }
 
-int spawn(fdmess,fdout,s,r,at)
-int fdmess; int fdout;
-char *s; char *r; int at;
+int spawn(int fdmess, int fdout, char *s, char *r, int at)
 {
  int f;
  char *ptr, *(args[5]);

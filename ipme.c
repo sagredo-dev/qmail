@@ -12,6 +12,7 @@
 #include "byte.h"
 #include "ip.h"
 #include "ipalloc.h"
+#include "ipalloc_address.h"
 #include "stralloc.h"
 #include "ipme.h"
 #include "substdio.h"
@@ -20,26 +21,24 @@
 #include "open.h"
 #include "getln.h"
 #include "str.h"
+#include <stdio.h>
 
 static int ipmeok = 0;
 ipalloc ipme = {0};
-ipalloc ipme_mask = {0};
+ipalloc_address ipme_mask = {0};
 ipalloc notipme = {0};
-ipalloc notipme_mask = {0};
+ipalloc_address notipme_mask = {0};
 
-int ipme_match(struct ipalloc *ipa, struct ipalloc *ipa_mask, struct ip_address *ip);
-int ipme_readipfile(ipalloc *ipa, ipalloc *ipa_mask, char *fn);
+int ipme_match(struct ipalloc *ipa, struct ipalloc_address *ipa_mask, struct ip_address *ip);
+int ipme_readipfile(ipalloc *ipa, ipalloc_address *ipa_mask, char *fn);
 
-int ipme_is(ip)
-struct ip_address *ip;
+int ipme_is(struct ip_address *ip)
 {
   if (ipme_init() != 1) return -1;
   return ipme_match(&ipme,&ipme_mask,ip) > ipme_match(&notipme,&notipme_mask,ip);
 }
 
-int ipme_match(ipa, ipa_mask, ip)
-struct ipalloc *ipa, *ipa_mask;
-struct ip_address *ip;
+int ipme_match(struct ipalloc *ipa, struct ipalloc_address *ipa_mask, struct ip_address *ip)
 {
   int i,j;
   struct ip_address masked;
@@ -50,7 +49,7 @@ struct ip_address *ip;
     masklen = 0;
     for(j=0;j<4;++j)
     {
-      switch(ipa_mask->ix[i].ip.d[j])
+      switch(ipa_mask->ia[i].d[j])
       {
         case 255:  masklen += 8; break;
         case 254:  masklen += 7; break;
@@ -62,7 +61,7 @@ struct ip_address *ip;
         case 128:  masklen += 1; break;
         default:   masklen += 0; break;
       }
-      if (ipa->ix[i].ip.d[j] != (ip->d[j] & ipa_mask->ix[i].ip.d[j]))
+      if (ipa->ix[i].ip.d[j] != (ip->d[j] & ipa_mask->ia[i].d[j]))
         break;
     }
     if ( (j == 4) && (masklen > longest_masklen) )
@@ -75,11 +74,11 @@ struct ip_address *ip;
 static stralloc buf = {0};
 
 #define ipme_init_retclean(ret) { \
-  if (moreipme.ix) alloc_free(moreipme.ix); \
-  if (moreipme_mask.ix) alloc_free(moreipme_mask.ix); \
+  if (moreipme.ix) alloc_free((char *)moreipme.ix); \
+  if (moreipme_mask.ia) alloc_free((char *)moreipme_mask.ia); \
   if (buf.s) alloc_free(buf.s); \
   return ret; }
-   
+
 int ipme_init()
 {
   struct ifconf ifc;
@@ -90,16 +89,16 @@ int ipme_init()
   int s;
   struct ip_mx ix, ix_mask;
   ipalloc moreipme = {0};
-  ipalloc moreipme_mask = {0};
+  ipalloc_address moreipme_mask = {0};
   int i;
 
   if (ipmeok) return 1;
   if (!ipalloc_readyplus(&ipme,0)) ipme_init_retclean(0);
-  if (!ipalloc_readyplus(&ipme_mask,0)) ipme_init_retclean(0);
+  if (!ipalloc_address_readyplus(&ipme_mask,0)) ipme_init_retclean(0);
   if (!ipalloc_readyplus(&notipme,0)) ipme_init_retclean(0);
-  if (!ipalloc_readyplus(&notipme_mask,0)) ipme_init_retclean(0);
+  if (!ipalloc_address_readyplus(&notipme_mask,0)) ipme_init_retclean(0);
   if (!ipalloc_readyplus(&moreipme,0)) ipme_init_retclean(0);
-  if (!ipalloc_readyplus(&moreipme_mask,0)) ipme_init_retclean(0);
+  if (!ipalloc_address_readyplus(&moreipme_mask,0)) ipme_init_retclean(0);
 
   ipme.len = 0;
   ix.pref = ix_mask.pref = 0;
@@ -110,17 +109,17 @@ int ipme_init()
      every address in this range as a local interface, even if it
      isn't explicitly configured.
   */
-  byte_copy(&ix.ip,4,"\x7f\0\0\0");
-  byte_copy(&ix_mask.ip,4,"\xff\0\0\0");
+  byte_copy((char *)&ix.ip,4,"\x7f\0\0\0");
+  byte_copy((char *)&ix_mask.ip,4,"\xff\0\0\0");
   if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
-  if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
+  if (!ipalloc_address_append(&ipme_mask,&ix_mask.ip)) ipme_init_retclean(0);
 
   /* 0.0.0.0 is a special address which always refers to
    * "this host, this network", according to RFC 1122, Sec. 3.2.1.3a.  */
-  byte_copy(&ix.ip,4,"\0\0\0\0");
-  byte_copy(&ix_mask.ip,4,"\xff\xff\xff\xff");
+  byte_copy((char *)&ix.ip,4,"\0\0\0\0");
+  byte_copy((char *)&ix_mask.ip,4,"\xff\xff\xff\xff");
   if (!ipalloc_append(&ipme,&ix)) ipme_init_retclean(0);
-  if (!ipalloc_append(&ipme_mask,&ix_mask)) ipme_init_retclean(0);
+  if (!ipalloc_address_append(&ipme_mask,&ix_mask.ip)) ipme_init_retclean(0);
 
   if ((s = socket(AF_INET,SOCK_STREAM,0)) == -1) ipme_init_retclean(-1);
 
@@ -152,7 +151,7 @@ int ipme_init()
         if (ifr->ifr_flags & IFF_UP)
         {
           if (!ipalloc_append(&ipme,&ix)) { close(s);  ipme_init_retclean(0); }
-          if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
+          if (!ipalloc_address_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
         }
     }
 #else
@@ -162,12 +161,12 @@ int ipme_init()
         if (ioctl(s,SIOCGIFADDR,x) == 0)
 	  if (ifr->ifr_addr.sa_family == AF_INET) {
 	    sin = (struct sockaddr_in *) &ifr->ifr_addr;
-	    byte_copy(&ix.ip,4,&sin->sin_addr);
+	    byte_copy((char *)&ix.ip,4,(char *)&sin->sin_addr);
             if (!ipalloc_append(&ipme,&ix)) { close(s);  ipme_init_retclean(0); }
-            if (!ipalloc_append(&ipme_mask,&ix_mask)) { close(s);  ipme_init_retclean(0); }
+            if (!ipalloc_address_append(&ipme_mask,&ix_mask.ip)) { close(s);  ipme_init_retclean(0); }
 	  }
 #endif
-    x += len;
+x += len;
   }
   close(s);
 
@@ -175,16 +174,14 @@ int ipme_init()
   for(i = 0;i < moreipme.len;++i)
   {
     if (!ipalloc_append(&ipme,&moreipme.ix[i])) ipme_init_retclean(0);
-    if (!ipalloc_append(&ipme_mask,&moreipme_mask.ix[i])) ipme_init_retclean(0);
+    if (!ipalloc_address_append(&ipme_mask,&moreipme_mask.ia[i])) ipme_init_retclean(0);
   }
   ipmeok = 1;
   ipme_init_retclean(1);
 }
 
 
-int ipme_readipfile(ipa, ipa_mask, fn)
-  ipalloc *ipa, *ipa_mask;
-  char *fn;
+int ipme_readipfile(ipalloc *ipa, ipalloc_address *ipa_mask, char *fn)
 {
   int fd = -1;
   char inbuf[1024];
@@ -196,7 +193,7 @@ int ipme_readipfile(ipa, ipa_mask, fn)
   int slash = 0;
 
   if ( (fd = open_read(fn)) != -1) {
-    substdio_fdbuf(&ss, read, fd, inbuf, sizeof(inbuf));
+    substdio_fdbuf(&ss, (ssize_t (*)(int,  const void *, size_t))read, fd, inbuf, sizeof(inbuf));
     while ( (getln(&ss,&l,&match,'\n') != -1) && (match || l.len) ) {
       l.len--;
       if (!stralloc_0(&l)) { ret = 0; break; }
@@ -211,7 +208,7 @@ int ipme_readipfile(ipa, ipa_mask, fn)
 
       if (!ip_scan(l.s, &ix.ip)) continue;
       if (!ipalloc_append(ipa,&ix)) { ret = 0; break; }
-      if (!ipalloc_append(ipa_mask,&ix_mask.ip)) { ret = 0; break; }
+      if (!ipalloc_address_append(ipa_mask, &ix_mask.ip)) { ret = 0; break; }
     }
     if (l.s) alloc_free(l.s);
     if ( (fd >= 0) && (close(fd) == -1) )

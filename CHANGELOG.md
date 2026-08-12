@@ -1,5 +1,11 @@
 # ChangeLog
 
+- unreleased
+  - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
+    (tx Steffen Nurpmeso)
+  - Extensive modernization work for compatibility with C23 and recent GCC/clang releases, including fixes for
+    function prototypes, callback signatures, type safety, allocation helpers, and OpenSSL APIs.
+
 - Apr 7, 2026
   - (security) Fixed a command injection vulnerability in qmail-remote by removing unsafe shell usage and
     properly validating and handling remote FQDN input when updating notlshosts. Tx Diep Pham for the advice.
@@ -18,8 +24,6 @@
   - Ported over DKIM_BAD_IDENTITY support from https://github.com/indimail/indimail-mta
     (tx Manvendra Bhangui and Andreas Gerstlauer)
     https://github.com/sagredo-dev/qmail/commit/1299b550f27c257fd5432fc88e1f9b1b8440873a
-  - Added Bruce Guenter's qmail-qfilter. Ported over Indimail by Manvendra Bhangui and to my
-    qmail by Andreas Gerstlauer [Pull request](https://github.com/sagredo-dev/qmail/pull/38)
 
 - Feb 3, 2026
   - Bug fix for verifying multiple DKIM signatures (second one always

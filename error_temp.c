@@ -3,8 +3,7 @@
 
 #define X(n) if (e == n) return 1;
 
-int error_temp(e)
-int e;
+int error_temp(int e)
 {
   X(error_intr)
   X(error_nomem)
