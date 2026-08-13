@@ -1,6 +1,18 @@
 # ChangeLog
 
 - unreleased
+  - (docker) Fixed `qmail-newu` failing with "unable to write users/cdb.tmp" on every
+    startup — the generated `users/cdb` was never created, breaking local delivery
+    lookups. Root cause: UB in `cdbmake_add.c`, which called `alloc()` without an
+    argument (K&R `char *(*)()` signature) while the real `alloc` expects
+    `long unsigned int` — on x86-64 the garbage register value made `alloc` refuse
+    the allocation. Now passes explicit sizes (`sizeof(struct cdbmake_hplist)` and
+    `memsize * sizeof(struct cdbmake_hp)`).
+  - (docker) Built `vusaged` (vpopmail quota daemon) into the image — vpopmail's
+    `make install` only prints build instructions for it (target `vusage-msg`), so
+    it was never compiled and the runit service stayed disabled ("binary not found").
+    Dockerfile now compiles it from the `vusaged/` subdir (`libev-dev` in builder)
+    and installs `libev4` in the runtime stage for the `libev.so.4` soname.
   - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
     (tx Steffen Nurpmeso)
   - Extensive modernization work for compatibility with C23 and recent GCC/clang releases, including fixes for

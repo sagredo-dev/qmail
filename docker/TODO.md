@@ -64,6 +64,7 @@ MySQL backend must be implemented before the container split is attempted.
 - [x] All env vars documented in `docker-compose.yml` and `.env.example`
 - [x] qmailadmin built with cracklib password strength checking (`libcrack2-dev` + `cracklib-runtime` in builder; dictionary at `/var/cache/cracklib/cracklib_dict`)
 - [x] Rate limiting via `rcptcheck-overlimit` on ports 587 and 465
+- [x] `vusaged` (vpopmail quota daemon) built into image — `make install` only prints instructions; compiled manually from `vusaged/` (needs `libev-dev` in builder + `libev4` in runtime)
 - [x] `FORCETLS=1` on port 587; `DROP_PRE_GREET`, `SURBL`, `ENABLE_SPP` consistent across all three SMTP ports
 - [x] Full image build passes cleanly on `debian:bookworm-slim`
 

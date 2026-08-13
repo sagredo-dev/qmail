@@ -25,7 +25,7 @@ The compilation order is strictly enforced because each step depends on the
 previous one being installed:
 
 ```
-fehQlibs → ucspi-tcp6 → ucspi-ssl → libsrs2 → netqmail → vpopmail → autorespond
+fehQlibs → ucspi-tcp6 → ucspi-ssl → libsrs2 → netqmail → vpopmail → vusaged → autorespond
          → patched qmail → jgreylist → rcptcheck-overlimit → spp-greylisting + ifauthskip
          → ripMIME → simscan → ezmlm-idx → qmailadmin → vqadmin
 ```
@@ -39,6 +39,7 @@ fehQlibs → ucspi-tcp6 → ucspi-ssl → libsrs2 → netqmail → vpopmail → 
 | **netqmail** | creates `/var/qmail` layout before vpopmail's `configure` runs |
 | **vpopmail** | `chkuser.c` includes `vpopmail.h`/`vauth.h`; qmail-smtpd links against `/home/vpopmail/etc/lib_deps` |
 | **autorespond** | vacation responder required by qmailadmin |
+| **vusaged** | vpopmail quota usage daemon — `make install` only *prints* build instructions (target `vusage-msg`); compiled manually from the `vusaged/` subdir. Needs `libev-dev` in the builder and `libev4` in the runtime (soname `libev.so.4`) |
 | **patched qmail** | overwrites netqmail binaries |
 | **jgreylist** | file-based greylisting wrapper compiled into `/var/qmail/bin/` |
 | **rcptcheck-overlimit** | send-rate limiting script installed to `/var/qmail/bin/` — always present, active on ports 465 and 587 |
