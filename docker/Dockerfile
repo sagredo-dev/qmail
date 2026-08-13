@@ -155,7 +155,21 @@ RUN ARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) \
  && make -j"$(nproc)" \
  && make install-strip
 
-# ── Step 3b: autorespond ─────────────────────────────────────────────────────
+# ── Step 3b: vusaged (vpopmail usage daemon) ────────────────────────────────
+# vpopmail's `make install` only prints build instructions for vusaged (see
+# the vusage-msg target) — it must be compiled manually from the vusaged/
+# subdir. Requires libev (Debian: libev-dev).
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends libev-dev \
+ && rm -rf /var/lib/apt/lists/* \
+ && cd /build/vpopmail-5.6.13/vusaged \
+ && LIBS="$(head -1 /home/vpopmail/etc/lib_deps) -lev" \
+    ./configure --with-vpopmail=/home/vpopmail/ \
+ && make \
+ && cp -f vusaged /home/vpopmail/bin/ \
+ && cp -f etc/vusaged.conf /home/vpopmail/etc/
+
+# ── Step 3c: autorespond ─────────────────────────────────────────────────────
 # Vacation/out-of-office responder required by qmailadmin.
 # v2.0.9 fixes a segfault in To: header processing.
 RUN wget -q https://github.com/sagredo-dev/autorespond/archive/refs/tags/v2.0.9.tar.gz \
@@ -384,7 +398,12 @@ COPY --from=builder /usr/local/bin    /usr/local/bin
 COPY --from=builder /usr/local/sbin   /usr/local/sbin
 COPY --from=builder /var/www/qmailadmin /var/www/qmailadmin
 
-RUN echo '/usr/local/lib' > /etc/ld.so.conf.d/usr-local.conf \
+# libev — runtime dep of /home/vpopmail/bin/vusaged (built against libev-dev
+# in the builder stage; the .so.4 soname must be present here)
+RUN apt-get update -qq \
+ && apt-get install -y --no-install-recommends libev4 \
+ && rm -rf /var/lib/apt/lists/* \
+ && echo '/usr/local/lib' > /etc/ld.so.conf.d/usr-local.conf \
  && ldconfig \
  && ln -s /var/qmail/bin/sendmail /usr/sbin/sendmail
 
