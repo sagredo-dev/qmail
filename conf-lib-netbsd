@@ -1,0 +1,5 @@
+-lresolv
+-Wl,-R/usr/pkg/lib
+
+conf-lib for NetBSD users. Replace conf-lib with this file, otherwise 
+The second line adds NetBSD-specific pkgsrc library path for libidn2
