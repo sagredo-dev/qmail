@@ -213,3 +213,6 @@ conf-policy.temp
 unittest_stralloc
 qtmp.h
 helodnscheck
+
+# local kubectl cache (cluster hostnames)
+.kube/
