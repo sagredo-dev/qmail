@@ -1,0 +1,15 @@
+apiVersion: v2
+name: qmail
+description: brdelphus/qmail docker stack (qmail + dovecot + rspamd + clamav + redis + tika + oletools) as a Helm chart for k3s.
+type: application
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - qmail
+  - mail
+  - mta
+  - dovecot
+  - rspamd
+home: https://github.com/brdelphus/qmail
+sources:
+  - https://github.com/brdelphus/qmail

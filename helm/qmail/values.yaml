@@ -1,0 +1,177 @@
+# Default values for the qmail chart.
+# Mirror of docker/.env.example + docker/docker-compose.yml (2026-09).
+# All secrets live in templates/secret.yaml — override via --set or a values file.
+
+image:
+  registry: ghcr.io/brdelphus
+  tag: latest
+  pullPolicy: IfNotPresent
+
+# When true, public ports bind straight on the node via hostPort
+# (25/80/465/587 on qmail, 993/995/4190 on dovecot). k3s NodePort range
+# (30000-32767) can't carry real SMTP/IMAP ports, hence hostPort.
+# qmail and dovecot are forced onto the same node (shared RWO volumes).
+service:
+  useHostPort: true
+  clusterIP: true   # internal ClusterIP services for inter-container DNS
+
+storageClass: ""    # empty = cluster default (local-path on k3s-v3)
+
+# Secrets — leave empty to use the docker/.env.example defaults (changeme_*),
+# but ALWAYS override before a real deployment:
+#   helm install qmail helm/qmail --set secret.mysqlRootPass=... ...
+secret:
+  mysqlRootPass: ""
+  mysqlPass: ""
+  greylistPass: ""
+  rspamdPassword: ""
+  vqadminPass: ""
+  qmailApiKey: ""
+
+qmail:
+  me: mail.example.com          # REQUIRED — FQDN of this mail server (QMAIL_ME)
+  domain: ""                    # primary vpopmail domain; empty = derived from QMAIL_ME
+  # Non-secret environment (mirror of docker-compose defaults). Secrets are
+  # separate (MYSQL_PASS, GREYLIST_PASS, VQADMIN_PASS, QMAIL_API_KEY).
+  env:
+    MYSQL_HOST: mariadb
+    MYSQL_PORT: "3306"
+    MYSQL_DB: vpopmail
+    MYSQL_USER: vpopmail
+    QMAIL_SOFTLIMIT: "64000000"
+    QMAIL_CONCURRENCY_INCOMING: "200"
+    QMAIL_CONCURRENCY_REMOTE: "20"
+    QMAIL_CONCURRENCY_LOCAL: "10"
+    QMAIL_DATABYTES: "20000000"
+    QMAIL_MAXRCPT: "100"
+    QMAIL_QUEUELIFETIME: "272800"
+    SPF_LAYER: rspamd
+    DKIM_VERIFY_LAYER: rspamd
+    DNSBL_LAYER: rspamd
+    SURBL_LAYER: rspamd
+    QMAIL_DNSBL_SERVERS: ""
+    QMAIL_SPFBEHAVIOR: "3"
+    QMAIL_GREETDELAY: "5"
+    QMAIL_SURBL: "0"
+    QMAIL_CHKUSER_WRONGRCPTLIMIT: "3"
+    QMAIL_BRTLIMIT: "2"
+    QMAIL_BOUNCEFROM: noreply
+    QMAIL_RELAY_LIMIT: "1000"
+    QMAIL_DUALSTACK: "0"
+    QMAIL_GREYLISTING: "0"
+    UNSIGNED_SUBJECT: "1"
+    QMAIL_TLS_CERT: ""
+    QMAIL_TLS_KEY: ""
+    QMAIL_DH_BITS: "2048"
+    QMAIL_SNI_CERTS: ""
+    QMAIL_RELAY_NETS: ""
+    QMAIL_TAPS: ""
+    GREYLIST_HOST: mariadb
+    GREYLIST_DB: greylisting
+    GREYLIST_USER: ""
+    VQADMIN_USER: admin
+    QMAIL_API_PORT: "8080"
+    SIMSCAN_ENABLE: "true"
+    SIMSCAN_CLAM: "no"
+    SIMSCAN_SPAM: "yes"
+    RSPAMD_TAG_ONLY: "false"
+    SIMSCAN_SPAM_HITS: "9.0"
+    SIMSCAN_SIZE_LIMIT: "20000000"
+    SIMSCAN_ATTACH: ""
+    SIMSCAN_DEBUG: "0"
+    CLAMD_HOST: clamav
+    CLAMD_PORT: "3310"
+    RSPAMD_HOST: rspamd
+    RSPAMD_PORT: "11333"
+    LMTP_HOST: dovecot
+    LMTP_PORT: "24"
+    QMAIL_SMTP: "true"
+    QMAIL_SMTPS: "true"
+    QMAIL_SUBMISSION: "true"
+    QMAIL_HTTP: "true"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+# mariadb 11 — auth + greylisting backend
+mariadb:
+  env:
+    MARIADB_DATABASE: vpopmail
+    MARIADB_USER: vpopmail
+    GREYLIST_DB: greylisting
+    GREYLIST_USER: ""
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+# rspamd — spam/AV orchestration. SPF/DKIM/DNSBL/SURBL layers must mirror qmail's.
+rspamd:
+  env:
+    SPF_LAYER: rspamd
+    DKIM_VERIFY_LAYER: rspamd
+    DNSBL_LAYER: rspamd
+    SURBL_LAYER: rspamd
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+# dovecot — IMAPS/POP3S/Sieve + LMTP delivery. Shares maildata/maildirs with qmail.
+dovecot:
+  env:
+    DOVECOT_AUTH_DRIVER: mysql
+    MYSQL_HOST: mariadb
+    MYSQL_PORT: "3306"
+    MYSQL_DB: vpopmail
+    MYSQL_USER: vpopmail
+    RSPAMD_HOST: rspamd
+    RSPAMD_PORT: "11333"
+    RSPAMD_CONTROLLER_PORT: "11334"
+    DOVECOT_IMAP: "false"
+    DOVECOT_IMAPS: "true"
+    DOVECOT_POP3: "false"
+    DOVECOT_POP3S: "true"
+    DOVECOT_SIEVE: "true"
+    DOVECOT_LMTP: "true"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+redis:
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+clamav:
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+tika:
+  javaOpts: "-Xms128m -Xmx512m"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+# oletools (OLE macro scanner) — off by default (compose profile "macros").
+# rspamd times out and passes mail through when it's down (fail-open).
+oletools:
+  enabled: false
+  env:
+    OLEFY_BINDADDRESS: "0.0.0.0"
+    OLEFY_BINDPORT: "11343"
+    OLEFY_TMPDIR: /dev/shm
+    OLEFY_LOGLEVEL: "20"
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
+# certbot — Let's Encrypt issuance/renewal (compose profile "certbot").
+# Requires qmail.me + certbot.email/domain set.
+certbot:
+  enabled: false
+  email: ""
+  domain: ""            # defaults to qmail.me
+  schedule: "0 3 * * *" # daily renewal check
+  resources: {}
+  nodeSelector: {}
+  tolerations: []

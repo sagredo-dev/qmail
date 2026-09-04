@@ -1,0 +1,21 @@
+The qmail stack has been deployed.
+
+1. Wait for mariadb to be ready first — every other service waits on it:
+     kubectl get pods -w
+
+2. The first qmail pod run does the one-time setup (control files, TLS
+   self-signed, DKIM, tcprules, vpopmail domain). Watch its log:
+     kubectl logs deploy/qmail -f
+
+   If VQADMIN_PASS was left empty, the generated password is printed to the
+   qmail pod stdout on first run.
+
+3. Public ports are bound straight on the node via hostPort
+   (qmail: 25/80/465/587, dovecot: 993/995/4190). Open the matching ports on
+   the firewall/security list and point your MX/IMAP DNS at the node IP.
+
+4. qmail and dovecot are pinned to the same node (shared mail volumes on
+   local-path storage).
+
+Check the whole stack:
+   kubectl get deploy,pvc,svc

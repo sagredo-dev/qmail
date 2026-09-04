@@ -1,0 +1,46 @@
+# Per-service environment ConfigMaps — non-secret env vars from values.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qmail-env
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+  QMAIL_ME: {{ .Values.qmail.me | quote }}
+  QMAIL_DOMAIN: {{ .Values.qmail.domain | default "" | quote }}
+{{- range $k, $v := .Values.qmail.env }}
+  {{ $k }}: {{ $v | default "" | quote }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mariadb-env
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+{{- range $k, $v := .Values.mariadb.env }}
+  {{ $k }}: {{ $v | default "" | quote }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rspamd-env
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+{{- range $k, $v := .Values.rspamd.env }}
+  {{ $k }}: {{ $v | default "" | quote }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dovecot-env
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+{{- range $k, $v := .Values.dovecot.env }}
+  {{ $k }}: {{ $v | default "" | quote }}
+{{- end }}

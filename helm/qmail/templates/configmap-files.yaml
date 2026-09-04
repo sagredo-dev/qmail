@@ -1,0 +1,35 @@
+# ConfigMaps sourced from the repo's config files (docker/mariadb-init, docker/rspamd).
+# Originals live in helm/qmail/files/ — keep in sync when editing the docker configs.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qmail-mariadb-init
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+  01-greylisting.sh: |
+{{ .Files.Get "files/mariadb-init/01-greylisting.sh" | indent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qmail-rspamd-local
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+{{- range $path, $_ := .Files.Glob "files/rspamd/local.d/*" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: qmail-rspamd-lua
+  labels:
+    app.kubernetes.io/name: qmail
+data:
+{{- range $path, $_ := .Files.Glob "files/rspamd/lua.local.d/*" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}

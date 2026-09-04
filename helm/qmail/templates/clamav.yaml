@@ -1,0 +1,53 @@
+# clamav — virus definitions + clamd. Slow first start (definition load ~5 min).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clamav
+  labels:
+    app.kubernetes.io/name: qmail
+    app.kubernetes.io/component: clamav
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: clamav
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: clamav
+    spec:
+      containers:
+        - name: clamav
+          image: clamav/clamav:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: clamd
+              containerPort: 3310
+          readinessProbe:
+            exec:
+              command: ["/usr/local/bin/clamdcheck.sh"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 30
+            failureThreshold: 12
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/clamav
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: clamav-data }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: clamav
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: clamav
+  ports:
+    - name: clamd
+      port: 3310
+      targetPort: 3310

@@ -1,0 +1,106 @@
+{{- /* Persistent volumes. local-path is RWO: maildata+maildirs are shared by
+       qmail AND dovecot → those two pods are pinned to the same node. */}}
+{{- $sc := .Values.storageClass }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: maildata
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: maildirs
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 20Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mariadb-data
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: clamav-data
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-data
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rspamd-data
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: acme-webroot
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: letsencrypt
+spec:
+  accessModes: [ReadWriteOnce]
+{{- if $sc }}
+  storageClassName: {{ $sc | quote }}
+{{- end }}
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,49 @@
+# apache tika — attachment text extraction for rspamd.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tika
+  labels:
+    app.kubernetes.io/name: qmail
+    app.kubernetes.io/component: tika
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: tika
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: tika
+    spec:
+      containers:
+        - name: tika
+          image: apache/tika:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: JAVA_OPTS
+              value: {{ .Values.tika.javaOpts | quote }}
+          ports:
+            - name: tika
+              containerPort: 9998
+          readinessProbe:
+            exec:
+              command: ["wget", "-qO-", "http://localhost:9998/tika"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tika
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/component: tika
+  ports:
+    - name: tika
+      port: 9998
+      targetPort: 9998
