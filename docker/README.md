@@ -52,6 +52,44 @@ fehQlibs → ucspi-tcp6 → ucspi-ssl → libsrs2 → netqmail → vpopmail → 
 
 ---
 
+## Prebuilt images (GHCR)
+
+Public multi-arch images are published to **GitHub Container Registry** under
+[`brdelphus/qmail`](https://github.com/brdelphus/qmail) — no login required:
+
+| Image | Archs | Contents |
+|---|---|---|
+| `ghcr.io/brdelphus/qmail:latest` | amd64, arm64 | qmail image (MTA + qmailadmin) |
+| `ghcr.io/brdelphus/qmail-dovecot:latest` | amd64, arm64 | Dovecot (IMAP/POP3/ManageSieve) |
+| `ghcr.io/brdelphus/qmail-rspamd:latest` | amd64, arm64 | Rspamd + Tika attachment extraction |
+| `ghcr.io/brdelphus/qmail-oletools:latest` | amd64, arm64 | Olefy macro scanner (optional profile) |
+
+```sh
+docker pull ghcr.io/brdelphus/qmail:latest
+```
+
+Images are rebuilt from the repo's `main` branch by the
+`.github/workflows/ghcr-build.yml` GitHub Actions workflow (parallel amd64/arm64
+builds + a multi-arch `latest` manifest). To rebuild, re-run the workflow —
+push-to-GHCR via `GITHUB_TOKEN` is what keeps the packages public and linked to
+the repository.
+
+### arm64 notes
+
+The stack builds and runs cleanly on arm64 (validated on OCI Ampere A1 via
+k3s). The qmail sources themselves are architecture-independent — the only
+arm64 friction comes from the 2002-era autoconf tarballs in the build chain:
+
+- **`config.guess`/`config.sub`** are refreshed to current versions before
+  every autoconf `configure` runs (fehQlibs, libsrs2, vpopmail, …) — the stock
+  2002 copies don't know `aarch64`
+- **DJB-style Makefiles must build single-threaded** — only autoconf-generated
+  makefiles get `-j`; the DJB ones fail in parallel
+- **MySQL backend** already resolves the multiarch lib path automatically via
+  `dpkg-architecture -qDEB_HOST_MULTIARCH` (see vpopmail section)
+
+---
+
 ## Quick start
 
 ### 1. Configure
