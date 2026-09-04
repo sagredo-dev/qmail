@@ -20,17 +20,17 @@ spec:
     spec:
       containers:
         - name: clamav
-          image: clamav/clamav:latest
-          imagePullPolicy: IfNotPresent
+          image: "{{ .Values.clamav.image.registry }}/{{ .Values.clamav.image.repository }}:{{ .Values.clamav.image.tag }}"
+          imagePullPolicy: {{ .Values.clamav.image.pullPolicy }}
           ports:
             - name: clamd
               containerPort: 3310
           readinessProbe:
-            exec:
-              command: ["/usr/local/bin/clamdcheck.sh"]
-            initialDelaySeconds: 30
+            tcpSocket:
+              port: 3310
+            initialDelaySeconds: 60
             periodSeconds: 30
-            timeoutSeconds: 30
+            timeoutSeconds: 5
             failureThreshold: 12
           volumeMounts:
             - name: data
