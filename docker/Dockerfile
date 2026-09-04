@@ -191,7 +191,9 @@ RUN wget -q https://github.com/sagredo-dev/autorespond/archive/refs/tags/v2.0.9.
 # step 2, leaving /var/qmail in its final state.
 COPY . /usr/src/qmail/
 WORKDIR /usr/src/qmail
-RUN make -j"$(nproc)" it && make setup
+# djb Makefiles generate their compile scripts during the build (no declared
+# deps) — -j races on ./compile. Must stay single-threaded.
+RUN make it && make setup
 
 # ── Step 4b: jgreylist ───────────────────────────────────────────────────────
 # File-based greylisting wrapper for qmail-smtpd by John Simpson.
@@ -294,7 +296,7 @@ RUN cp /build/external-files/ezmlm-idx-7.2.2.tar.gz . \
  && tar xzf ezmlm-idx-7.2.2.tar.gz \
  && cd ezmlm-idx-7.2.2 \
  && ln -s en_US lang/default \
- && make -j"$(nproc)" \
+ && make \
  && make man \
  && make install
 
