@@ -244,6 +244,25 @@ tika:
   nodeSelector: {}
   tolerations: []
 
+# certbot — Let's Encrypt issue/renewal via certbot CronJob (compose profile
+# "certbot"). Alternative to tls.provider: cert-manager when cert-manager is
+# not installed (e.g. testing on k3s-v3). Certs land in the letsencrypt PVC,
+# served through qmail's lighttpd webroot (/var/www/acme). To make qmail USE
+# the issued cert, also point qmail.env.QMAIL_TLS_CERT/QMAIL_TLS_KEY at the
+# mounted paths:
+#   qmail.env.QMAIL_TLS_CERT=/etc/letsencrypt/live/<qmail.me>/fullchain.pem
+#   qmail.env.QMAIL_TLS_KEY=/etc/letsencrypt/live/<qmail.me>/privkey.pem
+# The entrypoint re-combines servercert.pem on every boot, so renewals are
+# picked up at the next qmail pod start (restart it after a renewal).
+certbot:
+  enabled: false
+  email: ""
+  domain: ""            # defaults to qmail.me
+  schedule: "0 3 * * *" # daily renewal check
+  resources: {}
+  nodeSelector: {}
+  tolerations: []
+
 # oletools (OLE macro scanner) — off by default (compose profile "macros").
 # rspamd times out and passes mail through when it's down (fail-open).
 oletools:

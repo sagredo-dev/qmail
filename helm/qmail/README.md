@@ -5,8 +5,9 @@ release: qmail (MTA) + dovecot (IMAP/POP3/Sieve) + mariadb + redis + rspamd +
 clamav + tika — mirroring the compose services 1:1 and exposing **every env
 var the images understand** (see `values.yaml`, a full mirror of
 `docker/.env.example` grouped per component). The compose profiles map to:
-`macros` → `oletools.enabled`, `certbot` → TLS via **cert-manager**
-(`tls.provider: cert-manager`) — no certbot sidecar in Kubernetes.
+`macros` → `oletools.enabled`, `certbot` → `certbot.enabled` (CronJob) or,
+recommended, TLS via **cert-manager** (`tls.provider: cert-manager`) — see the
+TLS section.
 
 Images come from the public multi-arch GHCR packages
 (`ghcr.io/brdelphus/{qmail,qmail-dovecot,qmail-rspamd,qmail-oletools}`, amd64 +
@@ -76,13 +77,39 @@ helm upgrade qmail . -n qmail \
 
 (`nodeSelector` and `tolerations` exist on every component:
 `qmail`, `dovecot`, `mariadb`, `redis`, `rspamd`, `clamav`, `tika`,
-`oletools`.)
+`oletools`, `certbot`.)
 
-## TLS — cert-manager (recommended on Kubernetes)
+## TLS
 
-The docker stack ships a certbot profile; on Kubernetes that's cert-manager's
-job. Set `tls.provider: cert-manager` and point `tls.certManager.issuerRef` at
-an existing Issuer/ClusterIssuer:
+Three ways to get the SMTP/IMAP certificate (the entrypoint combines cert+key
+into `control/servercert.pem` on every boot — dovecot reads the same combined
+file from the shared volume):
+
+**1. selfsigned (default)** — the qmail entrypoint generates a self-signed cert
+for `qmail.me` on first boot. Nothing to configure; fine for testing.
+
+**2. certbot (opt-in, `certbot.enabled: true`)** — mirrors the docker "certbot"
+profile as a CronJob; useful when cert-manager isn't installed (e.g. testing
+on k3s-v3). Certs land in the letsencrypt PVC via qmail's lighttpd webroot.
+Point qmail at the issued cert:
+
+```yaml
+certbot:
+  enabled: true
+  email: you@example.com
+  # domain: mail2.example.org     # defaults to qmail.me
+qmail:
+  env:
+    QMAIL_TLS_CERT: /etc/letsencrypt/live/mail.example.com/fullchain.pem
+    QMAIL_TLS_KEY:  /etc/letsencrypt/live/mail.example.com/privkey.pem
+```
+
+Renewal happens daily (schedule); servercert.pem is re-combined at qmail pod
+boot, so `kubectl rollout restart deploy/qmail -n qmail` after a renewal.
+
+**3. cert-manager (recommended on Kubernetes)** — no certbot sidecar: the chart
+creates a `Certificate` for `qmail.me` (+ `dnsNames`) against your existing
+Issuer/ClusterIssuer, and the qmail pod mounts the issued Secret:
 
 ```yaml
 tls:
@@ -94,25 +121,14 @@ tls:
     # dnsNames: [mail2.example.org]   # extra SANs
 ```
 
-The chart then creates a `Certificate` for `qmail.me` (+ `dnsNames`) writing
-to `qmail-tls` (a Secret with `tls.crt`/`tls.key`). The qmail pod mounts it at
-`/etc/qmail-tls` and sets `QMAIL_TLS_CERT`/`QMAIL_TLS_KEY`; the entrypoint
-combines both into `control/servercert.pem` (shared volume) on every boot —
-dovecot keeps reading the same combined file, nothing else changes. The
-self-signed fallback in the entrypoint only runs when the vars are unset.
+`tls.provider: cert-manager` mounts the issued Secret (`qmail-tls`) at
+`/etc/qmail-tls` and sets `QMAIL_TLS_CERT`/`QMAIL_TLS_KEY` automatically.
+Renewal is automatic (default at 2/3 of lifetime) but `servercert.pem` is only
+rewritten at qmail pod boot — after a renewal:
+`kubectl rollout restart deploy/qmail -n qmail`.
 
-**Renewal:** cert-manager renews automatically (default: at 2/3 of lifetime),
-but the combined `servercert.pem` is only rewritten at qmail pod boot. After a
-renewal, re-combine with:
-
-```sh
-kubectl rollout restart deploy/qmail -n qmail
-```
-
-(`tls.provider: selfsigned`, the default, needs nothing — the entrypoint
-generates a self-signed cert for `qmail.me` on first boot. For static PEMs
-without cert-manager, mount your certs and set `qmail.env.QMAIL_TLS_CERT`/
-`QMAIL_TLS_KEY` or the `_B64` variants.)
+For static PEMs without cert-manager, mount your certs and set
+`qmail.env.QMAIL_TLS_CERT`/`QMAIL_TLS_KEY` or the `_B64` variants.
 
 ## Ports / firewalling
 
@@ -149,7 +165,8 @@ empty → `changeme_*` defaults (fine for a test cluster, never for production):
 | `clamav.image.*` | `ghcr.io/mailu/clamav:2.0` | **official `clamav/clamav` has no arm64 manifest** — the Mailu image is amd64+arm+arm64 and includes a TCP-ready clamd (probe is tcpSocket, no `clamamdcheck.sh`) |
 | `tika.javaOpts` | `-Xms128m -Xmx512m` | JVM heap for the tika server |
 | `oletools.enabled` | `false` | enable olefy macro scanning (rspamd fails open when it's down) |
-| `tls.provider` | `selfsigned` | `selfsigned` or `cert-manager` (see TLS section) |
+| `certbot.enabled` | `false` | certbot CronJob for Let's Encrypt (see TLS section) |
+| `tls.provider` | `selfsigned` | `selfsigned`, `certbot` (via certbot.enabled) or `cert-manager` |
 
 Feature-layer ownership (`SPF_LAYER`, `DKIM_VERIFY_LAYER`, `DNSBL_LAYER`,
 `SURBL_LAYER`) must stay consistent between `qmail.env` and `rspamd.env` —
