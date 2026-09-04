@@ -169,7 +169,7 @@ empty → `changeme_*` defaults (fine for a test cluster, never for production):
 | `secret.rspamdPassword` | rspamd web UI/controller |
 | `secret.vqadminPass` | vqadmin HTTP basic auth |
 | `secret.qmailApiKey` | qmail REST API (port 8080, internal) |
-| `secret.postmasterPass` | postmaster password for the primary domain (first run only; empty = entrypoint generates and stores it in `control/postmaster.passwd` on the maildata volume, mode 600) |
+| `secret.postmasterPass` | postmaster password for the primary domain (first run). Always present in the Secret: explicit value wins, otherwise the existing Secret value is kept across upgrades, otherwise a random one is generated on first install — recoverable via `kubectl get secret qmail-secrets -n qmail -o jsonpath='{.data.POSTMASTER_PASS}'` |
 
 ## Key values
 

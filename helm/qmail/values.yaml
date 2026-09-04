@@ -42,8 +42,9 @@ secret:
   rspamdPassword: ""   # RSPAMD_PASSWORD — rspamd controller + web UI
   vqadminPass: ""      # VQADMIN_PASS — vqadmin HTTP basic auth
   qmailApiKey: ""      # QMAIL_API_KEY — REST API auth (empty disables the API)
-  postmasterPass: ""   # POSTMASTER_PASS — primary-domain postmaster (first run only);
-                       # empty = entrypoint generates and stores it in control/postmaster.passwd
+  postmasterPass: ""   # POSTMASTER_PASS — primary-domain postmaster (first run).
+                       # Always in the Secret: explicit > existing Secret (kept
+                       # across upgrades via lookup) > random on first install.
   # Optional auth backends (dovecot). Only set these when switching
   # DOVECOT_AUTH_DRIVER to pgsql/ldap — see dovecot.env below.
   pgsqlPass: ""        # PGSQL_PASS — emitted only when non-empty
