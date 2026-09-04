@@ -13,13 +13,21 @@ image:
   tag: latest
   pullPolicy: IfNotPresent
 
-# When true, public ports bind straight on the node via hostPort
-# (25/80/465/587 on qmail, 993/995/4190 on dovecot). k3s NodePort range
-# (30000-32767) can't carry real SMTP/IMAP ports, hence hostPort.
-# qmail and dovecot are forced onto the same node (shared RWO volumes).
+# ── Service exposure ─────────────────────────────────────────────────────────
+# Three mechanisms, selectable per deployment (mirror of the Mailu chart):
+#   ClusterIP    — services reachable only inside the cluster (pod DNS)
+#   NodePort     — services exposed on a high port (30000-32767) on every node
+#   LoadBalancer — services get an external LB IP (MetalLB/cloud controller);
+#                  set useHostPort=false in this mode
+# `useHostPort` binds the REAL mail ports (25/80/465/587 on qmail,
+# 993/995/4190 on dovecot) directly on the node via hostPort — the right mode
+# for k3s without an LB controller, since a NodePort can't carry SMTP/IMAP
+# ports. qmail and dovecot are forced onto the same node (shared RWO volumes).
 service:
+  type: ClusterIP
   useHostPort: true
   clusterIP: true   # internal ClusterIP services for inter-container DNS
+  loadBalancerIP: "" # fixed external IP when type=LoadBalancer (optional)
 
 storageClass: ""    # empty = cluster default (local-path on k3s-v3)
 

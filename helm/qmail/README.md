@@ -130,6 +130,24 @@ rewritten at qmail pod boot — after a renewal:
 For static PEMs without cert-manager, mount your certs and set
 `qmail.env.QMAIL_TLS_CERT`/`QMAIL_TLS_KEY` or the `_B64` variants.
 
+## Service exposure — hostPort / ClusterIP / LoadBalancer
+
+Like the Mailu chart, the way qmail/dovecot are exposed is configurable
+(`service.*` in values) — nothing is hardcoded:
+
+| Mode | Values | When to use |
+|---|---|---|
+| **hostPort** *(default)* | `service.useHostPort: true` | k3s/bare-metal without an LB controller. Real ports bind on the node (qmail 25/80/465/587, dovecot 993/995/4190). A NodePort can't carry SMTP/IMAP ports (30000-32767 range) |
+| **ClusterIP** | `service.type: ClusterIP` + `useHostPort: false` | cluster-internal only — no external mail ports at all |
+| **LoadBalancer** | `service.type: LoadBalancer` + `useHostPort: false`, optional `service.loadBalancerIP` | clusters with MetalLB or a cloud LB controller; qmail/dovecot Services get an external IP |
+| **NodePort** | `service.type: NodePort` + `useHostPort: false` | high-port access on every node (e.g. in front of an external LB) |
+
+Internal services (`mariadb`, `redis`, `rspamd`, `clamav`, `tika`, plus the
+per-component ClusterIP DNS) stay ClusterIP in every mode. With `hostPort`,
+qmail and dovecot keep their ClusterIP services too (pod DNS + internal
+access). qmail and dovecot always share a node (RWO volumes) regardless of
+mode.
+
 ## Ports / firewalling
 
 Public mail ports on the node: **25** (SMTP), **465** (SMTPS), **587**
