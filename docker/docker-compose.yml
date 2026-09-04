@@ -37,6 +37,10 @@ services:
       QMAIL_ME: ${QMAIL_ME:-mail.example.com}
       QMAIL_DOMAIN: ${QMAIL_DOMAIN:-}
 
+      # Postmaster password for the primary domain (first run). Empty = generate
+      # and persist to control/postmaster.passwd on the volume.
+      POSTMASTER_PASS: ${POSTMASTER_PASS:-}
+
       # ── MariaDB — must match the mariadb service above ───────────────────────
       MYSQL_HOST: mariadb
       MYSQL_PORT: ${MYSQL_PORT:-3306}
