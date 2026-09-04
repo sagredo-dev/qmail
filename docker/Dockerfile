@@ -191,7 +191,7 @@ RUN wget -q https://github.com/sagredo-dev/autorespond/archive/refs/tags/v2.0.9.
 # step 2, leaving /var/qmail in its final state.
 COPY . /usr/src/qmail/
 WORKDIR /usr/src/qmail
-RUN make it && make setup
+RUN make -j"$(nproc)" it && make setup
 
 # ── Step 4b: jgreylist ───────────────────────────────────────────────────────
 # File-based greylisting wrapper for qmail-smtpd by John Simpson.
@@ -283,7 +283,7 @@ RUN wget -q https://github.com/sagredo-dev/simscan/archive/refs/tags/v${SIMSCAN_
         --enable-spamc-user=y \
         --enable-clamavdb-path=/var/lib/clamav \
         --enable-received=y \
- && make \
+ && make -j"$(nproc)" \
  && make install
 
 # ── Step 5: ezmlm-idx ────────────────────────────────────────────────────────
@@ -294,7 +294,7 @@ RUN cp /build/external-files/ezmlm-idx-7.2.2.tar.gz . \
  && tar xzf ezmlm-idx-7.2.2.tar.gz \
  && cd ezmlm-idx-7.2.2 \
  && ln -s en_US lang/default \
- && make \
+ && make -j"$(nproc)" \
  && make man \
  && make install
 
@@ -328,7 +328,7 @@ RUN wget -q https://github.com/sagredo-dev/qmailadmin/archive/refs/tags/v${QMA_V
         --disable-catchall \
         --disable-ezmlm-mysql \
         --disable-trivial-password \
- && make \
+ && make -j"$(nproc)" \
  && make install-strip
 
 # ── Step 7: vqadmin ──────────────────────────────────────────────────────────
@@ -343,7 +343,7 @@ RUN wget -q https://github.com/sagredo-dev/vqadmin/archive/refs/tags/v${VQA_VERS
  && ./configure \
         --enable-cgibindir=/var/www/qmailadmin/cgi-bin \
         --enable-qmaildir=/var/qmail \
- && make \
+ && make -j"$(nproc)" \
  && make install-strip
 
 
