@@ -23,7 +23,7 @@ FROM debian:bookworm-slim AS builder
 ARG VPOPMAIL_AUTH=cdb
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential wget ca-certificates \
+        build-essential wget ca-certificates autotools-dev \
         libssl-dev libidn2-dev \
         libbz2-dev liblz4-dev \
         libmariadb-dev-compat \
@@ -58,9 +58,12 @@ COPY docker/external-files/ /build/external-files/
 
 # ── Step 1: libsrs2 ──────────────────────────────────────────────────────────
 # conf-ld already carries -L/usr/local/lib, so installing here is enough.
+# The shipped config.guess (2002) predates aarch64 and fails on arm64 builds —
+# refresh it from autotools-dev (harmless no-op on amd64).
 RUN wget -q https://www.sagredo.eu/files/qmail/tar/libsrs2-1.0.18.tar.gz \
  && tar xzf libsrs2-1.0.18.tar.gz \
  && cd libsrs2-1.0.18 \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && ./configure --prefix=/usr/local \
  && make \
  && make install
@@ -128,6 +131,7 @@ RUN ARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH) \
  && wget -q https://github.com/sagredo-dev/vpopmail/archive/refs/tags/v${VPOPMAIL_VERSION}.tar.gz \
  && tar xzf v${VPOPMAIL_VERSION}.tar.gz \
  && cd vpopmail-${VPOPMAIL_VERSION} \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && if [ "${VPOPMAIL_AUTH}" = "mysql" ]; then \
         EXTRA_FLAGS="--enable-incdir=/usr/include/mysql \
                      --enable-libdir=/usr/lib/${ARCH} \
@@ -163,6 +167,7 @@ RUN apt-get update -qq \
  && apt-get install -y --no-install-recommends libev-dev \
  && rm -rf /var/lib/apt/lists/* \
  && cd /build/vpopmail-5.6.13/vusaged \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && LIBS="$(head -1 /home/vpopmail/etc/lib_deps) -lev" \
     ./configure --with-vpopmail=/home/vpopmail/ \
  && make \
@@ -261,6 +266,7 @@ ARG SIMSCAN_VERSION=1.4.6.2
 RUN wget -q https://github.com/sagredo-dev/simscan/archive/refs/tags/v${SIMSCAN_VERSION}.tar.gz \
  && tar xzf v${SIMSCAN_VERSION}.tar.gz \
  && cd simscan-${SIMSCAN_VERSION} \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && ./configure \
         --enable-user=clamav \
         --enable-clamav=y \
@@ -300,6 +306,7 @@ RUN wget -q https://github.com/sagredo-dev/qmailadmin/archive/refs/tags/v${QMA_V
  && tar xzf v${QMA_VERSION}.tar.gz \
  && cd qmailadmin-${QMA_VERSION} \
  && chown -R root:root . \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && ./configure \
         --enable-htmldir=/var/www/qmailadmin \
         --enable-cgibindir=/var/www/qmailadmin/cgi-bin \
@@ -332,6 +339,7 @@ RUN wget -q https://github.com/sagredo-dev/vqadmin/archive/refs/tags/v${VQA_VERS
  && tar xzf v${VQA_VERSION}.tar.gz \
  && cd vqadmin-${VQA_VERSION} \
  && chown -R root:root . \
+ && cp /usr/share/misc/config.guess /usr/share/misc/config.sub . \
  && ./configure \
         --enable-cgibindir=/var/www/qmailadmin/cgi-bin \
         --enable-qmaildir=/var/qmail \
