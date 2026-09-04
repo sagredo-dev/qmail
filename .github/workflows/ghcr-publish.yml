@@ -1,0 +1,33 @@
+# Republish the qmail stack container images to GHCR with repo-scoped
+# credentials. Packages pushed via GITHUB_TOKEN inherit the public repo's
+# visibility (a user PAT push creates private packages with no way to flip
+# them via REST). No rebuild happens — imagetools copies the existing
+# multi-arch manifests. Run manually after a local `buildx --push`.
+name: ghcr-publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  republish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Republish manifests (no rebuild)
+        run: |
+          set -euo pipefail
+          for img in qmail qmail-dovecot qmail-rspamd qmail-oletools; do
+            echo "== ghcr.io/brdelphus/${img}:latest =="
+            docker buildx imagetools create \
+              "ghcr.io/brdelphus/${img}:latest" \
+              --tag "ghcr.io/brdelphus/${img}:latest"
+          done
