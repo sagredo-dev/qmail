@@ -1,0 +1,84 @@
+# Multi-arch (amd64+arm64) build of the qmail docker stack, pushed to GHCR
+# with repo-scoped GITHUB_TOKEN. Packages pushed this way are linked to this
+# public repo and inherit public visibility — a local `docker buildx --push`
+# with a user PAT creates private user-scoped packages with no REST way to
+# flip them. Architecture jobs run in parallel; merge builds the :latest
+# manifest list. Trigger manually: Actions -> ghcr-build -> Run workflow.
+name: ghcr-build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGES: qmail qmail-dovecot qmail-rspamd qmail-oletools
+
+jobs:
+  build-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push amd64
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/amd64 --build-arg VPOPMAIL_AUTH=mysql \
+            -f docker/Dockerfile -t ${{ env.REGISTRY }}/brdelphus/qmail:amd64 --push .
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-dovecot:amd64 --push -f docker/dovecot/Dockerfile .
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-rspamd:amd64 --push -f docker/rspamd/Dockerfile .
+          docker buildx build --platform linux/amd64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-oletools:amd64 --push -f docker/oletools/Dockerfile .
+
+  build-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push arm64
+        run: |
+          set -euo pipefail
+          docker buildx build --platform linux/arm64 --build-arg VPOPMAIL_AUTH=mysql \
+            -f docker/Dockerfile -t ${{ env.REGISTRY }}/brdelphus/qmail:arm64 --push .
+          docker buildx build --platform linux/arm64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-dovecot:arm64 --push -f docker/dovecot/Dockerfile .
+          docker buildx build --platform linux/arm64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-rspamd:arm64 --push -f docker/rspamd/Dockerfile .
+          docker buildx build --platform linux/arm64 \
+            -t ${{ env.REGISTRY }}/brdelphus/qmail-oletools:arm64 --push -f docker/oletools/Dockerfile .
+
+  merge:
+    needs: [build-amd64, build-arm64]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create multi-arch :latest manifest lists
+        run: |
+          set -euo pipefail
+          for img in ${{ env.IMAGES }}; do
+            docker buildx imagetools create \
+              -t ${{ env.REGISTRY }}/brdelphus/${img}:latest \
+              ${{ env.REGISTRY }}/brdelphus/${img}:amd64 \
+              ${{ env.REGISTRY }}/brdelphus/${img}:arm64
+          done
