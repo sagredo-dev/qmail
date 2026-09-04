@@ -1,0 +1,30 @@
+{{- if eq .Values.tls.provider "cert-manager" }}
+# TLS certificate issued by cert-manager (replaces the docker "certbot"
+# profile — in Kubernetes, cert-manager owns issuance/renewal). The qmail pod
+# mounts the issued Secret and the entrypoint combines cert+key into
+# control/servercert.pem on every boot; dovecot reads the same file from the
+# shared volume. Requires cert-manager + an Issuer/ClusterIssuer installed.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.tls.certManager.secretName | default "qmail-tls" }}
+  labels:
+    app.kubernetes.io/name: qmail
+    app.kubernetes.io/component: tls
+spec:
+  secretName: {{ .Values.tls.certManager.secretName | default "qmail-tls" }}
+  dnsNames:
+    - {{ .Values.qmail.me }}
+    {{- range .Values.tls.certManager.dnsNames }}
+    - {{ . }}
+    {{- end }}
+  {{- with .Values.tls.certManager.duration }}
+  duration: {{ . | quote }}
+  {{- end }}
+  {{- with .Values.tls.certManager.renewBefore }}
+  renewBefore: {{ . | quote }}
+  {{- end }}
+  issuerRef:
+    name: {{ .Values.tls.certManager.issuerRef.name }}
+    kind: {{ .Values.tls.certManager.issuerRef.kind | default "ClusterIssuer" }}
+{{- end }}

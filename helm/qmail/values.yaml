@@ -1,6 +1,12 @@
 # Default values for the qmail chart.
-# Mirror of docker/.env.example + docker/docker-compose.yml (2026-09).
-# All secrets live in templates/secret.yaml — override via --set or a values file.
+# Full mirror of docker/.env.example + docker/docker-compose.yml (2026-09) —
+# every env var the images understand is exposed here, grouped as in the
+# docker docs. Secrets live in templates/secret.yaml — override via --set.
+#
+# The env maps below are rendered verbatim into per-component ConfigMaps
+# (configmap-env.yaml) and injected with envFrom. Empty values are emitted as
+# "" and behave exactly like unset vars in the entrypoints (${VAR:-default}
+# semantics) — so leave unused vars empty instead of deleting them.
 
 image:
   registry: ghcr.io/brdelphus
@@ -17,27 +23,67 @@ service:
 
 storageClass: ""    # empty = cluster default (local-path on k3s-v3)
 
-# Secrets — leave empty to use the docker/.env.example defaults (changeme_*),
-# but ALWAYS override before a real deployment:
+# ── Secrets ──────────────────────────────────────────────────────────────────
+# Leave empty to use the docker/.env.example defaults (changeme_*), but ALWAYS
+# override before a real deployment:
 #   helm install qmail helm/qmail --set secret.mysqlRootPass=... ...
 secret:
-  mysqlRootPass: ""
-  mysqlPass: ""
-  greylistPass: ""
-  rspamdPassword: ""
-  vqadminPass: ""
-  qmailApiKey: ""
+  mysqlRootPass: ""    # MYSQL_ROOT_PASS — mariadb root (baked into the data volume)
+  mysqlPass: ""        # MYSQL_PASS — vpopmail DB user
+  greylistPass: ""     # GREYLIST_PASS — qmail-spp greylisting plugin / mariadb greylisting user
+  rspamdPassword: ""   # RSPAMD_PASSWORD — rspamd controller + web UI
+  vqadminPass: ""      # VQADMIN_PASS — vqadmin HTTP basic auth
+  qmailApiKey: ""      # QMAIL_API_KEY — REST API auth (empty disables the API)
+  # Optional auth backends (dovecot). Only set these when switching
+  # DOVECOT_AUTH_DRIVER to pgsql/ldap — see dovecot.env below.
+  pgsqlPass: ""        # PGSQL_PASS — emitted only when non-empty
+  ldapBindPw: ""       # LDAP_BIND_PW — emitted only when non-empty
+
+# ── TLS certificates ────────────────────────────────────────────────────────
+# How the SMTP/IMAP certificate (control/servercert.pem, combined PEM) is
+# provisioned:
+#   selfsigned   — (default) qmail entrypoint generates a self-signed cert for
+#                  qmail.me on first boot when no cert is provided
+#   cert-manager — issue via cert-manager (Certificate CRD). The issued secret
+#                  is mounted into the qmail pod and the entrypoint combines
+#                  cert+key into servercert.pem on every boot. After a
+#                  cert-manager renewal, restart the qmail deployment to
+#                  re-combine: kubectl rollout restart deploy/qmail -n qmail
+tls:
+  provider: selfsigned
+  certManager:
+    # cert-manager.io/v1 Certificate — requires cert-manager installed and an
+    # Issuer/ClusterIssuer (e.g. Let's Encrypt). Point issuerRef at yours.
+    issuerRef:
+      name: letsencrypt-prod
+      kind: ClusterIssuer
+    secretName: qmail-tls   # issued Secret holding tls.crt/tls.key
+    dnsNames: []            # extra SANs; qmail.me is always included
+    duration: ""            # optional (cert-manager default 90d)
+    renewBefore: ""         # optional (cert-manager default renews at 2/3 lifetime)
 
 qmail:
   me: mail.example.com          # REQUIRED — FQDN of this mail server (QMAIL_ME)
   domain: ""                    # primary vpopmail domain; empty = derived from QMAIL_ME
-  # Non-secret environment (mirror of docker-compose defaults). Secrets are
-  # separate (MYSQL_PASS, GREYLIST_PASS, VQADMIN_PASS, QMAIL_API_KEY).
+  # All non-secret env vars the qmail image understands (docker/.env.example +
+  # docker-compose.yml). QMAIL_ME and QMAIL_DOMAIN come from qmail.me/domain —
+  # do not repeat them here.
   env:
+    # ── Stack endpoints (service DNS) ──
     MYSQL_HOST: mariadb
     MYSQL_PORT: "3306"
     MYSQL_DB: vpopmail
     MYSQL_USER: vpopmail
+    GREYLIST_HOST: mariadb
+    GREYLIST_DB: greylisting
+    GREYLIST_USER: ""                 # set to enable the spp plugin (else empty)
+    CLAMD_HOST: clamav
+    CLAMD_PORT: "3310"
+    RSPAMD_HOST: rspamd
+    RSPAMD_PORT: "11333"
+    LMTP_HOST: dovecot
+    LMTP_PORT: "24"
+    # ── Queue / concurrency ──
     QMAIL_SOFTLIMIT: "64000000"
     QMAIL_CONCURRENCY_INCOMING: "200"
     QMAIL_CONCURRENCY_REMOTE: "20"
@@ -45,46 +91,56 @@ qmail:
     QMAIL_DATABYTES: "20000000"
     QMAIL_MAXRCPT: "100"
     QMAIL_QUEUELIFETIME: "272800"
+    # ── Feature layer toggles (rspamd or qmail; keep in sync with rspamd.env) ──
     SPF_LAYER: rspamd
     DKIM_VERIFY_LAYER: rspamd
     DNSBL_LAYER: rspamd
     SURBL_LAYER: rspamd
-    QMAIL_DNSBL_SERVERS: ""
-    QMAIL_SPFBEHAVIOR: "3"
-    QMAIL_GREETDELAY: "5"
-    QMAIL_SURBL: "0"
-    QMAIL_CHKUSER_WRONGRCPTLIMIT: "3"
-    QMAIL_BRTLIMIT: "2"
+    QMAIL_DNSBL_SERVERS: ""           # space-separated; -prefix = hard reject (DNSBL_LAYER=qmail)
+    # ── SMTP behaviour ──
+    QMAIL_SPFBEHAVIOR: "3"            # 0=off 1=softfail→pass 2=softfail→reject 3=fail→reject
+    QMAIL_SPF_EXP: ""                 # custom SPF failure explanation
+    QMAIL_GREETDELAY: "5"             # seconds before SMTP banner (0=off)
+    QMAIL_SURBL: "0"                  # SURBL URI checking in qmail layer
+    QMAIL_BRTLIMIT: "2"               # max non-existent rcpts before disconnect
+    QMAIL_CHKUSER_WRONGRCPTLIMIT: "3" # max invalid rcpts before disconnect (all ports)
     QMAIL_BOUNCEFROM: noreply
-    QMAIL_RELAY_LIMIT: "1000"
-    QMAIL_DUALSTACK: "0"
-    QMAIL_GREYLISTING: "0"
-    UNSIGNED_SUBJECT: "1"
-    QMAIL_TLS_CERT: ""
-    QMAIL_TLS_KEY: ""
+    QMAIL_RELAY_LIMIT: "1000"         # msgs per auth user/domain/IP per period (0=unlimited)
+    QMAIL_DUALSTACK: "0"              # 1 = tcpserver on :: (needs IPv6)
+    QMAIL_GREYLISTING: "0"            # 1 = jgreylist wrapper on port 25
+    # ── SMTP run-script env (passed into qmail-smtpd) ──
+    UNSIGNED_SUBJECT: "1"             # allow DKIM mail without Subject in h=
+    HELO_DNS_CHECK: ""                # HELO DNS validation modes, e.g. PLRIV
+    REJECTNULLSENDERS: ""             # non-empty = reject empty envelope sender
+    # ── TLS (file paths / b64; cert-manager sets the file paths automatically) ──
+    QMAIL_TLS_CERT: ""                # path to cert PEM (mounted file) — overrides self-signed
+    QMAIL_TLS_KEY: ""                 # path to key PEM
+    QMAIL_TLS_CERT_B64: ""            # base64 -w0 fullchain.pem — wins over file paths
+    QMAIL_TLS_KEY_B64: ""             # base64 -w0 privkey.pem
+    QMAIL_TLS_CIPHERS: "HIGH:MEDIUM:!MD5:!RC4:!3DES:!LOW:!SSLv2:!SSLv3"
     QMAIL_DH_BITS: "2048"
-    QMAIL_SNI_CERTS: ""
-    QMAIL_RELAY_NETS: ""
-    QMAIL_TAPS: ""
-    GREYLIST_HOST: mariadb
-    GREYLIST_DB: greylisting
-    GREYLIST_USER: ""
-    VQADMIN_USER: admin
-    QMAIL_API_PORT: "8080"
+    QMAIL_SNI_CERTS: ""               # domain:cert:key;... for additional TLS domains
+    # ── Relay / access control ──
+    QMAIL_RELAY_NETS: ""              # comma-separated IPs/prefixes allowed to relay on 25
+    QMAIL_TAPS: ""                    # semicolon rules TYPE:REGEX:DEST (F/T/A)
+    # ── qmail-spp greylisting plugin tuning (needs GREYLIST_USER set) ──
+    GREYLIST_BLOCK_EXPIRE: "2"        # minutes a new sender is greylisted
+    GREYLIST_RECORD_EXPIRE: "2000"    # minutes until unseen triplet purged
+    GREYLIST_RECORD_EXPIRE_GOOD: "36" # hours a good sender stays whitelisted
+    GREYLIST_LOGLEVEL: "4"
+    # ── simscan (content filter calling rspamd) ──
     SIMSCAN_ENABLE: "true"
-    SIMSCAN_CLAM: "no"
+    SIMSCAN_CLAM: "no"                # simscan→clamav direct scan (rspamd owns AV by default)
     SIMSCAN_SPAM: "yes"
-    RSPAMD_TAG_ONLY: "false"
     SIMSCAN_SPAM_HITS: "9.0"
     SIMSCAN_SIZE_LIMIT: "20000000"
-    SIMSCAN_ATTACH: ""
+    SIMSCAN_ATTACH: ""                # attachment size/type limits (empty = off)
     SIMSCAN_DEBUG: "0"
-    CLAMD_HOST: clamav
-    CLAMD_PORT: "3310"
-    RSPAMD_HOST: rspamd
-    RSPAMD_PORT: "11333"
-    LMTP_HOST: dovecot
-    LMTP_PORT: "24"
+    RSPAMD_TAG_ONLY: "false"          # rspamd tags instead of rejecting
+    # ── Web admin + API ──
+    VQADMIN_USER: admin
+    QMAIL_API_PORT: "8080"
+    # ── Port/service toggles (runit) ──
     QMAIL_SMTP: "true"
     QMAIL_SMTPS: "true"
     QMAIL_SUBMISSION: "true"
@@ -93,18 +149,21 @@ qmail:
   nodeSelector: {}
   tolerations: []
 
-# mariadb 11 — auth + greylisting backend
+# mariadb 11 — auth + greylisting backend.
+# MARIADB_ROOT_PASSWORD / MARIADB_PASSWORD / GREYLIST_PASS are wired from the
+# secret in the deployment template (mariadb.yaml).
 mariadb:
   env:
     MARIADB_DATABASE: vpopmail
     MARIADB_USER: vpopmail
     GREYLIST_DB: greylisting
-    GREYLIST_USER: ""
+    GREYLIST_USER: ""                 # set to have the init script create the greylisting user
   resources: {}
   nodeSelector: {}
   tolerations: []
 
-# rspamd — spam/AV orchestration. SPF/DKIM/DNSBL/SURBL layers must mirror qmail's.
+# rspamd — spam/AV orchestration. SPF/DKIM/DNSBL/SURBL layers MUST mirror
+# qmail.env's. RSPAMD_PASSWORD comes from the secret (envFrom).
 rspamd:
   env:
     SPF_LAYER: rspamd
@@ -116,16 +175,38 @@ rspamd:
   tolerations: []
 
 # dovecot — IMAPS/POP3S/Sieve + LMTP delivery. Shares maildata/maildirs with qmail.
+# Auth backend selector: mysql (default) | pgsql | ldap — must match the
+# VPOPMAIL_AUTH the qmail image was built with. Set the matching credentials:
+# mysql → secret.mysql*; pgsql → secret.pgsqlPass + PGSQL_*; ldap →
+# secret.ldapBindPw + LDAP_*. qmailadmin/chkuser keep working on any backend
+# (vpopmail C API); the spp greylisting plugin is MySQL-only (use jgreylist).
 dovecot:
   env:
     DOVECOT_AUTH_DRIVER: mysql
+    # mysql backend
     MYSQL_HOST: mariadb
     MYSQL_PORT: "3306"
     MYSQL_DB: vpopmail
     MYSQL_USER: vpopmail
+    # pgsql backend (set DOVECOT_AUTH_DRIVER=pgsql + secret.pgsqlPass)
+    PGSQL_HOST: ""
+    PGSQL_PORT: "5432"
+    PGSQL_DB: ""
+    PGSQL_USER: ""
+    # ldap backend (set DOVECOT_AUTH_DRIVER=ldap + secret.ldapBindPw)
+    LDAP_HOST: ""
+    LDAP_PORT: "389"
+    LDAP_BASE: ""
+    LDAP_BIND_DN: ""
+    LDAP_TLS: "no"
+    LDAP_USER_FILTER: "(&(objectClass=qmailUser)(mail=%u))"
+    LDAP_PASS_ATTRS: "userPassword=password"
+    LDAP_USER_ATTRS: "homeDirectory=home,=uid=89,=gid=2109"
+    # rspamd integration (sieves + controller)
     RSPAMD_HOST: rspamd
     RSPAMD_PORT: "11333"
     RSPAMD_CONTROLLER_PORT: "11334"
+    # service toggles
     DOVECOT_IMAP: "false"
     DOVECOT_IMAPS: "true"
     DOVECOT_POP3: "false"
@@ -137,6 +218,7 @@ dovecot:
   tolerations: []
 
 redis:
+  # no env vars — Bayes/fuzzy state only
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -149,12 +231,15 @@ clamav:
     repository: clamav
     tag: "2.0"
     pullPolicy: IfNotPresent
+  env: {}               # image has no env knobs (compose passes none)
   resources: {}
   nodeSelector: {}
   tolerations: []
 
 tika:
+  # JVM heap for the tika server (mirrors compose JAVA_OPTS)
   javaOpts: "-Xms128m -Xmx512m"
+  env: {}               # only JAVA_OPTS is supported — see javaOpts
   resources: {}
   nodeSelector: {}
   tolerations: []
@@ -168,17 +253,6 @@ oletools:
     OLEFY_BINDPORT: "11343"
     OLEFY_TMPDIR: /dev/shm
     OLEFY_LOGLEVEL: "20"
-  resources: {}
-  nodeSelector: {}
-  tolerations: []
-
-# certbot — Let's Encrypt issuance/renewal (compose profile "certbot").
-# Requires qmail.me + certbot.email/domain set.
-certbot:
-  enabled: false
-  email: ""
-  domain: ""            # defaults to qmail.me
-  schedule: "0 3 * * *" # daily renewal check
   resources: {}
   nodeSelector: {}
   tolerations: []

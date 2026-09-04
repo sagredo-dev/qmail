@@ -41,6 +41,15 @@ spec:
                 name: qmail-env
             - secretRef:
                 name: qmail-secrets
+          {{- if eq .Values.tls.provider "cert-manager" }}
+          # TLS cert from cert-manager: entrypoint combines these into
+          # control/servercert.pem on boot (docker/entrypoint.sh option 2).
+          env:
+            - name: QMAIL_TLS_CERT
+              value: /etc/qmail-tls/tls.crt
+            - name: QMAIL_TLS_KEY
+              value: /etc/qmail-tls/tls.key
+          {{- end }}
           ports:
             - name: smtp
               containerPort: 25
@@ -78,6 +87,11 @@ spec:
             - name: letsencrypt
               mountPath: /etc/letsencrypt
               readOnly: true
+          {{- if eq .Values.tls.provider "cert-manager" }}
+            - name: qmail-tls
+              mountPath: /etc/qmail-tls
+              readOnly: true
+          {{- end }}
           {{- with .Values.qmail.resources }}
           resources:
             {{- toYaml . | nindent 12 }}
@@ -91,6 +105,11 @@ spec:
           persistentVolumeClaim: { claimName: acme-webroot }
         - name: letsencrypt
           persistentVolumeClaim: { claimName: letsencrypt }
+        {{- if eq .Values.tls.provider "cert-manager" }}
+        - name: qmail-tls
+          secret:
+            secretName: {{ .Values.tls.certManager.secretName | default "qmail-tls" }}
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service
