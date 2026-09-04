@@ -1,5 +1,18 @@
 # qmail
 
+> **This fork adds a containerised, multi-arch deployment on top of
+> [sagredo-dev/qmail](https://github.com/sagredo-dev/qmail):**
+>
+> · [**Docker stack**](docker/README.md) — qmail + dovecot + mariadb + rspamd +
+>   clamav + tika + oletools under runit (full env-var reference inside)
+> · [**Helm chart**](helm/qmail/README.md) — same stack for Kubernetes/k3s
+>   (chart values, secrets, TLS, node pinning)
+> · [**Public images**](https://github.com/brdelphus/qmail/pkgs/container/qmail)
+>   — `ghcr.io/brdelphus/{qmail,qmail-dovecot,qmail-rspamd,qmail-oletools}`,
+>   amd64 + arm64
+
+---
+
 [`qmail`](http://cr.yp.to/qmail.html) is a secure, reliable, efficient, simple message transfer agent. It is designed for typical Internet-connected UNIX hosts.
 It was developed by [D. J. Bernstein](http://cr.yp.to/djb.html).
 

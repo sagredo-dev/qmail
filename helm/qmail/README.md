@@ -173,6 +173,114 @@ Feature-layer ownership (`SPF_LAYER`, `DKIM_VERIFY_LAYER`, `DNSBL_LAYER`,
 qmail's feature layer toggle only works when rspamd mirrors it (see the docker
 README section on feature layer toggles).
 
+## Configuration reference
+
+Every env var the images understand (docker/`.env.example` + compose) is
+exposed in `values.yaml`, grouped per component. Each component's `env` map is
+rendered into its own ConfigMap (`qmail-env`, `mariadb-env`, `rspamd-env`,
+`dovecot-env`) and injected into the pod with `envFrom`. Values files and
+`--set` deep-merge over the chart defaults, so any var can be overridden
+without touching the chart:
+
+```sh
+helm upgrade qmail . -n qmail \
+  --set qmail.env.HELO_DNS_CHECK=PLRIV \
+  --set qmail.env.QMAIL_RELAY_NETS=10.0.0.0/8 \
+  --set 'dovecot.env.DOVECOT_POP3S=false'
+```
+
+Empty values (`""`) are emitted as-is and behave like unset vars in the
+entrypoints (`${VAR:-default}`), i.e. the image's built-in default applies —
+leave unused vars empty instead of deleting them. Secrets (`MYSQL_PASS`,
+`GREYLIST_PASS`, `RSPAMD_PASSWORD`, `VQADMIN_PASS`, `QMAIL_API_KEY`,
+`PGSQL_PASS`, `LDAP_BIND_PW`) come from the Secret, never from `env` maps.
+Full semantics of every var: [`docker/README.md`](../../docker/README.md).
+
+### qmail.env — MTA
+
+| Env var | What it does |
+|---|---|
+| `MYSQL_HOST/PORT/DB/USER` | vpopmail MySQL backend connection (service DNS `mariadb`) |
+| `GREYLIST_HOST/DB/USER` | qmail-spp greylisting plugin; set `GREYLIST_USER` to activate |
+| `CLAMD_HOST/PORT` | ClamAV endpoint used by simscan when `SIMSCAN_CLAM=yes` |
+| `RSPAMD_HOST/PORT` | rspamd endpoint called by simscan's filter |
+| `LMTP_HOST/PORT` | dovecot LMTP delivery endpoint (local deliveries) |
+| `QMAIL_SOFTLIMIT` | memory limit per SMTP process (bytes) |
+| `QMAIL_CONCURRENCY_INCOMING/REMOTE/LOCAL` | max simultaneous inbound / outbound / local deliveries |
+| `QMAIL_DATABYTES` | max message size (bytes, `0` = unlimited) |
+| `QMAIL_MAXRCPT` | max recipients per message |
+| `QMAIL_QUEUELIFETIME` | seconds in queue before bounce (~3 days default) |
+| `SPF_LAYER` / `DKIM_VERIFY_LAYER` / `DNSBL_LAYER` / `SURBL_LAYER` | `rspamd` or `qmail` — who owns each check (must mirror `rspamd.env`) |
+| `QMAIL_DNSBL_SERVERS` | RBL servers when `DNSBL_LAYER=qmail` (space-separated, `-` = hard reject) |
+| `QMAIL_SPFBEHAVIOR` | SPF reject mode when `SPF_LAYER=qmail` (`0`-`3`) |
+| `QMAIL_SPF_EXP` | custom SPF failure explanation |
+| `QMAIL_GREETDELAY` | seconds of greet delay before the banner (`0` = off) |
+| `QMAIL_SURBL` | SURBL URI checking in the qmail layer (`0`/`1`) |
+| `QMAIL_BRTLIMIT` | max non-existent recipients before disconnect |
+| `QMAIL_CHKUSER_WRONGRCPTLIMIT` | max invalid recipients before disconnect (all ports) |
+| `QMAIL_BOUNCEFROM` | envelope sender name for bounces |
+| `QMAIL_RELAY_LIMIT` | msgs per auth user/domain/IP per period (`0` = unlimited) |
+| `QMAIL_DUALSTACK` | `1` binds tcpserver on `::` (IPv4+IPv6) |
+| `QMAIL_GREYLISTING` | `1` = jgreylist wrapper on port 25 |
+| `UNSIGNED_SUBJECT` | allow DKIM mail whose `h=` misses Subject (`1` = allow) |
+| `HELO_DNS_CHECK` | HELO hostname DNS validation modes (e.g. `PLRIV`) |
+| `REJECTNULLSENDERS` | non-empty = reject empty envelope sender |
+| `QMAIL_TLS_CERT/KEY` | paths to cert/key PEM — entrypoint combines into `servercert.pem` |
+| `QMAIL_TLS_CERT_B64/KEY_B64` | base64 PEMs (no volume needed); wins over file paths |
+| `QMAIL_TLS_CIPHERS` | TLS cipher suite |
+| `QMAIL_DH_BITS` | DH parameter size (`2048`/`4096`) |
+| `QMAIL_SNI_CERTS` | `domain:cert:key;...` for extra TLS domains |
+| `QMAIL_RELAY_NETS` | comma-separated IPs/prefixes trusted to relay on port 25 |
+| `QMAIL_TAPS` | mail-tap rules `TYPE:REGEX:DEST` (`F` from / `T` to / `A` all) |
+| `GREYLIST_BLOCK_EXPIRE` / `GREYLIST_RECORD_EXPIRE` / `GREYLIST_RECORD_EXPIRE_GOOD` / `GREYLIST_LOGLEVEL` | spp plugin tuning (minutes/hours/log verbosity) |
+| `SIMSCAN_ENABLE` | `true`/`false` — content filter calling rspamd before queueing |
+| `SIMSCAN_CLAM` | `yes` scans attachments directly with clamd too |
+| `SIMSCAN_SPAM` / `SIMSCAN_SPAM_HITS` | reject spam over the hit threshold (`9.0`) |
+| `SIMSCAN_SIZE_LIMIT` / `SIMSCAN_ATTACH` | size/attachment limits |
+| `SIMSCAN_DEBUG` | simscan debug level `0`-`4` |
+| `RSPAMD_TAG_ONLY` | rspamd tags instead of rejecting |
+| `VQADMIN_USER` | vqadmin HTTP basic-auth username |
+| `QMAIL_API_PORT` | REST API listen port (internal) |
+| `QMAIL_SMTP` / `QMAIL_SMTPS` / `QMAIL_SUBMISSION` / `QMAIL_HTTP` | runit service toggles (ports 25/465/587/80) |
+
+`QMAIL_ME` / `QMAIL_DOMAIN` are not in this map — set `qmail.me` / `qmail.domain`.
+
+### mariadb.env
+
+| Env var | What it does |
+|---|---|
+| `MARIADB_DATABASE` / `MARIADB_USER` | vpopmail database/user created on first start |
+| `GREYLIST_DB` / `GREYLIST_USER` | greylisting database/user (init script creates both) |
+
+Root/password come from the Secret (`MYSQL_ROOT_PASS`, `MYSQL_PASS`,
+`GREYLIST_PASS`).
+
+### rspamd.env
+
+| Env var | What it does |
+|---|---|
+| `SPF_LAYER` / `DKIM_VERIFY_LAYER` / `DNSBL_LAYER` / `SURBL_LAYER` | mirror of `qmail.env` — keep both in sync |
+
+`RSPAMD_PASSWORD` comes from the Secret (controller + web UI).
+
+### dovecot.env
+
+| Env var | What it does |
+|---|---|
+| `DOVECOT_AUTH_DRIVER` | `mysql` (default) \| `pgsql` \| `ldap` — must match the qmail image's `VPOPMAIL_AUTH` |
+| `MYSQL_HOST/PORT/DB/USER` | mysql backend connection |
+| `PGSQL_HOST/PORT/DB/USER` | pgsql backend (`DOVECOT_AUTH_DRIVER=pgsql`, pass via `secret.pgsqlPass`) |
+| `LDAP_HOST/PORT/BASE/BIND_DN/TLS` + `LDAP_USER_FILTER/PASS_ATTRS/USER_ATTRS` | ldap backend (`DOVECOT_AUTH_DRIVER=ldap`, bind pw via `secret.ldapBindPw`) |
+| `RSPAMD_HOST/PORT/CONTROLLER_PORT` | rspamd integration (learn/spam folders, controller for admin) |
+| `DOVECOT_IMAP` / `DOVECOT_IMAPS` / `DOVECOT_POP3` / `DOVECOT_POP3S` / `DOVECOT_SIEVE` / `DOVECOT_LMTP` | service toggles (`true`/`false`) |
+
+### oletools.env / clamav.env / tika
+
+| Var | What it does |
+|---|---|
+| `OLEFY_BINDADDRESS/BINDPORT/TMPDIR/LOGLEVEL` | olefy macro scanner (only when `oletools.enabled: true`) |
+| — | clamav image has no env knobs; tika takes `javaOpts` (JVM heap) only |
+
 ## Operation
 
 ```sh
