@@ -18,6 +18,14 @@ spec:
       labels:
         app.kubernetes.io/component: tika
     spec:
+      {{- with .Values.tika.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tika.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
         - name: tika
           image: apache/tika:latest
