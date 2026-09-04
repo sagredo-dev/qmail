@@ -38,7 +38,7 @@ spec:
         - name: wait-maildata
           image: {{ .Values.image.registry }}/qmail-dovecot:{{ .Values.image.tag }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["sh", "-c", "until [ -f /srv/qmail/control/me ]; do echo waiting for qmail control files; sleep 3; done"]
+          command: ["sh", "-c", "until [ -f /srv/qmail/qmail/control/me ]; do echo waiting for qmail control files; sleep 3; done"]
           volumeMounts:
             - name: maildata
               mountPath: /srv/qmail
