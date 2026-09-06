@@ -81,6 +81,15 @@ int srsforward(char *address) {
   x = str_len(address);
   if (x <= 1) return 0;
 
+  /* Return zero for qmail's internal envelope representations, which are not
+     addresses and must never be rewritten:
+       "#@[]"      the null sender (RFC 5321 4.5.5 requires a bounce to keep an
+                   empty reverse-path; rewriting it makes the bounce itself
+                   bounceable, which loops)
+       "...-@[]"   the VERP sender qmail-send expands per recipient
+     Both end in "@[]", which is not a legal domain, so one test covers them. */
+  if (x >= 3 && !str_diff(address + x - 3,"@[]")) return 0;
+
   /* Return zero if local address */
   if (!srs_alwaysrewrite && rcpthosts(address,x) == 1) return 0;  
   
