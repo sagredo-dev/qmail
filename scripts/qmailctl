@@ -1,11 +1,11 @@
-#!/usr/bin/env bash
-#
-# This is a pure bash script.
-# FreeBSD users should change the bash path to /usr/local/bin/bash
+#!/bin/sh
 #
 #### LWQ qmailctl script modified by Sam Tang ###
 #
 # Subsequent adjustments by Roberto Puzzanghera:
+#
+# Jul 2026
+# - Make qmailctl POSIX-compliant
 #
 # Apr 2025
 # - QMAILDIR defined via getent
@@ -37,10 +37,18 @@ PATH=$QMAILDIR/bin:/bin:/usr/bin:/usr/local/bin:/usr/local/sbin
 export PATH
 
 show_uptime() {
+  UP=$(printf '\033[1;32mup\033[0m')
+  DOWN=$(printf '\033[1;31mdown\033[0m')
+
   re='^[0-9]+$'
-  org="$(svstat /service/$1 | awk '{print $2,$3,$4;}' | sed 's/up/[ up ]/g' | sed 's/down/[ down ]/g' | sed ''/up/s//`printf "\033[1\;32mup\033[0m"`/'' | sed ''/down/s//`printf "\033[1\;31mdown\033[0m"`/'')"
+  org="$(svstat /service/$1 |
+    awk '{print $2,$3,$4;}' |
+    sed -e 's/up/[ up ]/g' \
+        -e 's/down/[ down ]/g' \
+        -e "s/\<up\>/$UP/" \
+        -e "s/\<down\>/$DOWN/")"
   sec="$(svstat /service/$1 | awk '{print $5;}')"
-  if ! [[ $sec =~ $re ]]; then
+  if ! printf '%s\n' "$sec" | grep -Eq "$re"; then
     sec="$(svstat /service/$1 | awk '{print $3;}')"
   fi
   d=$(( $sec / 86400))
@@ -49,7 +57,7 @@ show_uptime() {
   s=$(($sec -d * 86400 - $h * 3600 - $m * 60))
 
   if [ $sec -le 60 ]; then
-    if [[ "$(svstat /service/$1 | awk '{print $2}')" = 'down' ]]; then
+    if [ "$(svstat /service/$1 | awk '{print $2}')" = 'down' ]; then
       printf "%-22s %s %s %s %s %s\n" "$1:" $org | sed 's/,//g'
     else
       printf "%-22s %s %s %s %s %s %s seconds\n" "$1:" $org $s
@@ -66,6 +74,17 @@ svscan_check() {
     echo "'qmailctl boot' or '/command/svscanboot'"
     exit 1
   fi
+}
+
+# kill all svscan processes (portable killall -g)
+kill_svscan_group()
+{
+    pid=$(pgrep -x svscan) || return 0
+    pgid=$(ps -o pgid= -p "$pid" | tr -d ' ') || return 0
+    [ -n "$pgid" ] || return 0
+    kill -TERM -- "-$pgid" 2>/dev/null
+    sleep 2
+    kill -KILL -- "-$pgid" 2>/dev/null || true
 }
 
 case "$1" in
@@ -113,8 +132,7 @@ case "$1" in
     echo ""
     for service in $servicelist ; do
       printf "%-22s " "$service status:"
-      if (( $(ps -ef | grep -v grep | grep $service | wc -l) > 0 ))
-      then
+      if pgrep -f "$service" >/dev/null 2>&1; then
         echo -e "[ \033[1;32mup\033[m ]"
       else
         echo -e "[ \033[1;31mdown\033[m ]"
@@ -203,8 +221,9 @@ case "$1" in
          svc -d /service/$svc/log
       fi
     done
+    sleep 2
     echo "Now sending processes the kill signal ... "
-    killall -g svscanboot
+    kill_svscan_group
     echo "done"
     ;;
   boot)
@@ -232,7 +251,7 @@ case "$1" in
           hup -- same as reload
         queue -- shows status of queue
         clear -- clears the readproctitle service errors with .....................
-         kill -- svc -d processes in svclist, then do 'killall -g svscanboot'
+         kill -- svc -d processes in svclist, then kill all svscan processes
          boot -- Boots qmail and all services in /service running /command/svscanboot
        reboot -- kill & boot commands in sequence
 HELP

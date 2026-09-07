@@ -1,4 +1,4 @@
-[# Configure/install the following as per notes.sagredo.eu guide:
+# Configure/install the following as per notes.sagredo.eu guide:
 # - control files: me, defaultdomain, defaulthost, plusdomain, rcpthosts, spfbehavior, softlimit,
 #   bouncefrom, bouncehost, databytes, queuelifetime, maxrcpt, brtlimit, defaultdelivery,
 #   tlsserverciphers.
@@ -131,6 +131,13 @@ if check_file "QMAIL/control/plusdomain"; then
     echo "$PDOM" > QMAIL/control/plusdomain
     chmod 644 QMAIL/control/plusdomain
   ) )
+fi
+
+# locals must exist, let's touch it
+if check_file "QMAIL/control/locals"; then
+  echo "Touching control/locals..."
+  touch QMAIL/control/locals
+  chmod 644 QMAIL/control/locals
 fi
 
 # rcpthosts

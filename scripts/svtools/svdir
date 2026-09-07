@@ -77,15 +77,22 @@ then
   exit 1
 fi
 
-if ! SVDIR=`readlink /proc/\`pidof svscan\`/cwd`
+SVDIR=""
+
+if command -v pidof >/dev/null 2>&1
 then
-  if [ -d "/var/lib/svscan" ]
+  SVDIR=`readlink /proc/\`pidof svscan\`/cwd 2>/dev/null`
+fi
+
+if [ -z "$SVDIR" ]
+then
+  if [ -d "/service" ]
   then
-    SVDIR="/var/lib/svscan"
+    SVDIR="/service"
   else
-    if [ -d "/service" ]
+    if [ -d "/var/lib/svscan" ]
     then
-      SVDIR="/service"
+      SVDIR="/var/lib/svscan"
     else
       echo "$TITLE: Unable to determine daemontools service dir" >&2
       exit 1
