@@ -1,6 +1,6 @@
 # ChangeLog
 
-- unreleased
+- Sep 8, 2026
   - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
     (tx Steffen Nurpmeso)
   - Extensive modernization work for compatibility with C23 and recent GCC/clang releases, including fixes for
