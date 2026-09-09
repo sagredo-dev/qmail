@@ -109,6 +109,16 @@ int main(int argc, char **argv)
     case -1: strerr_die2x(111,FATAL,"unable to read controls"); break;
     case 0: strerr_die2x(100,FATAL,"unable to rewrite envelope"); break;
   }
+
+  /* An SRS address that reverses to one of qmail's internal representations
+     ("#@[]" or a VERP "...-@[]") was produced by a buggy forward.  There is
+     nothing to return the bounce to, so discard it instead of queueing a
+     message addressed to a domain that cannot exist. */
+  {
+    int n = srs_result.len ? srs_result.len - 1 : 0;
+    if (n >= 3 && !str_diff(srs_result.s + n - 3,"@[]"))
+      strerr_die2x(0,IGNORE,"reversed address is qmail's null/VERP sender");
+  }
  
   if (qmail_open(&qqt) == -1)
     strerr_die2x(111,FATAL,"unable to fork");

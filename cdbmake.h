@@ -27,8 +27,8 @@ extern void cdbmake_pack(unsigned char *, uint32);
 #define CDBMAKE_HASHSTART ((uint32) 5381)
 extern uint32 cdbmake_hashadd(uint32, unsigned int);
 extern void cdbmake_init(struct cdbmake *);
-extern int cdbmake_add(struct cdbmake *, uint32, uint32, char *(*)());
-extern int cdbmake_split(struct cdbmake *, char *(*)());
+extern int cdbmake_add(struct cdbmake *, uint32, uint32, char *(*)(long unsigned int));
+extern int cdbmake_split(struct cdbmake *, char *(*)(long unsigned int));
 extern uint32 cdbmake_throw(struct cdbmake *, uint32, int);
 
 #endif

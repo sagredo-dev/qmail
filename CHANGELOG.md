@@ -1,22 +1,45 @@
 # ChangeLog
 
 - unreleased
-  - (docker) Fixed `qmail-newu` failing with "unable to write users/cdb.tmp" on every
-    startup — the generated `users/cdb` was never created, breaking local delivery
-    lookups. Root cause: UB in `cdbmake_add.c`, which called `alloc()` without an
-    argument (K&R `char *(*)()` signature) while the real `alloc` expects
-    `long unsigned int` — on x86-64 the garbage register value made `alloc` refuse
-    the allocation. Now passes explicit sizes (`sizeof(struct cdbmake_hplist)` and
-    `memsize * sizeof(struct cdbmake_hp)`).
   - (docker) Built `vusaged` (vpopmail quota daemon) into the image — vpopmail's
     `make install` only prints build instructions for it (target `vusage-msg`), so
     it was never compiled and the runit service stayed disabled ("binary not found").
     Dockerfile now compiles it from the `vusaged/` subdir (`libev-dev` in builder)
     and installs `libev4` in the runtime stage for the `libev.so.4` soname.
+
+- Sep 8, 2026
   - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
     (tx Steffen Nurpmeso)
   - Extensive modernization work for compatibility with C23 and recent GCC/clang releases, including fixes for
     function prototypes, callback signatures, type safety, allocation helpers, and OpenSSL APIs.
+  - Rename rcptcheck-overlimit.cron.daily at install in /etc/cron.daily by @estiloinfo
+  - Initialize embedded stralloc objects in token822_ready()
+  - srs: do not rewrite qmail's internal envelope addresses ("#@[]" and VERP) by @yohgaki
+  - Fix BSD make compatibility in Makefile and Makefile-cert.mk
+  - Fix qmail-newu memory allocation on modern C compilers
+  - qmail-send: fix startup with libsrs2 shared library on NetBSD. Added LD_LIBRARY_PATH=/usr/local/lib to rc file
+  - svdir: improve service directory detection on non-Linux systems
+  - export LD_LIBRARY_PATH=/usr/local/qlibs:/usr/local/lib in vusaged run file
+  - qmailctl: make ANSI color output portable across NetBSD and GNU printf
+  - config-all.sh: adding missing touch locals command
+  - config-all.sh touches control/locals, as it defaults to control/me and would break srs if not existent
+  - qmHandle: use pgrep as a fallback when pidof is unavailable
+  - qmHandle: Use env in Perl shebang for portability
+  - Make rcptcheck-overlimit POSIX-compliant
+  - Make qmailctl POSIX-compliant
+  - config-all.sh bug fix in dir existence check
+  - config-all.sh moreipme is configured only if the ip command is available
+  - config-all.sh: cronjobs and profile will be added only if /etc/cron.d and /etc/profile exist.
+  - Now using env bash in qmailctl
+  - config-all.sh: dropped option -g in chgrp usage
+  - config-all now uses POSIX dd instead of head
+  - dkim.c: replace OPENSSL_realloc with realloc for LibreSSL compatibility
+  - qtmp.h1: fix utmp handling and fdutmp initialization for OpenBSD compatibility
+  - qtmp.h1: added expected ';' after declarator
+  - Fix TLS handshake state detection for LibreSSL compatibility in qmail-remote
+  - qtmp.h1: including substdio.h
+  - qmail-local: add unused parameter name to sigalrm() definition
+  - qmail dir is calculated in create_notlshost_file function
 
 - Apr 7, 2026
   - (security) Fixed a command injection vulnerability in qmail-remote by removing unsafe shell usage and
