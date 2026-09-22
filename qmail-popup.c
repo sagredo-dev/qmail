@@ -16,7 +16,7 @@
 
 void die() { _exit(1); }
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   r = timeoutread(1200,fd,buf,len);
@@ -24,7 +24,7 @@ ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
   return r;
 }
 
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
   r = timeoutwrite(1200,fd,buf,len);
@@ -38,7 +38,7 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 char ssinbuf[128];
 substdio ssin = SUBSTDIO_FDBUF(saferead,0,ssinbuf,sizeof ssinbuf);
 
-void puts2(s) char *s;
+void puts2(char *s)
 {
   substdio_puts(&ssout,s);
 }
@@ -46,7 +46,7 @@ void flush()
 {
   substdio_flush(&ssout);
 }
-void err(s) char *s;
+void err(char *s)
 {
   puts2("-ERR ");
   puts2(s);
@@ -64,10 +64,10 @@ void die_badauth() { err("authorization failed"); }
 
 void err_syntax() { err("syntax error"); }
 void err_wantuser() { err("USER first"); }
-void err_authoriz(arg) char *arg; { err("authorization first"); }
+void err_authoriz(char *arg) { err("authorization first"); }
 
-void okay(arg) char *arg; { puts2("+OK \r\n"); flush(); }
-void pop3_quit(arg) char *arg; { okay(0); die(); }
+void okay(char *arg) { puts2("+OK \r\n"); flush(); }
+void pop3_quit(char *arg) { okay(0); die(); }
 
 
 char unique[FMT_ULONG + FMT_ULONG + 3];
@@ -79,10 +79,10 @@ substdio ssup;
 char upbuf[128];
 
 
-void doanddie(user,userlen,pass)
-char *user;
-unsigned int userlen; /* including 0 byte */
-char *pass;
+void doanddie(
+char *user,
+unsigned int userlen, /* including 0 byte */
+char *pass)
 {
   int child;
   int wstat;
@@ -133,7 +133,7 @@ void pop3_greet()
   puts2(">\r\n");
   flush();
 }
-void pop3_user(arg) char *arg;
+void pop3_user(char *arg)
 {
   if (!*arg) { err_syntax(); return; }
   okay(0);
@@ -141,13 +141,13 @@ void pop3_user(arg) char *arg;
   if (!stralloc_copys(&username,arg)) die_nomem(); 
   if (!stralloc_0(&username)) die_nomem(); 
 }
-void pop3_pass(arg) char *arg;
+void pop3_pass(char *arg)
 {
   if (!seenuser) { err_wantuser(); return; }
   if (!*arg) { err_syntax(); return; }
   doanddie(username.s,username.len,arg);
 }
-void pop3_apop(arg) char *arg;
+void pop3_apop(char *arg)
 {
   char *space;
   space = arg + str_chr(arg,' ');
@@ -165,11 +165,9 @@ struct commands pop3commands[] = {
 , { 0, err_authoriz, 0 }
 } ;
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
-  sig_alarmcatch(die);
+  sig_alarmcatch((void (*)(int))die);
   sig_pipeignore();
  
   hostname = argv[1];

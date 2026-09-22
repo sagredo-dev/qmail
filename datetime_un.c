@@ -1,8 +1,7 @@
 #include "datetime.h"
 
 /* roughly 100x faster than mktime() */
-datetime_sec datetime_untai(dt)
-struct datetime *dt;
+datetime_sec datetime_untai(struct datetime *dt)
 {
   int year;
   int day;

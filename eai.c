@@ -11,7 +11,7 @@ extern void temp_nomem();
   returns 1 if the remote server advertises a specific verb
   tx notqmail/mbhangui-smtputf8
  */
-int get_capa(const char *capa)
+int get_capa(char *capa)
 {
   int i = 0, len;
   len = str_len(capa);

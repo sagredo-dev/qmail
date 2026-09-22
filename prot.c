@@ -5,7 +5,7 @@
 
 /* XXX: there are more portability problems here waiting to leap out at me */
 
-int prot_gid(gid) int gid;
+int prot_gid(int gid)
 {
 #ifdef HASSHORTSETGROUPS
   short x[2];
@@ -17,7 +17,7 @@ int prot_gid(gid) int gid;
   return setgid(gid); /* _should_ be redundant, but on some systems it isn't */
 }
 
-int prot_uid(uid) int uid;
+int prot_uid(int uid)
 {
   return setuid(uid);
 }

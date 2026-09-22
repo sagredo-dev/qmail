@@ -1,8 +1,7 @@
 #include <limits.h>
+#include <stdlib.h>
 #include "alloc.h"
 #include "error.h"
-extern void *malloc();
-extern void free();
 
 #define ALIGNMENT 16 /* XXX: assuming that this alignment is enough */
 #define SPACE 4096 /* must be multiple of ALIGNMENT */
@@ -12,8 +11,7 @@ static aligned realspace[SPACE / ALIGNMENT];
 #define space ((char *) realspace)
 static unsigned int avail = SPACE; /* multiple of ALIGNMENT; 0<=avail<=SPACE */
 
-/*@null@*//*@out@*/char *alloc(n)
-long unsigned int n;
+/*@null@*//*@out@*/char *alloc(long unsigned int n)
 {
   char *x;
   if (n >= (INT_MAX >> 3)) {
@@ -27,8 +25,7 @@ long unsigned int n;
   return x;
 }
 
-void alloc_free(x)
-char *x;
+void alloc_free(char *x)
 {
   if (x >= space)
     if (x < space + SPACE)

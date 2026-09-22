@@ -14,8 +14,8 @@ extern struct strerr strerr_sys;
 extern void strerr_sysinit();
 
 extern char *strerr();
-extern void strerr_warn();
-extern void strerr_die();
+extern void strerr_warn(char *, char *, char *, char *, char *, char *, struct strerr *);
+extern void strerr_die(int , char *, char *, char *, char *, char *, char *, struct strerr *);
 
 #define STRERR(r,se,a) \
 { se.who = 0; se.x = a; se.y = 0; se.z = 0; return r; }

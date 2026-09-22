@@ -3,9 +3,7 @@
 #include "alloc.h"
 #include "cdbmss.h"
 
-int cdbmss_start(c,fd)
-struct cdbmss *c;
-int fd;
+int cdbmss_start(struct cdbmss *c, int fd)
 {
   cdbmake_init(&c->cdbm);
   c->fd = fd;
@@ -14,12 +12,12 @@ int fd;
   return seek_set(fd,(seek_pos) c->pos);
 }
 
-int cdbmss_add(c,key,keylen,data,datalen)
-struct cdbmss *c;
-unsigned char *key;
-unsigned int keylen;
-unsigned char *data;
-unsigned int datalen;
+int cdbmss_add(
+struct cdbmss *c,
+unsigned char *key,
+unsigned int keylen,
+unsigned char *data,
+unsigned int datalen)
 {
   uint32 h;
   int i;
@@ -35,13 +33,11 @@ unsigned int datalen;
     h = cdbmake_hashadd(h,(unsigned int) key[i]);
 
   if (!cdbmake_add(&c->cdbm,h,c->pos,alloc)) return -1;
-
   c->pos += 8 + keylen + datalen; /* XXX: overflow? */
   return 0;
 }
 
-int cdbmss_finish(c)
-struct cdbmss *c;
+int cdbmss_finish(struct cdbmss *c)
 {
   int i;
   uint32 len;

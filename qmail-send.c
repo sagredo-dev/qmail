@@ -33,9 +33,7 @@
 #include "fmtqfn.h"
 #include "readsubdir.h"
 #include "srs.h"
-
 #include "auto_spawn.h"
-
 #include "channels.h"
 
 /* critical timing feature #1: if not triggered, do not busy-loop */
@@ -86,7 +84,7 @@ void cleandied() { log1("alert: oh no! lost qmail-clean connection! dying...\n")
  flagexitasap = 1; }
 
 int flagspawnalive[CHANNELS];
-void spawndied(c) int c; { log1("alert: oh no! lost spawn connection! dying...\n");
+void spawndied(int c) { log1("alert: oh no! lost spawn connection! dying...\n");
  flagspawnalive[c] = 0; flagexitasap = 1; }
 
 #define REPORTMAX 10000
@@ -104,14 +102,14 @@ void fnmake_init()
  while (!stralloc_ready(&fn2,FMTQFN)) nomem();
 }
 
-void fnmake_info(id) unsigned long id; { fn.len = fmtqfn(fn.s,"info/",id,1); }
-void fnmake_todo(id) unsigned long id; { fn.len = fmtqfn(fn.s,"todo/",id,1); }
-void fnmake_mess(id) unsigned long id; { fn.len = fmtqfn(fn.s,"mess/",id,1); }
-void fnmake_foop(id) unsigned long id; { fn.len = fmtqfn(fn.s,"foop/",id,0); }
-void fnmake_split(id) unsigned long id; { fn.len = fmtqfn(fn.s,"",id,1); }
-void fnmake2_bounce(id) unsigned long id;
+void fnmake_info(unsigned long id) { fn.len = fmtqfn(fn.s,"info/",id,1); }
+void fnmake_todo(unsigned long id) { fn.len = fmtqfn(fn.s,"todo/",id,1); }
+void fnmake_mess(unsigned long id) { fn.len = fmtqfn(fn.s,"mess/",id,1); }
+void fnmake_foop(unsigned long id) { fn.len = fmtqfn(fn.s,"foop/",id,0); }
+void fnmake_split(unsigned long id) { fn.len = fmtqfn(fn.s,"",id,1); }
+void fnmake2_bounce(unsigned long id)
 { fn2.len = fmtqfn(fn2.s,"bounce/",id,0); }
-void fnmake_chanaddr(id,c) unsigned long id; int c;
+void fnmake_chanaddr(unsigned long id, int c)
 { fn.len = fmtqfn(fn.s,chanaddr[c],id,1); }
 
 
@@ -121,8 +119,7 @@ stralloc rwline = {0};
 
 /* 1 if by land, 2 if by sea, 0 if out of memory. not allowed to barf. */
 /* may trash recip. must set up rwline, between a T and a \0. */
-int rewrite(recip)
-char *recip;
+int rewrite(char *recip)
 {
   int i;
   int j;
@@ -179,10 +176,7 @@ char *recip;
   return 2;
 }
 
-void senderadd(sa,sender,recip)
-stralloc *sa;
-char *sender;
-char *recip;
+void senderadd(stralloc *sa, char *sender, char *recip)
 {
  int i;
  int j;
@@ -212,10 +206,7 @@ char *recip;
 
 /* this file is too long ---------------------------------------------- INFO */
 
-int getinfo(sa,dt,id)
-stralloc *sa;
-datetime_sec *dt;
-unsigned long id;
+int getinfo(stralloc *sa, datetime_sec *dt, unsigned long id)
 {
  int fdinfo;
  struct stat st;
@@ -228,7 +219,7 @@ unsigned long id;
  fdinfo = open_read(fn.s);
  if (fdinfo == -1) return 0;
  if (fstat(fdinfo,&st) == -1) { close(fdinfo); return 0; }
- substdio_fdbuf(&ss,read,fdinfo,buf,sizeof(buf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int, const void *, size_t))read,fdinfo,buf,sizeof(buf));
  if (getln(&ss,&line,&match,'\0') == -1) { close(fdinfo); return 0; }
  close(fdinfo);
  if (!match) return 0;
@@ -253,27 +244,21 @@ void comm_init()
 {
  int c;
  substdio_fdbuf(&sstoqc,write,5,sstoqcbuf,sizeof(sstoqcbuf));
- substdio_fdbuf(&ssfromqc,read,6,ssfromqcbuf,sizeof(ssfromqcbuf));
+ substdio_fdbuf(&ssfromqc,(ssize_t (*)(int, const void *, size_t))read,6,ssfromqcbuf,sizeof(ssfromqcbuf));
  for (c = 0;c < CHANNELS;++c)
    if (ndelay_on(chanfdout[c]) == -1)
    /* this is so stupid: NDELAY semantics should be default on write */
      spawndied(c); /* drastic, but better than risking deadlock */
 }
 
-int comm_canwrite(c)
-int c;
+int comm_canwrite(int c)
 {
  /* XXX: could allow a bigger buffer; say 10 recipients */
  if (comm_buf[c].s && comm_buf[c].len) return 0;
  return 1;
 }
 
-void comm_write(c,delnum,id,sender,recip)
-int c;
-int delnum;
-unsigned long id;
-char *sender;
-char *recip;
+void comm_write(int c, int delnum, unsigned long id, char *sender, char *recip)
 {
  char ch;
  if (comm_buf[c].s && comm_buf[c].len) return;
@@ -292,9 +277,7 @@ char *recip;
  comm_pos[c] = 0;
 }
 
-void comm_selprep(nfds,wfds)
-int *nfds;
-fd_set *wfds;
+void comm_selprep(int *nfds, fd_set *wfds)
 {
  int c;
  for (c = 0;c < CHANNELS;++c)
@@ -307,8 +290,7 @@ fd_set *wfds;
       }
 }
 
-void comm_do(wfds)
-fd_set *wfds;
+void comm_do(fd_set *wfds)
 {
  int c;
  for (c = 0;c < CHANNELS;++c)
@@ -349,8 +331,7 @@ void cleanup_init()
  cleanuptime = now();
 }
 
-void cleanup_selprep(wakeup)
-datetime_sec *wakeup;
+void cleanup_selprep(datetime_sec *wakeup)
 {
  if (flagcleanup) *wakeup = 0;
  if (*wakeup > cleanuptime) *wakeup = cleanuptime;
@@ -365,7 +346,7 @@ void cleanup_do()
  if (!flagcleanup)
   {
    if (recent < cleanuptime) return;
-   readsubdir_init(&cleanupdir,"mess",pausedir);
+   readsubdir_init(&cleanupdir,"mess",(void (*)(char *))pausedir);
    flagcleanup = 1;
   }
 
@@ -407,8 +388,7 @@ prioq pqchan[CHANNELS];
 /* pqchan 1: -todo +info ?local +remote */
 prioq pqfail = {0}; /* stat() failure; has to be pqadded again */
 
-void pqadd(id)
-unsigned long id;
+void pqadd(unsigned long id)
 {
  struct prioq_elt pe;
  struct prioq_elt pechan[CHANNELS];
@@ -461,7 +441,7 @@ void pqstart()
  int x;
  unsigned long id;
 
- readsubdir_init(&rs,"info",pausedir);
+ readsubdir_init(&rs,"info",(void (*)(char *))pausedir);
 
  while ((x = readsubdir_next(&rs,&id)))
    if (x > 0)
@@ -533,9 +513,7 @@ int job_avail()
  return 0;
 }
 
-int job_open(id,channel)
-unsigned long id;
-int channel;
+int job_open(unsigned long id, int channel)
 {
  int j;
  for (j = 0;j < numjobs;++j) if (!jo[j].refs) break;
@@ -548,8 +526,7 @@ int channel;
  return j;
 }
 
-void job_close(j)
-int j;
+void job_close(int j)
 {
  struct prioq_elt pe;
  struct stat st;
@@ -591,8 +568,7 @@ int j;
 
 /* this file is too long ------------------------------------------- BOUNCES */
 
-char *stripvdomprepend(recip)
-char *recip;
+char *stripvdomprepend(char *recip)
 {
  int i;
  char *domain;
@@ -619,10 +595,7 @@ char *recip;
 
 stralloc bouncetext = {0};
 
-void addbounce(id,recip,report)
-unsigned long id;
-char *recip;
-char *report;
+void addbounce(unsigned long id, char *recip, char *report)
 {
  int fd;
  int pos;
@@ -665,8 +638,7 @@ char *report;
  close(fd);
 }
 
-int injectbounce(id)
-unsigned long id;
+int injectbounce(unsigned long id)
 {
  struct qmail qqt;
  struct stat st;
@@ -765,7 +737,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
      qmail_fail(&qqt);
    else
     {
-     substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssread,(ssize_t (*)(int, const void *, size_t))read,fd,inbuf,sizeof(inbuf));
      while ((r = substdio_get(&ssread,buf,sizeof(buf))) > 0)
        qmail_put(&qqt,buf,r);
      close(fd);
@@ -786,7 +758,7 @@ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
     {
      int bytestogo = bouncemaxbytes;
      int bytestoget = (bytestogo < sizeof buf) ? bytestogo : sizeof buf;
-     substdio_fdbuf(&ssread,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssread,(ssize_t (*)(int, const void *, size_t))read,fd,inbuf,sizeof(inbuf));
      while (bytestoget > 0 && (r = substdio_get(&ssread,buf,bytestoget)) > 0) {
        qmail_put(&qqt,buf,r);
        bytestogo -= bytestoget;
@@ -879,16 +851,12 @@ int del_canexit()
  return 1;
 }
 
-int del_avail(c)
-int c;
+int del_avail(int c)
 {
   return flagspawnalive[c] && comm_canwrite(c) && (concurrencyused[c] < concurrency[c]);
 }
 
-void del_start(j,mpos,recip)
-int j;
-seek_pos mpos;
-char *recip;
+void del_start(int j, seek_pos mpos, char *recip)
 {
  int i;
  int c;
@@ -918,10 +886,7 @@ char *recip;
  del_status();
 }
 
-void markdone(c,id,pos)
-int c;
-unsigned long id;
-seek_pos pos;
+void markdone(int c, unsigned long id, seek_pos pos)
 {
  struct stat st;
  int fd;
@@ -940,8 +905,7 @@ seek_pos pos;
  log3("warning: trouble marking ",fn.s,"; message will be delivered twice!\n");
 }
 
-void del_dochan(c)
-int c;
+void del_dochan(int c)
 {
  int r;
  char ch;
@@ -1009,9 +973,7 @@ int c;
   }
 }
 
-void del_selprep(nfds,rfds)
-int *nfds;
-fd_set *rfds;
+void del_selprep(int *nfds, fd_set *rfds)
 {
  int c;
  for (c = 0;c < CHANNELS;++c)
@@ -1023,8 +985,7 @@ fd_set *rfds;
     }
 }
 
-void del_do(rfds)
-fd_set *rfds;
+void del_do(fd_set *rfds)
 {
  int c;
  for (c = 0;c < CHANNELS;++c)
@@ -1053,8 +1014,7 @@ void pass_init()
  for (c = 0;c < CHANNELS;++c) pass[c].id = 0;
 }
 
-void pass_selprep(wakeup)
-datetime_sec *wakeup;
+void pass_selprep(datetime_sec *wakeup)
 {
  int c;
  struct prioq_elt pe;
@@ -1077,8 +1037,8 @@ datetime_sec *wakeup;
      *wakeup = pe.dt;
 }
 
-static datetime_sec squareroot(x) /* result^2 <= x < (result + 1)^2 */
-datetime_sec x; /* assuming: >= 0 */
+static datetime_sec squareroot( /* result^2 <= x < (result + 1)^2 */
+datetime_sec x /* assuming: >= 0 */)
 {
  datetime_sec y;
  datetime_sec yy;
@@ -1094,9 +1054,7 @@ datetime_sec x; /* assuming: >= 0 */
  return y;
 }
 
-datetime_sec nextretry(birth,c)
-datetime_sec birth;
-int c;
+datetime_sec nextretry(datetime_sec birth, int c)
 {
  int n;
 
@@ -1106,8 +1064,7 @@ int c;
  return birth + n * n;
 }
 
-void pass_dochan(c)
-int c;
+void pass_dochan(int c)
 {
  datetime_sec birth;
  struct prioq_elt pe;
@@ -1129,7 +1086,7 @@ int c;
    if (pass[c].fd == -1) goto trouble;
    if (!getinfo(&line,&birth,pe.id)) { close(pass[c].fd); goto trouble; }
    pass[c].id = pe.id;
-   substdio_fdbuf(&pass[c].ss,read,pass[c].fd,pass[c].buf,sizeof(pass[c].buf));
+   substdio_fdbuf(&pass[c].ss,(ssize_t (*)(int, const void *, size_t))read,pass[c].fd,pass[c].buf,sizeof(pass[c].buf));
    pass[c].j = job_open(pe.id,c);
    jo[pass[c].j].retry = nextretry(birth,c);
    jo[pass[c].j].flagdying = (recent > birth + lifetime);
@@ -1181,8 +1138,7 @@ int c;
  while (!prioq_insert(&pqchan[c],&pe)) nomem();
 }
 
-void messdone(id)
-unsigned long id;
+void messdone(unsigned long id)
 {
  char ch;
  int c;
@@ -1284,10 +1240,7 @@ void todo_init()
  trigger_set();
 }
 
-void todo_selprep(nfds,rfds,wakeup)
-int *nfds;
-fd_set *rfds;
-datetime_sec *wakeup;
+void todo_selprep(int *nfds, fd_set *rfds, datetime_sec *wakeup)
 {
  if (flagexitasap) return;
  trigger_selprep(nfds,rfds);
@@ -1295,8 +1248,7 @@ datetime_sec *wakeup;
  if (*wakeup > nexttodorun) *wakeup = nexttodorun;
 }
 
-void todo_do(rfds)
-fd_set *rfds;
+void todo_do(fd_set *rfds)
 {
  struct stat st;
  substdio ss; int fd;
@@ -1508,10 +1460,7 @@ void todo_init()
   return;
 }
 
-void todo_selprep(nfds,rfds,wakeup)
-int *nfds;
-fd_set *rfds;
-datetime_sec *wakeup;
+void todo_selprep(int *nfds, fd_set *rfds, datetime_sec *wakeup)
 {
   if (flagexitasap) {
     if (flagtodoalive) {
@@ -1574,8 +1523,7 @@ void todo_del(char* s)
  return;
 }
 
-void todo_do(rfds)
-fd_set *rfds;
+void todo_do(fd_set *rfds)
 {
   int r;
   char ch;
@@ -1717,9 +1665,9 @@ void regetcontrols()
  if (control_readfile(&newlocals,"control/locals",1) != 1)
   { log1("alert: unable to reread control/locals\n"); return; }
  if (control_readint(&concurrency[0],"control/concurrencylocal") == -1)
-  { log1("alert: unable to reread control/concurrencylocal\n",0); return; }
+  { log1("alert: unable to reread control/concurrencylocal\n"); return; }
  if (control_readint(&concurrency[1],"control/concurrencyremote") == -1)
-  { log1("alert: unable to reread control/concurrencyremote\n",0); return; }
+  { log1("alert: unable to reread control/concurrencyremote\n"); return; }
  r = control_readfile(&newvdoms,"control/virtualdomains",0);
  if (r == -1)
   { log1("alert: unable to reread control/virtualdomains\n"); return; }
@@ -1896,9 +1844,9 @@ int main()
  if (chdir("queue") == -1)
   { log1("alert: cannot start: unable to switch to queue directory\n"); _exit(111); }
  sig_pipeignore();
- sig_termcatch(sigterm);
- sig_alarmcatch(sigalrm);
- sig_hangupcatch(sighup);
+ sig_termcatch((void (*)(int))sigterm);
+ sig_alarmcatch((void (*)(int))sigalrm);
+ sig_hangupcatch((void (*)(int))sighup);
  sig_childdefault();
  umask(077);
 

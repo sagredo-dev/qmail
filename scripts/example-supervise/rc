@@ -11,10 +11,12 @@ if [ -r $QMAILDIR/control/filterargs ] && [ -n "$DKIM_ON" ]; then
  # NB: DKIMSIGNOPTIONS=-z 2 for 2048 bit long rsa key
  #     DKIMSIGNOPTIONS not defined for 1024 bit long rsa key
  exec env - PATH="$QMAILDIR/bin:$PATH" \
+ LD_LIBRARY_PATH=/usr/local/lib \
  QMAILREMOTE=$QMAILDIR/bin/spawn-filter  \
  qmail-start ./Maildir
 
 else
  exec env - PATH="$QMAILDIR/bin:$PATH" \
+ LD_LIBRARY_PATH=/usr/local/lib \
  qmail-start ./Maildir
 fi

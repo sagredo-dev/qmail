@@ -45,7 +45,7 @@ int main()
   fd = open_read("control/morercpthosts");
   if (fd == -1) die_read();
 
-  substdio_fdbuf(&ssin,read,fd,inbuf,sizeof inbuf);
+  substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,fd,inbuf,sizeof inbuf);
 
   fdtemp = open_trunc("control/morercpthosts.tmp");
   if (fdtemp == -1) die_write();

@@ -32,9 +32,7 @@ stralloc remotename = {0};
 
 char temp[IPFMT + FMT_ULONG];
 
-int main(argc,argv)
-int argc;
-char *argv[];
+int main(int argc, char *argv[])
 {
  strsalloc ssa = {0};
  int dummy;
@@ -73,7 +71,7 @@ char *argv[];
    temp[fmt_ulong(temp,localport)] = 0;
    if (!env_put2("TCPLOCALPORT",temp)) die();
 
-   byte_copy(&iplocal,4,&salocal.sin_addr);
+   byte_copy((char *)&iplocal,4,(const char *)&salocal.sin_addr);
    temp[ip_fmt(temp,&iplocal)] = 0;
    if (!env_put2("TCPLOCALIP",temp)) die();
 
@@ -99,7 +97,7 @@ char *argv[];
    temp[fmt_ulong(temp,remoteport)] = 0;
    if (!env_put2("TCPREMOTEPORT",temp)) die();
 
-   byte_copy(&ipremote,4,&saremote.sin_addr);
+   byte_copy((char *)&ipremote,4,(const char *)&saremote.sin_addr);
    temp[ip_fmt(temp,&ipremote)] = 0;
    if (!env_put2("TCPREMOTEIP",temp)) die();
 

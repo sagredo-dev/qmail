@@ -17,7 +17,7 @@
 void badproto() { _exit(100); }
 void resources() { _exit(111); }
 
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
   r = write(fd,buf,len);
@@ -28,7 +28,7 @@ ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
 char ssoutbuf[256];
 substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   substdio_flush(&ssout);
@@ -91,7 +91,7 @@ int main()
   unsigned long u;
  
   sig_pipeignore();
-  sig_alarmcatch(resources);
+  sig_alarmcatch((void (*)(int))resources);
   alarm(3600);
  
   if (chdir(auto_qmail) == -1) resources();

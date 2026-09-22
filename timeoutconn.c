@@ -10,12 +10,7 @@
 #include "byte.h"
 #include "timeoutconn.h"
 
-int timeoutconn(s,ip,outip,port,timeout)
-int s;
-struct ip_address *ip;
-struct ip_address *outip;
-unsigned int port;
-int timeout;
+int timeoutconn(int s, struct ip_address *ip, struct ip_address *outip, unsigned int port, int timeout)
 {
   char ch;
   struct sockaddr_in sin;
@@ -24,14 +19,14 @@ int timeout;
   struct timeval tv;
  
   /* bind() an outgoing ipaddr */
-  byte_zero(&sin,sizeof(sin));
-  byte_copy(&sin.sin_addr.s_addr,4,outip);
+  byte_zero((char *)&sin,sizeof(sin));
+  byte_copy((char *)&sin.sin_addr.s_addr,4,(char *)outip);
   sin.sin_family = AF_INET;
 
   if (-1 == bind(s,(struct sockaddr *) &sin,sizeof(sin))) return -1;
 
-  byte_zero(&sin,sizeof(sin));
-  byte_copy(&sin.sin_addr,4,ip);
+  byte_zero((char *)&sin,sizeof(sin));
+  byte_copy((char *)&sin.sin_addr,4,(char *)ip);
   x = (char *) &sin.sin_port;
   x[1] = port; port >>= 8; x[0] = port;
   sin.sin_family = AF_INET;

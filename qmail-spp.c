@@ -44,7 +44,7 @@
 
 /* stuff needed from qmail-smtpd */
 extern void flush();
-extern void out();
+extern void out(char *);
 extern void die_nomem();
 extern stralloc addr;
 /* *** */
@@ -64,7 +64,7 @@ static unsigned long rcptcountall;
 static substdio ssdown;
 static char downbuf[128];
 
-static void err_spp(s1, s2) char *s1, *s2; { out("451 qmail-spp failure: "); out(s1); out(": "); out(s2); out(" (#4.3.0)\r\n"); }
+static void err_spp(char *s1, char *s2) { out("451 qmail-spp failure: "); out(s1); out(": "); out(s2); out(" (#4.3.0)\r\n"); }
 
 int spp_init()
 {
@@ -103,7 +103,7 @@ int spp_init()
 
 void sppout() { if (sppmsg.len) out(sppmsg.s); out("\r\n"); }
 
-int spp(plugins, addrenv) stralloc *plugins; char *addrenv;
+int spp(stralloc *plugins, char *addrenv)
 {
   static int pipes[2];
   static int i, pid, wstat, match, last;
@@ -135,7 +135,7 @@ int spp(plugins, addrenv) stralloc *plugins; char *addrenv;
     }
 
     close(pipes[1]);
-    substdio_fdbuf(&ssdown, read, pipes[0], downbuf, sizeof(downbuf));
+    substdio_fdbuf(&ssdown, (ssize_t (*)(int, const void *, size_t))read, pipes[0], downbuf, sizeof(downbuf));
     do {
       if (getln(&ssdown, &data, &match, '\n') == -1) die_nomem();
       if (data.len > 1) {
@@ -194,7 +194,7 @@ int spp(plugins, addrenv) stralloc *plugins; char *addrenv;
   return 1;
 }
 
-int spp_errors(errors) stralloc *errors;
+int spp_errors(stralloc *errors)
 {
   if (!errors->len) return 1;
   if (!stralloc_0(errors)) die_nomem();
@@ -204,7 +204,7 @@ int spp_errors(errors) stralloc *errors;
 
 int spp_connect() { return spp(&plugins_connect, 0); }
 
-int spp_helo(arg) char *arg;
+int spp_helo(char *arg)
 {
   if (!env_put2("SMTPHELOHOST", arg)) die_nomem();
   return spp(&plugins_helo, 0);
@@ -227,7 +227,7 @@ int spp_mail()
   return spp(&plugins_mail, "SMTPMAILFROM");
 }
 
-int spp_rcpt(allowed) int allowed;
+int spp_rcpt(int allowed)
 {
   if (!spp_errors(&error_rcpt)) return 0;
   rcptcountstr[fmt_ulong(rcptcountstr, rcptcount)] = 0;
@@ -253,7 +253,7 @@ int spp_data()
   return spp(&plugins_data, 0);
 }
 
-int spp_auth(method, user) char *method, *user;
+int spp_auth(char *method, char *user)
 {
   if (!env_put2("SMTPAUTHMETHOD", method)) die_nomem();
   if (!env_put2("SMTPAUTHUSER", user)) die_nomem();

@@ -19,8 +19,7 @@ static void setup_qqargs()
     binqqargs[0] = "bin/qmail-queue";
 }
 
-int qmail_open(qq)
-struct qmail *qq;
+int qmail_open(struct qmail *qq)
 {
   int pim[2];
   int pie[2];
@@ -63,27 +62,27 @@ struct qmail *qq;
   return 0;
 }
 
-unsigned long qmail_qp(qq) struct qmail *qq;
+unsigned long qmail_qp(struct qmail *qq)
 {
   return qq->pid;
 }
 
-void qmail_fail(qq) struct qmail *qq;
+void qmail_fail(struct qmail *qq)
 {
   qq->flagerr = 1;
 }
 
-void qmail_put(qq,s,len) struct qmail *qq; char *s; int len;
+void qmail_put(struct qmail *qq, char *s, int len)
 {
   if (!qq->flagerr) if (substdio_put(&qq->ss,s,len) == -1) qq->flagerr = 1;
 }
 
-void qmail_puts(qq,s) struct qmail *qq; char *s;
+void qmail_puts(struct qmail *qq, char *s)
 {
   if (!qq->flagerr) if (substdio_puts(&qq->ss,s) == -1) qq->flagerr = 1;
 }
 
-void qmail_from(qq,s) struct qmail *qq; char *s;
+void qmail_from(struct qmail *qq, char *s)
 {
   if (substdio_flush(&qq->ss) == -1) qq->flagerr = 1;
   close(qq->fdm);
@@ -93,15 +92,14 @@ void qmail_from(qq,s) struct qmail *qq; char *s;
   qmail_put(qq,"",1);
 }
 
-void qmail_to(qq,s) struct qmail *qq; char *s;
+void qmail_to(struct qmail *qq, char *s)
 {
   qmail_put(qq,"T",1);
   qmail_puts(qq,s);
   qmail_put(qq,"",1);
 }
 
-char *qmail_close(qq)
-struct qmail *qq;
+char *qmail_close(struct qmail *qq)
 {
   int wstat;
   int exitcode;
@@ -113,7 +111,7 @@ struct qmail *qq;
   if (!qq->flagerr) if (substdio_flush(&qq->ss) == -1) qq->flagerr = 1;
   close(qq->fde);
 
-  substdio_fdbuf(&qq->ss, read, qq->fdc, qq->buf, sizeof(qq->buf));
+  substdio_fdbuf(&qq->ss, (ssize_t (*)(int,const void*,size_t))read, qq->fdc, qq->buf, sizeof(qq->buf));
 
   while (substdio_bget(&qq->ss, &ch, 1) && len < 255)
   {

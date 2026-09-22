@@ -5,9 +5,9 @@
 #include "now.h"
 #include "str.h"
 #include "direntry.h"
-#include "getln.h"
 #include "stralloc.h"
 #include "substdio.h"
+#include "stralloc.h"
 #include "subfd.h"
 #include "byte.h"
 #include "scan.h"
@@ -16,6 +16,7 @@
 #include "exit.h"
 #include "fmtqfn.h"
 #include "auto_qmail.h"
+#include "getln.h"
 
 #define OSSIFIED 129600 /* see qmail-send.c */
 
@@ -47,7 +48,7 @@ void cleanuppid()
 
 char fnbuf[FMTQFN];
 
-void respond(s) char *s; { if (substdio_putflush(subfdoutsmall,s,1) == -1) _exit(100); }
+void respond(char *s) { if (substdio_putflush(subfdoutsmall,s,1) == -1) _exit(100); }
 
 int main()
 {

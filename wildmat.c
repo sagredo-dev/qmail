@@ -49,14 +49,11 @@
 
 
 /*- Match text and p, return TRUE, FALSE, or ABORT.  */
-static int
-DoMatch(text, p)
-	register char  *text;
-	register char  *p;
+static int DoMatch(char *text, char *p)
 {
-	register int    last;
-	register int    matched;
-	register int    reverse;
+	int    last;
+	int    matched;
+	int    reverse;
 
 	for (; *p; text++, p++)
 	{
@@ -116,10 +113,7 @@ DoMatch(text, p)
 
 
 /*- User-level routine.  Returns TRUE or FALSE.  */
-int
-wildmat_internal(text, p)
-	char           *text;
-	char           *p;
+int wildmat_internal(char *text, char *p)
 {
 #ifdef	OPTIMIZE_JUST_STAR
 	if (p[0] == '*' && p[1] == '\0')

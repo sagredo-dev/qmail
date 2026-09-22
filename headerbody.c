@@ -4,10 +4,7 @@
 #include "hfield.h"
 #include "headerbody.h"
 
-static int getsa(ss,sa,match)
-substdio *ss;
-stralloc *sa;
-int *match;
+static int getsa(substdio *ss, stralloc *sa, int *match)
 {
  if (!*match) return 0;
  if (getln(ss,sa,match,'\n') == -1) return -1;
@@ -20,11 +17,7 @@ int *match;
 static stralloc line = {0};
 static stralloc nextline = {0};
 
-int headerbody(ss,dohf,hdone,dobl)
-substdio *ss;
-void (*dohf)();
-void (*hdone)();
-void (*dobl)();
+int headerbody(substdio *ss, void (*dohf)(stralloc *), void (*hdone)(), void (*dobl)(stralloc *))
 {
  int match;
  int flaglineok;

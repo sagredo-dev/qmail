@@ -9,11 +9,7 @@
  */
 #include "str.h"
 
-unsigned int
-str_copyb(s, t, max)
-      register char  *s;
-      register char  *t;
-      unsigned int    max;
+unsigned int str_copyb(char *s, char *t, int max)
 {
       register int    len;
 

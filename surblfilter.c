@@ -404,7 +404,7 @@ cachefunc(char *uri, size_t urilen, char **text, int flag)
 		}
 		if ((fd = open(cachefile.s, O_RDONLY)) == -1)
 			my_error(cachefile.s, 0, 2);
-		substdio_fdbuf(&ss, read, fd, inbuf, sizeof(inbuf));
+		substdio_fdbuf(&ss, (ssize_t (*)(int, const void *, size_t))read, fd, inbuf, sizeof(inbuf));
 		if (getln(&ss, &reason, &match, '\n') == -1) {
 			close(fd);
 			return -1;

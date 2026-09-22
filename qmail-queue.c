@@ -68,7 +68,7 @@ void cleanup()
   }
 }
 
-void die(e) int e; { _exit(e); }
+void die(int e) { _exit(e); }
 void die_write() { cleanup(); die(53); }
 void die_read() { cleanup(); die(54); }
 void sigalrm() { /* thou shalt not clean up here */ die(52); }
@@ -80,8 +80,7 @@ char *received;
 unsigned int authenticatedlen;
 char *authenticated;
 
-static unsigned int receivedfmt(s)
-char *s;
+static unsigned int receivedfmt(char *s)
 {
  unsigned int i;
  unsigned int len;
@@ -113,8 +112,7 @@ void received_setup()
  receivedfmt(received);
 }
 
-static unsigned int authenticatedfmt(s)
-char *s;
+static unsigned int authenticatedfmt(char *s)
 {
  char *e;
  unsigned int i;
@@ -146,9 +144,7 @@ void authenticated_setup()
  authenticatedfmt(authenticated);
 }
 
-unsigned int pidfmt(s,seq)
-char *s;
-unsigned long seq;
+unsigned int pidfmt(char *s, unsigned long seq)
 {
  unsigned int i;
  unsigned int len;
@@ -165,9 +161,7 @@ unsigned long seq;
  return len;
 }
 
-char *fnnum(dirslash,flagsplit)
-char *dirslash;
-int flagsplit;
+char *fnnum(char *dirslash, int flagsplit)
 {
  char *s;
 
@@ -223,8 +217,8 @@ int main()
 
  sig_pipeignore();
  sig_miscignore();
- sig_alarmcatch(sigalrm);
- sig_bugcatch(sigbug);
+ sig_alarmcatch((void (*)(int))sigalrm);
+ sig_bugcatch((void (*)(int))sigbug);
 
  alarm(DEATH);
 
@@ -248,7 +242,7 @@ int main()
  flagmademess = 1;
 
  substdio_fdbuf(&ssout,write,messfd,outbuf,sizeof(outbuf));
- substdio_fdbuf(&ssin,read,0,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,0,inbuf,sizeof(inbuf));
 
  if (substdio_bput(&ssout,received,receivedlen) == -1) die_write();
 
@@ -268,7 +262,7 @@ int main()
  flagmadeintd = 1;
 
  substdio_fdbuf(&ssout,write,intdfd,outbuf,sizeof(outbuf));
- substdio_fdbuf(&ssin,read,1,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,1,inbuf,sizeof(inbuf));
 
  if (substdio_bput(&ssout,"u",1) == -1) die_write();
  if (substdio_bput(&ssout,tmp,fmt_ulong(tmp,uid)) == -1) die_write();
@@ -343,8 +337,7 @@ int main()
  die(0);
 }
 
-int tapcheck(t)
-char t;
+int tapcheck(char t)
 {
   int i = 0;
   int j = 0;

@@ -126,7 +126,7 @@ int policy_check(void)
 	  p = mailfrom.s;
 
    fprintf(stderr, "policy_check: %s %s -> %s %s (%s)\n", 
-		 rcpthosts(p, strlen(p)) ? "local" : "remote", p, 
+		 rcpthosts((char *)p, strlen(p)) ? "local" : "remote", p, 
 		 rcpthosts(addr.s, strlen(addr.s)) ? "local" : "remote", addr.s,
 		 remoteinfo ? "AUTHENTICATED SENDER" : "UNAUTHENTICATED SENDER");
 

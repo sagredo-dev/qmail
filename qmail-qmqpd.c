@@ -13,14 +13,14 @@
 
 void resources() { _exit(111); }
 
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
   r = write(fd,buf,len);
   if (r <= 0) _exit(0);
   return r;
 }
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
   r = read(fd,buf,len);
@@ -35,8 +35,7 @@ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
 
 unsigned long bytesleft = 100;
 
-void getbyte(ch)
-char *ch;
+void getbyte(char *ch)
 {
   if (!bytesleft--) _exit(100);
   substdio_get(&ssin,ch,1);
@@ -115,7 +114,7 @@ int main()
   char ch;
 
   sig_pipeignore();
-  sig_alarmcatch(resources);
+  sig_alarmcatch((void (*)(int))resources);
   alarm(3600);
 
   bytesleft = getlen();

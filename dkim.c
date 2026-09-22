@@ -35,6 +35,9 @@
 #ifdef HAVE_OPENSSL_EVP_H
 #include <openssl/evp.h>
 #define DKIM_MALLOC(s)     OPENSSL_malloc(s)
+#ifndef OPENSSL_realloc
+#define OPENSSL_realloc realloc
+#endif
 #define DKIM_REALLOC(s, n) OPENSSL_realloc((s), (n))
 #define DKIM_MFREE(s)      OPENSSL_free(s); s = NULL;
 #else

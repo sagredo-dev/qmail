@@ -86,10 +86,10 @@ int tls_init();
 const char *ssl_err_str = 0;
 #endif 
 
-void out(s) char *s; { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
+void out(char *s) { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
 void zero() { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
 void zerodie() { zero(); substdio_flush(subfdoutsmall); _exit(0); }
-void outsafe(sa) stralloc *sa; { int i; char ch;
+void outsafe(stralloc *sa) { int i; char ch;
 for (i = 0;i < sa->len;++i) {
 ch = sa->s[i]; if (ch < 33) ch = '?'; if (ch > 126) ch = '?';
 if (substdio_put(subfdoutsmall,&ch,1) == -1) _exit(0); } }
@@ -155,7 +155,7 @@ int timeoutconnect = 60;
 int smtpfd;
 int timeout = 1200;
 
-ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
+ssize_t saferead(int fd, char *buf, int len)
 {
   int r;
 #ifdef TLS
@@ -168,7 +168,7 @@ ssize_t saferead(fd,buf,len) int fd; char *buf; int len;
   if (r <= 0) dropped();
   return r;
 }
-ssize_t safewrite(fd,buf,len) int fd; char *buf; int len;
+ssize_t safewrite(int fd, char *buf, int len)
 {
   int r;
 #ifdef TLS
@@ -191,8 +191,7 @@ substdio smtpfrom = SUBSTDIO_FDBUF(saferead,-1,smtpfrombuf,sizeof smtpfrombuf);
 
 stralloc smtptext = {0};
 
-void get(ch)
-char *ch;
+void get(char *ch)
 {
   substdio_get(&smtpfrom,ch,1);
   if (*ch != '\r')
@@ -294,18 +293,16 @@ void outsmtptext()
   }
 }
 
-void quit(prepend,append)
-char *prepend;
-char *append;
+void quit(char *prepend, char *append)
 {
 #ifdef TLS
   /* shouldn't talk to the client unless in an appropriate state */
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
   OSSL_HANDSHAKE_STATE state = ssl ? SSL_get_state(ssl) : TLS_ST_BEFORE;
-  if (state & TLS_ST_OK || (!smtps && state & TLS_ST_BEFORE))
+  if (state == TLS_ST_OK || (!smtps && state == TLS_ST_BEFORE))
 #else
-  int state = ssl ? ssl->state : SSL_ST_BEFORE;
-  if (state & SSL_ST_OK || (!smtps && state & SSL_ST_BEFORE))
+  int state = ssl ? SSL_get_state(ssl) : SSL_ST_BEFORE;
+  if ((state & SSL_ST_OK) || (!smtps && (state & SSL_ST_BEFORE)))
 #endif
 #endif
   substdio_putsflush(&smtpto,"QUIT\r\n");
@@ -504,11 +501,11 @@ void tls_quit(const char *s1, const char *s2)
 
 int match_partner(const char *s, int len)
 {
-  if (!case_diffb(partner_fqdn, len, s) && !partner_fqdn[len]) return 1;
+  if (!case_diffb(partner_fqdn, len, (char *)s) && !partner_fqdn[len]) return 1;
   /* we also match if the name is *.domainname */
   if (*s == '*') {
     const char *domain = partner_fqdn + str_chr(partner_fqdn, '.');
-    if (!case_diffb(domain, --len, ++s) && !domain[len]) return 1;
+    if (!case_diffb((char *)domain, --len, (char *)++s) && !domain[len]) return 1;
   }
   return 0;
 }
@@ -638,7 +635,7 @@ int tls_init()
       out("ZTLS unable to verify server with ");
       tls_quit(servercert, X509_verify_cert_error_string(r));
     }
-    alloc_free(servercert);
+    alloc_free((char *)servercert);
 
     peercert = SSL_get_peer_certificate(ssl);
     if (!peercert) {
@@ -707,10 +704,7 @@ void mailfrom()
 
 stralloc xuser = {0};
 
-int xtext(sa,s,len)
-stralloc *sa;
-char *s;
-int len;
+int xtext(stralloc *sa, char *s, int len)
 {
   int i;
 
@@ -989,16 +983,16 @@ void smtp()
 stralloc canonhost = {0};
 stralloc canonbox = {0};
 
-void addrmangle(saout,s,flagalias,flagcname)
-stralloc *saout; /* host has to be canonical, box has to be quoted */
-char *s;
-int *flagalias;
-int flagcname;
+void addrmangle(
+stralloc *saout, /* host has to be canonical, box has to be quoted */
+char *s,
+int *flagalias,
+int flagcname)
 {
   int j;
- 
+
   *flagalias = flagcname;
- 
+
   j = str_rchr(s,'@');
   if (!s[j]) {
     if (!stralloc_copys(saout,s)) temp_nomem();
@@ -1049,9 +1043,7 @@ void getcontrols()
  else if (!ip_scan(outgoingip.s, &outip)) temp_noip();
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   static ipalloc ip = {0};
   int i, j;
@@ -1100,7 +1092,7 @@ char **argv;
       authsender[i] = 0;
     }
 
-    if (!stralloc_copys(&relayhost,authsender)) temp_nomem();
+    if (!stralloc_copys((stralloc *)&relayhost,authsender)) temp_nomem();
     if (!stralloc_copys(&host,authsender)) temp_nomem();
 
   }

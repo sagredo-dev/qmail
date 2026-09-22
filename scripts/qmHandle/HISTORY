@@ -1,4 +1,10 @@
 qmHandle history
+
+Roberto Puzzanghera
+1.3.5
+  * Use pgrep as a fallback when pidof is unavailable
+  * Use env in Perl shebang for portability
+
 (c) Michele Beltrame
 --------------------
 1.3.2 by Chan Chung Hang Christopher

@@ -1,7 +1,7 @@
 #include <signal.h>
 #include "sig.h"
 
-void sig_bugcatch(f) void (*f)();
+void sig_bugcatch(void (*f)(int))
 {
   sig_catch(SIGILL,f);
   sig_catch(SIGABRT,f);

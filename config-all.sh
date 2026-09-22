@@ -87,6 +87,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
+##################################################
+
 FQDN="$1"
 SRCDIR=$(pwd)
 LOGDIR="/var/log"
@@ -131,6 +133,13 @@ if check_file "QMAIL/control/plusdomain"; then
   ) )
 fi
 
+# locals must exist, let's touch it
+if check_file "QMAIL/control/locals"; then
+  echo "Touching control/locals..."
+  touch QMAIL/control/locals
+  chmod 644 QMAIL/control/locals
+fi
+
 # rcpthosts
 if check_file "QMAIL/control/rcpthosts"; then
   echo "Putting '$FQDN' into control/rcpthosts..."
@@ -151,7 +160,7 @@ fi
 # srs_secrets
 if check_file "QMAIL/control/srs_secrets"; then
   echo "Putting a random string into control/srs_secrets..."
-  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | head -c 13; echo) > QMAIL/control/srs_secrets
+  echo $(LC_ALL=C tr -dc '[:graph:]' </dev/urandom | dd bs=13 count=1 2>/dev/null; echo) > QMAIL/control/srs_secrets
   chmod 644 QMAIL/control/srs_secrets
 fi
 
@@ -175,13 +184,6 @@ fi
 if check_file "QMAIL/control/spfbehavior"; then
   echo "Putting '3' in control/spfbehavior..."
   echo 3 > QMAIL/control/spfbehavior
-fi
-
-VPOPMAIL=$(getent passwd $(head -n 9 $SRCDIR/conf-users | tail -1) | cut -d: -f6)
-# defaultdelivery
-if check_file "QMAIL/control/defaultdelivery"; then
-  echo "Putting \"| ${VPOPMAIL}/bin/vdelivermail '' delete\" in control/defaultdelivery..."
-  echo "| ${VPOPMAIL}/bin/vdelivermail '' delete" > QMAIL/control/defaultdelivery
 fi
 
 # concurrencyincoming
@@ -258,8 +260,6 @@ ln -sf QMAIL/supervise/qmail-smtpd      /service
 ln -sf QMAIL/supervise/qmail-smtpsd     /service
 ln -sf QMAIL/supervise/qmail-submission /service
 ln -sf QMAIL/supervise/qmail-send       /service
-ln -sf QMAIL/supervise/vpopmaild        /service
-ln -sf QMAIL/supervise/vusaged          /service
 ln -sf QMAIL/supervise/clear            /service
 
 ########### supervise
@@ -276,10 +276,10 @@ cp -rp $SRCDIR/scripts/example-supervise QMAIL/doc/
 echo "Configuring the $LOGDIR/qmail dir..."
 mkdir -p $LOGDIR/qmail
 chown -R qmaill:nofiles $LOGDIR/qmail
-if [ $(getent group root) ]; then
-  chgrp root $LOGDIR/qmail
-elif [ $(getent group wheel) ]; then
-  chgrp wheel $LOGDIR/qmail
+# get the group with id=0 (root/wheel)
+rootgrp=$(awk -F: '$3==0 {print $1; exit}' /etc/group)
+if [ -n "$rootgrp" ]; then
+  chgrp $rootgrp $LOGDIR/qmail
 fi
 chmod -R og-wrx $LOGDIR/qmail
 chmod g+rx $LOGDIR/qmail
@@ -293,16 +293,20 @@ ln -sf $LOGDIR/qmail/smtpsd     /service/qmail-smtpsd/log/main
 ln -sf $LOGDIR/qmail/submission /service/qmail-submission/log/main
 
 ########### set PATH and MANPATH
-if check_file "/etc/profile.d/qmail.sh"; then
-  echo "Setting PATH and MANPATH for qmail, vpopmail and dovecot in /etc/profile.d/qmail.sh..."
-  cat > /etc/profile.d/qmail.sh <<- EOF
+if [ -d /etc/profile.d ]; then
+  if check_file "/etc/profile.d/qmail.sh"; then
+    echo "Setting PATH and MANPATH for qmail and dovecot in /etc/profile.d/qmail.sh..."
+    cat > /etc/profile.d/qmail.sh <<- EOF
 	#!/bin/sh
-	PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
+	PATH=\$PATH:QMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin
 	export PATH
 	MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man
 	export MANPATH
 EOF
-  chmod +x /etc/profile.d/qmail.sh
+    chmod +x /etc/profile.d/qmail.sh
+  fi
+else
+  echo "    /etc/profile.d not found. Please install PATH and MANPATH manually."
 fi
 
 ########### qmailctl
@@ -312,29 +316,33 @@ cp $SRCDIR/scripts/qmailctl QMAIL/bin
 ln -sf QMAIL/bin/qmailctl $BINDIR/qmailctl
 
 ########### cronjobs
-if check_file "/etc/cron.d/qmail"; then
-  echo "Installing cronjobs in /etc/cron.d/qmail..."
-  # slackware OS does not allow the user declared in /etc/cron.d cronjobs
-  if [ -e /etc/slackware-version ]; then
-    CRONUSER=""
-  else
-    CRONUSER="root"
-  fi
-  cat > /etc/cron.d/qmail << EOF
-# convert-multilog
-59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
-# qmail log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-submission/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpd/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpsd/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-send/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vpopmaild/log
-0 0 * * *  $CRONUSER $BINDIR/svc -a /service/vusaged/log
-# surbl tlds update
-2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
-# surbl cache purge
-2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
+if [ -d /etc/cron.d ]; then
+  if check_file "/etc/cron.d/qmail"; then
+    echo "Installing cronjobs in /etc/cron.d/qmail..."
+    # slackware OS does not allow the user declared in /etc/cron.d cronjobs
+    if [ -e /etc/slackware-version ]; then
+      CRONUSER=""
+    else
+      CRONUSER="root"
+    fi
+    cat > /etc/cron.d/qmail <<- EOF
+	# convert-multilog
+	59 2 * * * $CRONUSER QMAIL/bin/convert-multilog 1> /dev/null
+	# qmail log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-submission/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpd/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-smtpsd/log
+	0 0 * * *  $CRONUSER $BINDIR/svc -a /service/qmail-send/log
+	# surbl tlds update
+	2 2 23 * * $CRONUSER QMAIL/bin/update_tlds 1> /dev/null
+	# surbl cache purge
+	2 9 * * *  $CRONUSER find QMAIL/control/cache/* -cmin +5 -exec /bin/rm -f {} \;
 EOF
+  fi
+else
+  echo "    /etc/cron.d not found. Please install the cronjobs manually."
+  echo "    Have a look here:"
+  echo "    https://notes.sagredo.eu/en/qmail-notes-185/configuring-qmail-83.html#cronjobs"
 fi
 
 ########### RBL
@@ -350,23 +358,26 @@ fi
 
 ########### moreipme
 if check_file "QMAIL/control/moreipme"; then
-  IPCOMMAND=$(command -v ip) || exit 0
-  OUT=QMAIL/control/moreipme
-  : > "$OUT"   # svuota il file
-  # IPv4
-  ip -o -4 addr show scope global |
-  awk '{print $4}' | cut -d/ -f1 |
-  while read -r ip4; do
-    echo "Adding $ip4 to $OUT..."
-    printf '%s\n' "$ip4" >> "$OUT"
-  done
-  # IPv6
-  ip -o -6 addr show scope global |
-  awk '{print $4}' | cut -d/ -f1 |
-  while read -r ip6; do
-    echo "Adding $ip6 to $OUT..."
-    printf '%s\n' "$ip6" >> "$OUT"
-  done
+  IPCOMMAND=$(command -v ip)
+
+  if [ -n "$IPCOMMAND" ]; then
+    OUT=QMAIL/control/moreipme
+    : > "$OUT"   # svuota il file
+    # IPv4
+    ip -o -4 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip4; do
+      echo "Adding $ip4 to $OUT..."
+      printf '%s\n' "$ip4" >> "$OUT"
+    done
+    # IPv6
+    ip -o -6 addr show scope global |
+    awk '{print $4}' | cut -d/ -f1 |
+    while read -r ip6; do
+      echo "Adding $ip6 to $OUT..."
+      printf '%s\n' "$ip6" >> "$OUT"
+    done
+  fi
 fi
 
 ########### smtpplugins
@@ -440,38 +451,40 @@ QMAIL/bin/qmailctl cdb
 echo "Installing and configuring the 'overlimit (limiting outgoing emails)' feature..."
 cp scripts/rcptcheck-overlimit QMAIL/bin
 if check_file "QMAIL/control/relaylimits"; then
-  cat > QMAIL/control/relaylimits <<- EOF
-	:1000
-EOF
+  echo ":1000" > QMAIL/control/relaylimits
 fi
-if check_file "/etc/cron.daily/rcptcheck-overlimit"; then
-  echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
-  cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
+if [ -d /etc/cron.daily ]; then
+  if check_file "/etc/cron.daily/rcptcheck-overlimit"; then
+    echo "Installing 'overlimit' cronjob in /etc/cron.daily..."
+    cp scripts/rcptcheck-overlimit.cron.daily /etc/cron.daily/rcptcheck-overlimit
+  fi
+else
+  echo "    /etc/cron.daily not found. Please install scripts/rcptcheck-overlimit.cron.daily manually."
 fi
 
 ############ svtools
 echo "Installing svtools..."
 cp -f scripts/svtools/svdir \
-scripts/svtools/svinfo \
-scripts/svtools/mltail \
-scripts/svtools/mlcat \
-scripts/svtools/mlhead \
-scripts/svtools/mltac \
-QMAIL/bin
+  scripts/svtools/svinfo \
+  scripts/svtools/mltail \
+  scripts/svtools/mlcat \
+  scripts/svtools/mlhead \
+  scripts/svtools/mltac \
+  QMAIL/bin
 cp -f scripts/svtools/svinitd \
-scripts/svtools/svinitd-create \
-scripts/svtools/svsetup \
-QMAIL/bin
+  scripts/svtools/svinitd-create \
+  scripts/svtools/svsetup \
+  QMAIL/bin
 cp -f scripts/svtools/svinitd.1 \
-scripts/svtools/svinitd-create.1 \
-scripts/svtools/svsetup.1 \
-scripts/svtools/svdir.1 \
-scripts/svtools/svinfo.1 \
-scripts/svtools/mltail.1 \
-scripts/svtools/mlcat.1 \
-scripts/svtools/mlhead.1 \
-scripts/svtools/mltac.1 \
-QMAIL/man/man1
+  scripts/svtools/svinitd-create.1 \
+  scripts/svtools/svsetup.1 \
+  scripts/svtools/svdir.1 \
+  scripts/svtools/svinfo.1 \
+  scripts/svtools/mltail.1 \
+  scripts/svtools/mlcat.1 \
+  scripts/svtools/mlhead.1 \
+  scripts/svtools/mltac.1 \
+  QMAIL/man/man1
 
 ############ qmHandle
 echo "Installing qmHandle in QMAIL/bin/qmHandle..."
@@ -500,7 +513,9 @@ if [ "$RESPONSE" = 'y' ] || [ "$RESPONSE" = 'Y' ]; then
 else
   echo 'Skipping the RSA DH key file creation'
 fi
-chown vpopmail:vchkpw QMAIL/control/*.pem
+if [ -e QMAIL/control/servercert.pem ]; then
+  chown qmaild:nofiles QMAIL/control/*.pem
+fi
 
 echo
 echo "Be sure to have a valid MX record in your DNS, to configure the reverse DNS for '${FQDN}'"
@@ -508,7 +523,7 @@ echo "and to create the SPF, DKIM and DMARC records for '${FQDN}' and for '${DEF
 echo
 echo "You have to update the PATH and MANPATH in the current shell by rebooting the OS"
 echo "or better by running:"
-echo -e "${GREEN}PATH=\$PATH:QMAIL/bin:$VPOPMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin"
+echo -e "${GREEN}PATH=\$PATH:QMAIL/bin:/usr/local/dovecot/bin:/usr/local/dovecot-pigeonhole/bin"
 echo -e "MANPATH=\$MANPATH:QMAIL/man:/usr/local/dovecot/share/man${NC}"
 echo
 echo "You can now start qmail by running"

@@ -67,7 +67,7 @@ int flagreadasap = 0; void sighup(void) { flagreadasap = 1; }
 int flagsendalive = 1; void senddied(void) { flagsendalive = 0; }
 
 void nomem() { log1("alert: out of memory, sleeping...\n"); sleep(10); }
-void pausedir(dir) char *dir;
+void pausedir(char *dir)
 { log3("alert: unable to opendir ",dir,", sleeping...\n"); sleep(10); }
 
 void cleandied()
@@ -168,7 +168,7 @@ int fdin = -1;
 void comm_init(void)
 {
  substdio_fdbuf(&sstoqc,write,2,sstoqcbuf,sizeof(sstoqcbuf));
- substdio_fdbuf(&ssfromqc,read,3,ssfromqcbuf,sizeof(ssfromqcbuf));
+ substdio_fdbuf(&ssfromqc,(ssize_t (*)(int, const void *, size_t))read,3,ssfromqcbuf,sizeof(ssfromqcbuf));
 
  fdout = 1; /* stdout */
  fdin = 0;  /* stdin */
@@ -486,7 +486,7 @@ void todo_do(fd_set *rfds)
 
  for (c = 0;c < CHANNELS;++c) flagchan[c] = 0;
 
- substdio_fdbuf(&ss,read,fd,todobuf,sizeof(todobuf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int, const void *, size_t))read,fd,todobuf,sizeof(todobuf));
  substdio_fdbuf(&ssinfo,write,fdinfo,todobufinfo,sizeof(todobufinfo));
 
  uid = 0;

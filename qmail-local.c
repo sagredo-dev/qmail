@@ -11,7 +11,6 @@
 #include "lock.h"
 #include "seek.h"
 #include "substdio.h"
-#include "getln.h"
 #include "strerr.h"
 #include "subfd.h"
 #include "sgetopt.h"
@@ -30,6 +29,7 @@
 #include "auto_patrn.h"
 #include "srs.h"
 #include "maildirgetquota.h"
+#include "getln.h"
 
 extern int user_over_maildirquota( const char *dir, const char *q);
 
@@ -40,9 +40,9 @@ void temp_rewind() { strerr_die1x(111,"Unable to rewind message. (#4.3.0)"); }
 void temp_childcrashed() { strerr_die1x(111,"Aack, child crashed. (#4.3.0)"); }
 void temp_fork() { strerr_die3x(111,"Unable to fork: ",error_str(errno),". (#4.3.0)"); }
 void temp_read() { strerr_die3x(111,"Unable to read message: ",error_str(errno),". (#4.3.0)"); }
-void temp_slowlock()
+void temp_slowlock(int signo)
 { strerr_die1x(111,"File has been locked for 30 seconds straight. (#4.3.0)"); }
-void temp_qmail(fn) char *fn;
+void temp_qmail(char *fn)
 { strerr_die5x(111,"Unable to open ",fn,": ",error_str(errno),". (#4.3.0)"); }
 
 int flagdoit;
@@ -85,10 +85,9 @@ void die_srs() {
 char fntmptph[80 + FMT_ULONG * 2];
 char fnnewtph[80 + FMT_ULONG * 2];
 void tryunlinktmp() { unlink(fntmptph); }
-void sigalrm() { tryunlinktmp(); _exit(3); }
+void sigalrm(int sig) { tryunlinktmp(); _exit(3); }
 
-void maildir_child(dir)
-char *dir;
+void maildir_child(char *dir)
 {
  unsigned long pid;
  unsigned long time;
@@ -134,7 +133,7 @@ char *dir;
  fd = open_excl(fntmptph);
  if (fd == -1) _exit(1);
 
- substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t)) read,0,buf,sizeof(buf));
  substdio_fdbuf(&ssout,write,fd,outbuf,sizeof(outbuf));
  if (substdio_put(&ssout,rpline.s,rpline.len) == -1) goto fail;
  if (substdio_put(&ssout,dtline.s,dtline.len) == -1) goto fail;
@@ -158,8 +157,7 @@ char *dir;
 
 /* end child process */
 
-void maildir(fn)
-char *fn;
+void maildir(char *fn)
 {
  int child;
  int wstat;
@@ -189,8 +187,7 @@ char *fn;
   }
 }
 
-void mailfile(fn)
-char *fn;
+void mailfile(char *fn)
 {
  int fd;
  substdio ss;
@@ -214,7 +211,7 @@ char *fn;
  seek_end(fd);
  pos = seek_cur(fd);
 
- substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t)) read,0,buf,sizeof(buf));
  substdio_fdbuf(&ssout,write,fd,outbuf,sizeof(outbuf));
  if (substdio_put(&ssout,ufline.s,ufline.len)) goto writeerrs;
  if (substdio_put(&ssout,rpline.s,rpline.len)) goto writeerrs;
@@ -250,8 +247,7 @@ char *fn;
  _exit(111);
 }
 
-void mailprogram(prog)
-char *prog;
+void mailprogram(char *prog)
 {
  int child;
  char *(args[4]);
@@ -285,8 +281,7 @@ char *prog;
 
 unsigned long mailforward_qp = 0;
 
-void mailforward(recips)
-char **recips;
+void mailforward(char **recips)
 {
  struct qmail qqt;
  char *qqx;
@@ -294,7 +289,7 @@ char **recips;
  int match;
 
  if (seek_begin(0) == -1) temp_rewind();
- substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t)) read,0,buf,sizeof(buf));
 
  if (qmail_open(&qqt) == -1) temp_fork();
  mailforward_qp = qmail_qp(&qqt);
@@ -327,7 +322,7 @@ void bouncexf()
  substdio ss;
 
  if (seek_begin(0) == -1) temp_rewind();
- substdio_fdbuf(&ss,read,0,buf,sizeof(buf));
+ substdio_fdbuf(&ss,(ssize_t (*)(int,const void*,size_t)) read,0,buf,sizeof(buf));
  for (;;)
   {
    if (getln(&ss,&messline,&match,'\n') != 0) temp_read();
@@ -352,8 +347,7 @@ void checkhome()
  }
 }
 
-int qmeox(dashowner)
-char *dashowner;
+int qmeox(char *dashowner)
 {
  struct stat st;
 
@@ -370,9 +364,7 @@ char *dashowner;
  return 0;
 }
 
-int qmeexists(fd,cutable)
-int *fd;
-int *cutable;
+int qmeexists(int *fd, int *cutable)
 {
   struct stat st;
 
@@ -405,9 +397,7 @@ int *cutable;
 /* "-/" "a-b-": "-/a-b-" "-/a-b-default" "-/a-default" "-/default" */
 /* "-/" "a-b-c": "-/a-b-c" "-/a-b-default" "-/a-default" "-/default" */
 
-void qmesearch(fd,cutable)
-int *fd;
-int *cutable;
+void qmesearch(int *fd, int *cutable)
 {
   int i;
 
@@ -463,19 +453,14 @@ void count_print()
  substdio_flush(subfdoutsmall);
 }
 
-void sayit(type,cmd,len)
-char *type;
-char *cmd;
-int len;
+void sayit(char *type, char *cmd, int len)
 {
  substdio_puts(subfdoutsmall,type);
  substdio_put(subfdoutsmall,cmd,len);
  substdio_putsflush(subfdoutsmall,"\n");
 }
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  int opt;
  int i;

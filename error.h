@@ -30,7 +30,7 @@ extern int error_child;
 extern int error_ebadf;
 extern int error_invalid;
 
-extern char *error_str();
-extern int error_temp();
+extern char *error_str(int);
+extern int error_temp(int);
 
 #endif

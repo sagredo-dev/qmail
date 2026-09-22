@@ -23,13 +23,13 @@ stralloc woof = {0};
 stralloc tofrom = {0};
 stralloc text = {0};
 
-void doit(s,n) char *s; int n;
+void doit(char *s, int n)
 {
  if (!stralloc_catb(&text,s,n)) _exit(0);
  if (text.len > 78) text.len = 78;
 }
-void dobody(h) stralloc *h; { doit(h->s,h->len); }
-void doheader(h) stralloc *h;
+void dobody(stralloc *h) { doit(h->s,h->len); }
+void doheader(stralloc *h)
 {
  int i;
  if (hfield_known(h->s,h->len) == H_SUBJECT)

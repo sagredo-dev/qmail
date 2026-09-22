@@ -20,13 +20,13 @@ stralloc sender = {0};
 stralloc fromline = {0};
 stralloc text = {0};
 
-void addtext(s,n) char *s; int n;
+void addtext(char *s, int n)
 {
  if (!stralloc_catb(&text,s,n)) die_nomem();
  if (text.len > 158) text.len = 158;
 }
-void dobody(h) stralloc *h; { addtext(h->s,h->len); }
-void doheader(h) stralloc *h;
+void dobody(stralloc *h) { addtext(h->s,h->len); }
+void doheader(stralloc *h)
 {
  int i;
  switch(hfield_known(h->s,h->len))
@@ -81,7 +81,7 @@ int main()
 
      fd = open_read(filenames.s + pe.id);
      if (fd == -1) continue;
-     substdio_fdbuf(&ssin,read,fd,inbuf,sizeof(inbuf));
+     substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,fd,inbuf,sizeof(inbuf));
 
      if (!stralloc_copys(&sender,"?")) die_nomem();
      if (!stralloc_copys(&recipient,"?")) die_nomem();

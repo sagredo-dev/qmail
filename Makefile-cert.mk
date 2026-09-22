@@ -3,7 +3,7 @@ cert cert-req: QMAIL/control/clientcert.pem
 	@:
 
 QMAIL/control/clientcert.pem: QMAIL/control/servercert.pem
-	ln -s $< $@
+	ln -s QMAIL/control/servercert.pem $@
 
 QMAIL/control/servercert.pem:
 	PATH=$$PATH:/usr/local/ssl/bin \

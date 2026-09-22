@@ -6,9 +6,7 @@
 
 static stralloc cmd = {0};
 
-int commands(ss,c)
-substdio *ss;
-struct commands *c;
+int commands(substdio *ss, struct commands *c)
 {
   int i;
   char *arg;

@@ -4,9 +4,7 @@
 
 GEN_ALLOC_readyplus(prioq,struct prioq_elt,p,len,a,i,n,x,100,prioq_readyplus)
 
-int prioq_insert(pq,pe)
-prioq *pq;
-struct prioq_elt *pe;
+int prioq_insert(prioq *pq, struct prioq_elt *pe)
 {
  int i;
  int j;
@@ -23,9 +21,7 @@ struct prioq_elt *pe;
  return 1;
 }
 
-int prioq_min(pq,pe)
-prioq *pq;
-struct prioq_elt *pe;
+int prioq_min(prioq *pq, struct prioq_elt *pe)
 {
  if (!pq->p) return 0;
  if (!pq->len) return 0;
@@ -33,8 +29,7 @@ struct prioq_elt *pe;
  return 1;
 }
 
-void prioq_delmin(pq)
-prioq *pq;
+void prioq_delmin(prioq *pq)
 {
  int i;
  int j;

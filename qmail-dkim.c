@@ -41,7 +41,7 @@
 #ifndef HAVE_EVP_SHA256
 #define HAVE_EVP_SHA256
 #endif
-#define strncasecmp(x,y,z) case_diffb((x), (z), (y))
+#define strncasecmp(x,y,z) case_diffb((char *)(x), (z), (y))
 #define strcasecmp(x,y)    case_diffs((x), (y))
 
 extern char    *dns_text(char *);
@@ -87,15 +87,17 @@ die_read()
 }
 
 void
-sigalrm()
+sigalrm(int sig)
 {
+  (void)sig;
 	/*- thou shalt not clean up here */
 	die(52, 0);
 }
 
 void
-sigbug()
+sigbug(int sig)
 {
+  (void)sig;
 	die(81, 0);
 }
 
@@ -1219,7 +1221,7 @@ main(int argc, char *argv[])
 	if (unlink(pidfn) == -1)
 		die(63, dkimsign ? 1 : 2);
 	substdio_fdbuf(&ssout, write, messfd, outbuf, sizeof(outbuf));
-	substdio_fdbuf(&ssin, read, 0, inbuf, sizeof(inbuf)); /*- message content */
+	substdio_fdbuf(&ssin, (ssize_t (*)(int, const void *, size_t))read, 0, inbuf, sizeof(inbuf)); /*- message content */
 	for (ret = 0;;) {
 		register int    n;
 		register char  *x;
@@ -1230,7 +1232,7 @@ main(int argc, char *argv[])
 		}
 		if (!n)
 			break;
-		x = substdio_PEEK(&ssin);
+		x = (char *) substdio_PEEK(&ssin);
 		if (!ret) {
 			if ((ret = (dkimsign ? DKIMSignProcess : DKIMVerifyProcess) (&ctxt, x, n)) == DKIM_INVALID_CONTEXT)
 				(dkimsign ? DKIMSignFree : DKIMVerifyFree) (&ctxt);
@@ -1403,7 +1405,7 @@ main(int argc, char *argv[])
 		die(120, 0);
 	}
 	close(pim[0]);
-	substdio_fdbuf(&ssin, read, readfd, inbuf, sizeof(inbuf));
+	substdio_fdbuf(&ssin, (ssize_t (*)(int, const void *, size_t))read, readfd, inbuf, sizeof(inbuf));
 	substdio_fdbuf(&ssout, write, pim[1], outbuf, sizeof(outbuf));
 	if (substdio_bput(&ssout, dkimoutput.s, dkimoutput.len) == -1) /*- write DKIM signature */
 		die_write();

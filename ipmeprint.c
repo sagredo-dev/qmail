@@ -22,14 +22,14 @@ int main()
   {
    substdio_put(subfdout,temp,ip_fmt(temp,&ipme.ix[j].ip));
    substdio_puts(subfdout,"/");
-   substdio_put(subfdout,temp,ip_fmt(temp,&ipme_mask.ix[j].ip));
+   substdio_put(subfdout,temp,ip_fmt(temp,&ipme_mask.ia[j]));
    substdio_puts(subfdout," is me\n");
   }
  for (j = 0;j < notipme.len;++j)
   {
    substdio_put(subfdout,temp,ip_fmt(temp,&notipme.ix[j].ip));
    substdio_puts(subfdout,"/");
-   substdio_put(subfdout,temp,ip_fmt(temp,&notipme_mask.ix[j].ip));
+   substdio_put(subfdout,temp,ip_fmt(temp,&notipme_mask.ia[j]));
    substdio_puts(subfdout," is not me\n");
   }
 

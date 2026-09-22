@@ -1,9 +1,6 @@
 #include "byte.h"
 
-unsigned int byte_rcspn(s,n,c)
-register char *s;
-register unsigned int n;
-register char *c;
+unsigned int byte_rcspn(char *s, unsigned int n, char *c)
 {
   unsigned int ret,pos,i;
 

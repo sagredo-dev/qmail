@@ -2,11 +2,7 @@
 #include "fmt.h"
 #include "auto_split.h"
 
-unsigned int fmtqfn(s,dirslash,id,flagsplit)
-char *s;
-char *dirslash;
-unsigned long id;
-int flagsplit;
+unsigned int fmtqfn(char *s, char *dirslash, unsigned long id, int flagsplit)
 {
  unsigned int len;
  unsigned int i;

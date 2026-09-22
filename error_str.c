@@ -3,8 +3,7 @@
 
 #define X(e,s) if (i == e) return s;
 
-char *error_str(i)
-int i;
+char *error_str(int i)
 {
   X(0,"no error")
   X(error_intr,"interrupted system call")

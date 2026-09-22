@@ -15,7 +15,7 @@
 #include "substdio.h"
 #include "sig.h"
 
-void die(e,s) int e; char *s; { substdio_putsflush(subfderr,s); _exit(e); }
+void die(int e, char *s) { substdio_putsflush(subfderr,s); _exit(e); }
 void die_usage() { die(100,"qsmhook: fatal: incorrect usage\n"); }
 void die_temp() { die(111,"qsmhook: fatal: temporary problem\n"); }
 void die_read() { die(111,"qsmhook: fatal: unable to read message\n"); }
@@ -35,9 +35,7 @@ char outbuf[SUBSTDIO_OUTSIZE];
 substdio ssin;
 char inbuf[SUBSTDIO_INSIZE];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  int pid;
  int wstat;
@@ -123,7 +121,7 @@ char **argv;
  close(pi[0]);
 
  substdio_fdbuf(&ssout,write,pi[1],outbuf,sizeof(outbuf));
- substdio_fdbuf(&ssin,read,0,inbuf,sizeof(inbuf));
+ substdio_fdbuf(&ssin,(ssize_t (*)(int, const void *, size_t))read,0,inbuf,sizeof(inbuf));
  if (flagufline) substdio_bputs(&ssout,ufline);
  if (flagrpline) substdio_bputs(&ssout,rpline);
  if (flagdtline) substdio_bputs(&ssout,dtline);

@@ -152,7 +152,7 @@ run_mailfilter(char *domain, char *ext, char *mailprog, char **argv)
 		custom = 1;  /* custom error, get result from error response */
 	default:
 		e = errno;
-		substdio_fdbuf(&errbuf, read, pipefe[0], inbuf, sizeof(inbuf));
+		substdio_fdbuf(&errbuf, (ssize_t (*)(int, const void *, size_t))read, pipefe[0], inbuf, sizeof(inbuf));
 		for (len = 0; substdio_bget(&errbuf, &ch, 1) && len < (sizeof(errstr) - 1); len++)
 			errstr[len] = ch;
 		errstr[len] = 0;
@@ -192,7 +192,7 @@ mkTempFile(int seekfd)
 		report(111, "spawn-filter: ", tmpFile.s, ": ", error_str(errno), ". (#4.3.0)", 0);
 	unlink(tmpFile.s);
 	substdio_fdbuf(&_ssout, write, fd, outbuf, sizeof(outbuf));
-	substdio_fdbuf(&_ssin, read, seekfd, inbuf, sizeof(inbuf));
+	substdio_fdbuf(&_ssin, (ssize_t (*)(int, const void *, size_t))read, seekfd, inbuf, sizeof(inbuf));
 	switch (substdio_copy(&_ssout, &_ssin))
 	{
 	case -2: /*- read error */

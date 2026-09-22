@@ -18,9 +18,9 @@
 #include "auto_spawn.h"
 
 extern int truncreport;
-extern int spawn();
-extern void report();
-extern void initialize();
+extern int spawn(int, int, char *, char *, int);
+extern void report(substdio *, int, char *, int);
+extern void initialize(int, char **);
 
 struct delivery
  {
@@ -35,7 +35,7 @@ struct delivery
 
 struct delivery *d;
 
-void sigchld()
+void sigchld(int sig)
 {
  int wstat;
  int pid;
@@ -51,7 +51,7 @@ void sigchld()
 
 int flagwriting = 1;
 
-int okwrite(fd,buf,n) int fd; char *buf; int n;
+int okwrite(int fd, const void *buf, size_t n)
 {
  int w;
  if (!flagwriting) return n;
@@ -72,7 +72,7 @@ stralloc messid = {0};
 stralloc sender = {0};
 stralloc recip = {0};
 
-void err(s) char *s;
+void err(char *s)
 {
  char ch; ch = delnum; substdio_put(&ssout,&ch,1);
  ch = delnum >> 8; substdio_put(&ssout,&ch,1);
@@ -181,9 +181,7 @@ void getcmd()
 
 char inbuf[128];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
  char ch;
  int i;
@@ -200,7 +198,7 @@ char **argv;
  d = (struct delivery *) alloc((auto_spawn + 10) * sizeof(struct delivery));
  if (!d) _exit(111);
 
- substdio_fdbuf(&ssout,okwrite,1,outbuf,sizeof(outbuf));
+ substdio_fdbuf(&ssout,(ssize_t (*)(int,  const void *, size_t))okwrite,1,outbuf,sizeof(outbuf));
 
  sig_pipeignore();
  sig_childcatch(sigchld);

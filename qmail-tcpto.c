@@ -14,9 +14,9 @@
 #include "open.h"
 
 extern void byte_copy(char *to, unsigned int n, char *from);
-void die(n) int n; { substdio_flush(subfdout); _exit(n); }
+void die(int n) { substdio_flush(subfdout); _exit(n); }
 
-void warn(s) char *s;
+void warn(char *s)
 {
  char *x;
  x = error_str(errno);

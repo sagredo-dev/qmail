@@ -1,6 +1,8 @@
 #ifndef RECEIVED_H
 #define RECEIVED_H
 
-extern void received();
+#include "qmail.h"
+
+extern void received(struct qmail *, char *, char *, char *, char *, char *, char *);
 
 #endif

@@ -1,8 +1,7 @@
 #include "env.h"
 #include "str.h"
 
-extern /*@null@*/char *env_get(s)
-char *s;
+extern /*@null@*/char *env_get(char *s)
 {
   int i;
   unsigned int slen;
@@ -20,8 +19,7 @@ extern char *env_pick()
   return environ[0];
 }
 
-extern char *env_findeq(s)
-char *s;
+extern char *env_findeq(char *s)
 {
   for (;*s;++s)
     if (*s == '=')

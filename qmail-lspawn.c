@@ -20,9 +20,7 @@
 
 char *aliasempty;
 
-void initialize(argc,argv)
-int argc;
-char **argv;
+void initialize(int argc, char **argv)
 {
   aliasempty = argv[1];
   if (!aliasempty) _exit(100);
@@ -30,11 +28,7 @@ char **argv;
 
 int truncreport = 3000;
 
-void report(ss,wstat,s,len)
-substdio *ss;
-int wstat;
-char *s;
-int len;
+void report(substdio *ss, int wstat, char *s, int len)
 {
  int i;
  if (wait_crashed(wstat))
@@ -78,8 +72,7 @@ stralloc lower = {0};
 stralloc nughde = {0};
 stralloc wildchars = {0};
 
-void nughde_get(local)
-char *local;
+void nughde_get(char *local)
 {
  char *(args[3]);
  int pi[2];
@@ -169,9 +162,7 @@ char *local;
   }
 }
 
-int spawn(fdmess,fdout,s,r,at)
-int fdmess; int fdout;
-char *s; char *r; int at;
+int spawn(int fdmess, int fdout, char *s, char *r, int at)
 {
  int f;
  char *ptr;

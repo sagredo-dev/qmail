@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/bin/sh
+#
 # rcptcheck-overlimit v0.3
 # Digitalmind 2017-08-23
 # This script limits the number of emails sent by relayclients (authusers or ip with RELAYCLIENT in tcprules)
@@ -32,8 +33,9 @@
 EXITIGNORE=112
 EXITOVERLIMIT=113
 
-LIMITSCONTROLFILE=/var/qmail/control/relaylimits
-OVERLIMITDIR=/var/qmail/overlimit
+QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
+LIMITSCONTROLFILE=$QMAILDIR/control/relaylimits
+OVERLIMITDIR=$QMAILDIR/overlimit
 DEBUGLOG=/var/log/overlimit/debug.log
 
 if [ -z "${RELAYCLIENT+x}" ]; then exit $EXITIGNORE; fi

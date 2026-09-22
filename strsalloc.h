@@ -6,7 +6,7 @@
 #include "gen_alloc.h"
 
 GEN_ALLOC_typedef(strsalloc,stralloc,sa,len,a)
-extern int strsalloc_readyplus();
-extern int strsalloc_append();
+extern int strsalloc_readyplus(strsalloc *, unsigned int);
+extern int strsalloc_append(strsalloc *, stralloc *);
 
 #endif

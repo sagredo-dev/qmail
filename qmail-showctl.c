@@ -24,9 +24,7 @@ int meok;
 stralloc line = {0};
 char num[FMT_ULONG];
 
-void safeput(buf,len)
-char *buf;
-unsigned int len;
+void safeput(char *buf, unsigned int len)
 {
   char ch;
 
@@ -39,11 +37,7 @@ unsigned int len;
   }
 }
 
-void do_int(fn,def,pre,post)
-char *fn;
-char *def;
-char *pre;
-char *post;
+void do_int(char *fn, char *def, char *pre, char *post)
 {
   int i;
   substdio_puts(subfdout,"\n");
@@ -70,11 +64,7 @@ char *post;
   }
 }
 
-void do_str(fn,flagme,def,pre)
-char *fn;
-int flagme;
-char *def;
-char *pre;
+void do_str(char *fn, int flagme, char *def, char *pre)
 {
   substdio_puts(subfdout,"\n");
   substdio_puts(subfdout,fn);
@@ -102,11 +92,7 @@ char *pre;
   }
 }
 
-int do_lst(fn,def,pre,post)
-char *fn;
-char *def;
-char *pre;
-char *post;
+int do_lst(char *fn, char *def, char *pre, char *post)
 {
   int i;
   int j;

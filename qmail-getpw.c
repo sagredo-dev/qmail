@@ -56,9 +56,7 @@ int userext()
 
 char num[FMT_ULONG];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   local = argv[1];
   if (!local) _exit(100);

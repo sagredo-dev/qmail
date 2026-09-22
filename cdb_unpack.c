@@ -1,7 +1,6 @@
 #include "cdb.h"
 
-uint32 cdb_unpack(buf)
-unsigned char *buf;
+uint32 cdb_unpack(unsigned char *buf)
 {
   uint32 num;
   num = buf[3]; num <<= 8;

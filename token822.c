@@ -4,10 +4,9 @@
 #include "token822.h"
 #include "gen_allocdefs.h"
 
-static struct token822 comma = { TOKEN822_COMMA };
+static struct token822 comma = { NULL, TOKEN822_COMMA };
 
-void token822_reverse(ta)
-token822_alloc *ta;
+void token822_reverse(token822_alloc *ta)
 {
  int i;
  int n;
@@ -22,13 +21,67 @@ token822_alloc *ta;
   }
 }
 
-GEN_ALLOC_ready(token822_alloc,struct token822,t,len,a,i,n,x,30,token822_ready)
-GEN_ALLOC_readyplus(token822_alloc,struct token822,t,len,a,i,n,x,30,token822_readyplus)
-GEN_ALLOC_append(token822_alloc,struct token822,t,len,a,i,n,x,30,token822_readyplus,token822_append)
+GEN_ALLOC_append(token822_alloc, struct token822, t, len, a, i, n, x, 30, token822_readyplus, token822_append)
 
-static int needspace(t1,t2)
-int t1;
-int t2;
+/*
+ * token822 contains embedded stralloc objects.
+ * Every newly allocated token must have addr initialized to
+ * { NULL, 0, 0 }, otherwise stralloc_ready() may attempt to
+ * realloc/free an uninitialized pointer.
+ */
+int token822_ready(token822_alloc *x, unsigned int n)
+{
+    unsigned int olda;
+    unsigned int i;
+
+    if (x->t) {
+        olda = x->a;
+
+        if (n <= olda)
+            return 1;
+
+        x->a = 30 + n + (n >> 3);
+
+        if (!alloc_re((char **)&x->t,
+                      olda * sizeof(struct token822),
+                      x->a * sizeof(struct token822))) {
+            x->a = olda;
+            return 0;
+        }
+
+        for (i = olda; i < x->a; ++i) {
+            x->t[i].addr.s = 0;
+            x->t[i].addr.len = 0;
+            x->t[i].addr.a = 0;
+            x->t[i].type = 0;
+        }
+
+        return 1;
+    }
+
+    x->len = 0;
+    x->a = n;
+
+    x->t = (struct token822 *) alloc(n * sizeof(struct token822));
+    if (!x->t)
+        return 0;
+
+    for (i = 0; i < n; ++i) {
+        x->t[i].addr.s = 0;
+        x->t[i].addr.len = 0;
+        x->t[i].addr.a = 0;
+        x->t[i].type = 0;
+    }
+
+    return 1;
+}
+
+int token822_readyplus(token822_alloc *x, unsigned int n)
+{
+    return token822_ready(x, x->len + n);
+}
+
+static int needspace(int t1, int t2)
 {
  if (!t1) return 0;
  if (t1 == TOKEN822_COLON) return 1;
@@ -48,8 +101,7 @@ int t2;
  return 0;
 }
 
-static int atomok(ch)
-char ch;
+static int atomok(char ch)
 {
  switch(ch)
   {
@@ -62,14 +114,13 @@ char ch;
  return 1;
 }
 
-static void atomcheck(t)
-struct token822 *t;
+static void atomcheck(struct token822 *t)
 {
  int i;
  char ch;
- for (i = 0;i < t->slen;++i)
+ for (i = 0;i < t->addr.len;++i)
   {
-   ch = t->s[i];
+   ch = t->addr.s[i];
    if ((ch < 32) || (ch > 126) || (ch == ')') || (ch == ']') || (ch == '\\'))
     {
      t->type = TOKEN822_QUOTE;
@@ -78,10 +129,7 @@ struct token822 *t;
   }
 }
 
-int token822_unparse(sa,ta,linelen)
-stralloc *sa;
-token822_alloc *ta;
-unsigned int linelen;
+int token822_unparse(stralloc *sa, token822_alloc *ta, unsigned int linelen)
 {
  struct token822 *t;
  int len;
@@ -112,8 +160,8 @@ unsigned int linelen;
        ++len; break;
      case TOKEN822_ATOM: case TOKEN822_QUOTE: case TOKEN822_LITERAL: case TOKEN822_COMMENT:
        if (t->type != TOKEN822_ATOM) len += 2;
-       for (j = 0;j < t->slen;++j)
-	 switch(ch = t->s[j])
+       for (j = 0; j < t->addr.len; ++j)
+   switch(ch = t->addr.s[j])
 	  {
 	   case '"': case '[': case ']': case '(': case ')':
 	   case '\\': case '\r': case '\n': ++len;
@@ -160,8 +208,8 @@ unsigned int linelen;
        if (t->type == TOKEN822_QUOTE) *s++ = '"';
        if (t->type == TOKEN822_LITERAL) *s++ = '[';
        if (t->type == TOKEN822_COMMENT) *s++ = '(';
-       for (j = 0;j < t->slen;++j)
-	 switch(ch = t->s[j])
+       for (j = 0; j < t->addr.len; ++j)
+   switch(ch = t->addr.s[j])
 	  {
 	   case '"': case '[': case ']': case '(': case ')':
 	   case '\\': case '\r': case '\n': *s++ = '\\';
@@ -179,9 +227,7 @@ unsigned int linelen;
  return 1;
 }
 
-int token822_unquote(sa,ta)
-stralloc *sa;
-token822_alloc *ta;
+int token822_unquote(stralloc *sa, token822_alloc *ta)
 {
  struct token822 *t;
  int len;
@@ -201,7 +247,7 @@ token822_alloc *ta;
      case TOKEN822_LITERAL:
        len += 2;
      case TOKEN822_ATOM: case TOKEN822_QUOTE:
-       len += t->slen;
+       len += t->addr.len;
     }
   }
 
@@ -224,8 +270,8 @@ token822_alloc *ta;
      case TOKEN822_COLON: *s++ = ':'; break;
      case TOKEN822_ATOM: case TOKEN822_QUOTE: case TOKEN822_LITERAL:
        if (t->type == TOKEN822_LITERAL) *s++ = '[';
-       for (j = 0;j < t->slen;++j)
-	 *s++ = t->s[j];
+       for (j = 0;j < t->addr.len;++j)
+	       *s++ = t->addr.s[j];
        if (t->type == TOKEN822_LITERAL) *s++ = ']';
        break;
      case TOKEN822_COMMENT: break;
@@ -235,10 +281,7 @@ token822_alloc *ta;
  return 1;
 }
 
-int token822_parse(ta,sa,buf)
-token822_alloc *ta;
-stralloc *sa;
-stralloc *buf;
+int token822_parse(token822_alloc *ta, stralloc *sa, stralloc *buf)
 {
  int i;
  int salen;
@@ -336,60 +379,71 @@ stralloc *buf;
      case ';': t->type = TOKEN822_SEMI; ++t; break;
      case ' ': case '\t': case '\r': case '\n': break;
      case '(':
-       t->type = TOKEN822_COMMENT; t->s = cbuf; t->slen = 0;
+       t->type = TOKEN822_COMMENT;
+       if (!stralloc_ready(&t->addr, 0)) return 0;
+       t->addr.len = 0;
        level = 1;
        while (level)
-	{
-	 ++i; /* assert: < salen */
-	 switch(sa->s[i])
-	  {
-	   case '(': ++level; break;
-	   case ')': --level; break;
-	   case '\\': ++i; /* assert: < salen */
-	   default: *cbuf++ = sa->s[i]; ++t->slen;
-	  }
-	}
+       {
+	      ++i; /* assert: < salen */
+	      switch(sa->s[i])
+	      {
+	       case '(': ++level; break;
+	       case ')': --level; break;
+	       case '\\': ++i; /* assert: < salen */
+         default: {
+          char ch = sa->s[i];
+          if (!stralloc_catb(&t->addr, &ch, 1)) return 0;
+         }
+	      }
+	     }
        ++t;
        break;
      case '"':
-       t->type = TOKEN822_QUOTE; t->s = cbuf; t->slen = 0;
+       t->type = TOKEN822_QUOTE;
+       if (!stralloc_ready(&t->addr, 0)) return 0;
+       t->addr.len = 0;
        level = 1;
        while (level)
-	{
-	 ++i; /* assert: < salen */
-	 switch(sa->s[i])
-	  {
-	   case '"': --level; break;
-	   case '\\': ++i; /* assert: < salen */
-	   default: *cbuf++ = sa->s[i]; ++t->slen;
-	  }
-	}
+	     {
+	      ++i; /* assert: < salen */
+	      switch(sa->s[i])
+	      {
+	       case '"': --level; break;
+    	   case '\\': ++i; /* assert: < salen */
+	       default:
+    	       if (!stralloc_catb(&t->addr, &sa->s[i], 1)) return 0;
+	      }
+	     }
        ++t;
        break;
      case '[':
-       t->type = TOKEN822_LITERAL; t->s = cbuf; t->slen = 0;
+       t->type = TOKEN822_LITERAL;
+       if (!stralloc_ready(&t->addr, 0)) return 0;
+       t->addr.len = 0;
        level = 1;
        while (level)
-	{
-	 ++i; /* assert: < salen */
-	 switch(sa->s[i])
-	  {
-	   case ']': --level; break;
-	   case '\\': ++i; /* assert: < salen */
-	   default: *cbuf++ = sa->s[i]; ++t->slen;
-	  }
-	}
+       {
+	      ++i; /* assert: < salen */
+	      switch(sa->s[i])
+	      {
+	       case ']': --level; break;
+	       case '\\': ++i; /* assert: < salen */
+	       default: if (!stralloc_catb(&t->addr, &sa->s[i], 1)) return 0;
+	      }
+	     }
        ++t;
        break;
      default:
-       t->type = TOKEN822_ATOM; t->s = cbuf; t->slen = 0;
+       t->type = TOKEN822_ATOM;
+       if (!stralloc_ready(&t->addr, 0)) return 0;  /* assicurati spazio */
+       t->addr.len = 0;
        do
-	{
-	 if (sa->s[i] == '\\') if (++i >= salen) break;
-	 *cbuf++ = sa->s[i]; ++t->slen;
-	 if (++i >= salen)
-	   break;
-	}
+       {
+	      if (sa->s[i] == '\\') if (++i >= salen) break;
+        if (!stralloc_catb(&t->addr, &sa->s[i], 1)) return 0;
+        if (++i >= salen) break;
+	     }
        while (atomok(sa->s[i]));
        atomcheck(t);
        --i;
@@ -398,10 +452,7 @@ stralloc *buf;
  return 1;
 }
 
-static int gotaddr(taout,taaddr,callback)
-token822_alloc *taout;
-token822_alloc *taaddr;
-int (*callback)();
+static int gotaddr(token822_alloc *taout, token822_alloc *taaddr, int (*callback)(token822_alloc *))
 {
  int i;
 
@@ -410,7 +461,7 @@ int (*callback)();
 
  if (!token822_readyplus(taout,taaddr->len))
    return 0;
- 
+
  for (i = 0;i < taaddr->len;++i)
    taout->t[taout->len++] = taaddr->t[i];
 
@@ -418,11 +469,7 @@ int (*callback)();
  return 1;
 }
 
-int token822_addrlist(taout,taaddr,ta,callback)
-token822_alloc *taout;
-token822_alloc *taaddr;
-token822_alloc *ta;
-int (*callback)();
+int token822_addrlist(token822_alloc *taout, token822_alloc *taaddr, token822_alloc *ta, int (*callback)(token822_alloc *))
 {
  struct token822 *t;
  struct token822 *beginning;

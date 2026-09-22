@@ -46,14 +46,13 @@ void mailq()
   _exit(111);
 }
 
-void do_sender(s)
-const char *s;
+void do_sender(const char *s)
 {
   char *x;
   int n;
   int a;
   int i;
-  
+
   env_unset("QMAILNAME");
   env_unset("MAILNAME");
   env_unset("NAME");
@@ -61,13 +60,13 @@ const char *s;
   env_unset("MAILHOST");
 
   n = str_len(s);
-  a = str_rchr(s, '@');
+  a = str_rchr((char *)s, '@');
   if (a == n)
   {
-    env_put2("QMAILUSER", s);
+    env_put2("QMAILUSER", (char *)s);
     return;
   }
-  env_put2("QMAILHOST", s + a + 1);
+  env_put2("QMAILHOST", (char *)s + a + 1);
 
   x = (char *) alloc((a + 1) * sizeof(char));
   if (!x) nomem();
@@ -81,15 +80,13 @@ const char *s;
 int flagh;
 char *sender;
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   int opt;
   char **qiargv;
   char **arg;
   int i;
- 
+
   if (chdir(auto_qmail) == -1) {
     substdio_putsflush(subfderr,"sendmail: fatal: unable to switch to qmail home directory\n");
     _exit(111);

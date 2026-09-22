@@ -17,8 +17,8 @@
                      "why.html?sender=%{S}&ip=%{I}&receiver=%{xR}"
 */
 
-extern int spfcheck();
-extern int spfexplanation();
-extern int spfinfo();
+extern int spfcheck(char *);
+extern int spfexplanation(stralloc *);
+extern int spfinfo(stralloc *, int);
 
 #endif

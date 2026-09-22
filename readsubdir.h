@@ -8,12 +8,12 @@ typedef struct readsubdir
   DIR *dir;
   int pos;
   char *name;
-  void (*pause)();
+  void (*pause)(char *);
  }
 readsubdir;
 
-extern void readsubdir_init();
-extern int readsubdir_next();
+extern void readsubdir_init(readsubdir *, char *, void (*)(char *));
+extern int readsubdir_next(readsubdir *, unsigned long *);
 
 #define READSUBDIR_NAMELEN 10
 

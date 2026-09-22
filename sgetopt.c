@@ -25,10 +25,7 @@ Documentation in sgetopt.3.
 int opterr = 1;
 char *optprogname = 0;
 
-int getopt(argc,argv,opts)
-int argc;
-char **argv;
-char *opts;
+int sgetoptmine(int argc, char * const *argv, const char *opts)
 {
   int c;
   char *s;
@@ -38,7 +35,7 @@ char *opts;
     if (!optprogname) optprogname = "";
     for (s = optprogname;*s;++s) if (*s == '/') optprogname = s + 1;
   }
-  c = subgetopt(argc,argv,opts);
+  c = subgetopt(argc,(char **)argv,(char *)opts);
   if (opterr)
     if (c == '?') {
       char chp[2]; chp[0] = optproblem; chp[1] = '\n';

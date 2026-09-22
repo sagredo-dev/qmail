@@ -29,10 +29,10 @@ static char    *b64alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz
  */
 
 int
-b64decode(in, l, out)
-	const unsigned char *in;
-	int             l;
-	stralloc       *out;		/*- not null terminated */
+b64decode(
+	const unsigned char *in,
+	int             l,
+	stralloc       *out)		/*- not null terminated */
 {
 	int             p = 0;
 	int             n;
@@ -123,9 +123,9 @@ b64decode(in, l, out)
 }
 
 int
-b64encode(in, out)
-	stralloc       *in;
-	stralloc       *out;		/*- not null terminated */
+b64encode(
+	stralloc       *in,
+	stralloc       *out)		/*- not null terminated */
 {
 	unsigned char   a, b, c;
 	int             i;

@@ -4,22 +4,17 @@
 #include "str.h"
 #include "auto_split.h"
 
-void readsubdir_init(rs,name,pause)
-readsubdir *rs;
-char *name;
-void (*pause)();
+void readsubdir_init(readsubdir *rs, char *name, void (*pause)(char *))
 {
  rs->name = name;
- rs->pause = pause;
+ rs->pause = (void (*)(char *))pause;
  rs->dir = 0;
  rs->pos = 0;
 }
 
 static char namepos[FMT_ULONG + 4 + READSUBDIR_NAMELEN];
 
-int readsubdir_next(rs,id)
-readsubdir *rs;
-unsigned long *id;
+int readsubdir_next(readsubdir *rs, unsigned long *id)
 {
  direntry *d;
  unsigned int len;

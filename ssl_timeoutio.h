@@ -16,6 +16,6 @@ int ssl_timeoutread(int t, int rfd, int wfd, SSL *ssl, char *buf, int len);
 int ssl_timeoutwrite(int t, int rfd, int wfd, SSL *ssl, char *buf, int len);
 
 int ssl_timeoutio(
-  int (*fun)(), int t, int rfd, int wfd, SSL *ssl, char *buf, int len);
+  int (*fun)(SSL *, char *, int), int t, int rfd, int wfd, SSL *ssl, char *buf, int len);
 
 #endif

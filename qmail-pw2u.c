@@ -52,7 +52,7 @@ void die_alias()
   substdio_flush(subfderr);
   _exit(111);
 }
-void die_home(fn) char *fn;
+void die_home(char *fn)
 {
   substdio_puts(subfderr,"qmail-pw2u: fatal: unable to stat ");
   substdio_puts(subfderr,fn);
@@ -60,7 +60,7 @@ void die_home(fn) char *fn;
   substdio_flush(subfderr);
   _exit(111);
 }
-void die_user(s,len) char *s; unsigned int len;
+void die_user(char *s, unsigned int len)
 {
   substdio_puts(subfderr,"qmail-pw2u: fatal: unable to find ");
   substdio_put(subfderr,s,len);
@@ -230,9 +230,7 @@ int fd;
 substdio ss;
 char ssbuf[SUBSTDIO_INSIZE];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   int opt;
   int match;
@@ -282,7 +280,7 @@ char **argv;
     if (errno != error_noent) die_control();
   }
   else {
-    substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));
+    substdio_fdbuf(&ss,(ssize_t (*)(int,  const void *, size_t))read,fd,ssbuf,sizeof(ssbuf));
 
     if (!constmap_init(&mapuser,allusers.s,allusers.len,1)) die_nomem();
 
@@ -300,7 +298,7 @@ char **argv;
     if (errno != error_noent) die_control();
   }
   else {
-    substdio_fdbuf(&ss,read,fd,ssbuf,sizeof(ssbuf));
+    substdio_fdbuf(&ss,(ssize_t (*)(int,  const void *, size_t))read,fd,ssbuf,sizeof(ssbuf));
     for (;;) {
       if (getln(&ss,&line,&match,'\n') == -1) die_read();
       if (substdio_put(subfdout,line.s,line.len) == -1) die_write();

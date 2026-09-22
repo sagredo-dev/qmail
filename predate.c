@@ -22,9 +22,7 @@ static char *montab[12] = {
 char num[FMT_ULONG];
 char outbuf[1024];
 
-int main(argc,argv)
-int argc;
-char **argv;
+int main(int argc, char **argv)
 {
   time_t now;
   struct tm *tm;
