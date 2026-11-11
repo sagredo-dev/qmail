@@ -197,7 +197,7 @@ case "$1" in
     done
     ;;
   cdb)
-    if ! grep '\#define POP_AUTH_OPEN_RELAY 1' ~vpopmail/include/config.h >/dev/null; then
+    if ! grep '#define POP_AUTH_OPEN_RELAY 1' ~vpopmail/include/config.h >/dev/null; then
       (cd $TCPRULES_DIR ; cat tcp.smtp | tcprules tcp.smtp.cdb tcp.smtp.tmp)
       echo "Updated tcp.smtp.cdb."
       (cd $TCPRULES_DIR ; cat tcp.submission | tcprules tcp.submission.cdb tcp.submission.tmp)
