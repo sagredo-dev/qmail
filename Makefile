@@ -2384,7 +2384,7 @@ getDomainToken.h
 
 spawn-filter.0: \
 spawn-filter.8
-	nroff -man spawn-filter.8 > spawn-filter.0
+	nroff -t -man spawn-filter.8 > spawn-filter.0
 
 spawn-filter.8: \
 spawn-filter.9
