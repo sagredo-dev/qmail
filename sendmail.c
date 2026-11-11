@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     switch(opt) {
       case 'B': break;
       case 't': flagh = 1; break;
-      case 'f': sender = optarg; break;
+      case 'f': sender = str_equal(optarg,"<>") ? "" : optarg; break;
       case 'F': if (!env_put2("MAILNAME",optarg)) nomem(); break;
       case 'p': break; /* could generate a Received line from optarg */
       case 'v': break;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
   if (sender) {
     *arg++ = "-f";
     *arg++ = sender;
-    do_sender(sender);
+    if (*sender) do_sender(sender);
   }
   *arg++ = "--";
   for (i = 0;i < argc;++i) *arg++ = argv[i];
