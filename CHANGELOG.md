@@ -2,6 +2,7 @@
 
 - Nov 11, 2026
   - sendmail.c: Fix null reverse-path handling in sendmail -f option
+  - fix stray \ before # in qmailctl causing warning
 
 - Sep 29, 2026
   - dkimverify.cpp: updated tag-name parsing to comply with RFC 6376 by accepting _ and rejecting - in tag names.
