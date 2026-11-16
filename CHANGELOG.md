@@ -1,5 +1,8 @@
 # ChangeLog
 
+- Nov 16, 2026
+  - bug fix in policy.c: fix argument count reset when parsing consecutive policy types
+
 - Nov 11, 2026
   - sendmail.c: Fix null reverse-path handling in sendmail -f option
   - fix stray \ before # in qmailctl causing warning
