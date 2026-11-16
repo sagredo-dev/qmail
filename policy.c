@@ -528,6 +528,8 @@ static policy_t *policy_construct(char *data)
 	  }
 
 	  args = NULL;
+          /* Reset argument count for the next policy type. */
+          numargs = 0;
 
 	  /*
 	     Count, parse and allocate addresses
