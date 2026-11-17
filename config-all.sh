@@ -1,5 +1,5 @@
 # Configure/install the following as per notes.sagredo.eu guide:
-# - control files: me, defaultdomain, defaulthost, plusdomain, rcpthosts, spfbehavior, softlimit,
+# - control files: me, defaultdomain, defaulthost, plusdomain, rcpthosts, spfbehavior,
 #   bouncefrom, bouncehost, databytes, queuelifetime, maxrcpt, brtlimit, defaultdelivery,
 #   tlsserverciphers.
 # - aliases
@@ -221,12 +221,6 @@ fi
 if check_file "QMAIL/control/queuelifetime"; then
   echo "Putting '272800' in control/queuelifetime..."
   echo 272800 > QMAIL/control/queuelifetime
-fi
-
-# softlimit
-if check_file "QMAIL/control/softlimit"; then
-  echo "Putting '30000000' in control/softlimit..."
-  echo 30000000 > QMAIL/control/softlimit
 fi
 
 # maxrcpt

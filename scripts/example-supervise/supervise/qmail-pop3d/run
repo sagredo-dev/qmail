@@ -4,8 +4,11 @@ QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
 VPOPMAILUID=`id -u vpopmail`
 VPOPMAILGID=`id -g vpopmail`
 HOSTNAME=`cat $QMAILDIR/control/me`
+# softlimit for yescrypt hash. Raise to 100000000 if using Argon2id
+SOFTLIMIT=40000000
 
-exec /usr/local/bin/tcpserver -l 0 -R -H -v \
+/usr/local/bin/softlimit -m "$SOFTLIMIT" \
+     /usr/local/bin/tcpserver -l 0 -R -H -v \
 	-u "$VPOPMAILUID" -g "$VPOPMAILGID" 0 110 \
 	$QMAILDIR/bin/qmail-popup $HOSTNAME \
 	~vpopmail/bin/vchkpw \

@@ -4,7 +4,8 @@ QMAILDIR=$(getent passwd qmaild | cut -d: -f6)
 QMAILDUID=`id -u vpopmail`
 NOFILESGID=`id -g vpopmail`
 MAXSMTPD=`cat $QMAILDIR/control/concurrencyincoming`
-SOFTLIMIT=`cat $QMAILDIR/control/softlimit`
+# softlimit for yescrypt hash. Raise to 100000000 if using Argon2id
+SOFTLIMIT=40000000
 LOCAL=`head -1 $QMAILDIR/control/me`
 TCPRULES_DIR=$QMAILDIR/control
 

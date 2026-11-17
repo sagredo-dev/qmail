@@ -3,8 +3,10 @@
 QMAILDUID=`id -u root`
 NOFILESGID=`id -g root`
 VPOPMAILUID=`id -g vpopmail`
+# softlimit for yescrypt hash. Raise to 100000000 if using Argon2id
+SOFTLIMIT=40000000
 
-exec /usr/local/bin/softlimit -m 40000000 \
+exec /usr/local/bin/softlimit -m $SOFTLIMIT \
     /usr/local/bin/tcpserver -v -H -R -l 0 \
     -u "$QMAILDUID" -g "$NOFILESGID" 0 "$VPOPMAILUID" \
     ~vpopmail/bin/vpopmaild 2>&1
